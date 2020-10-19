@@ -1,0 +1,278 @@
+openapi: "3.0.0"
+info:
+  title: Heartland POS Integration
+  version: 0.1.0
+paths:
+  /member:
+    get:
+      operationId: getMember
+      tags:
+        - Springboard
+      parameters:
+        - in: query
+          name: psk
+          schema:
+            type: string
+          description: Bearer token
+          required: true
+        - in: query
+          name: account_uuid
+          schema:
+            type: string
+          description: UUID for the Account
+        - in: query
+          name: customer_id
+          schema:
+            type: string
+          description: ID for the customer
+        - in: query
+          name: pos_url
+          schema:
+            type: string
+          description: current POS transaction URL
+          required: true
+        - in: query
+          name: subdomain
+          schema:
+            type: string
+          description: Heartland tenant
+          required: true
+        - in: query
+          name: ticket_id
+          schema:
+            type: string
+          description: ID for the active ticket
+          required: true
+        - in: query
+          name: transaction_status
+          schema:
+            type: string
+          description: current status of the transaction (new,??)
+          required: true
+      security:
+        - queryKey: []
+      responses:
+        '200':
+          description: |-
+            200 response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+  /capture:
+    post:
+      operationId: capture
+      summary: Capture Payment
+      tags:
+        - Springboard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Request'
+      responses:
+        '200':
+          description: |-
+            200 response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          description: unexpected error
+  /refund:
+    post:
+      operationId: refund
+      summary: Refund Payment
+      tags:
+        - Springboard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Request'
+      responses:
+        '200':
+          description: |-
+            200 response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          description: unexpected error
+  /void:
+    post:
+      operationId: void
+      summary: Void Payment
+      tags:
+        - Springboard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Request'
+      responses:
+        '200':
+          description: |-
+            200 response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          description: unexpected error
+components:
+  securitySchemes:
+    apiKey:
+      type: http
+      scheme: bearer
+    queryKey:
+      type: apiKey
+      in: query
+      name: key
+  responses:
+    InvalidRequest:
+      description: Invalid request
+    NotFound:
+      description: The specified resource was not found
+  schemas:
+    Request:
+      description: Standard request for all springboard calls
+      type: object
+      properties:
+        payment_id:
+          type: integer
+          format: int64
+        amount:
+          type: number
+          format: double
+        number:
+          description: Account number
+          type: string
+    Response:
+      type: object
+      properties:
+        balance:
+          type: number
+    Reward:
+      type: object
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+    Balance:
+      type: object
+      properties:
+        amount:
+          type: integer
+        expiration:
+          type: string
+          format: 'date-time'
+        reward:
+          $ref: '#/components/schemas/Reward'
+    Member:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        balances:
+          type: array
+          minItems: 1
+          maxItems: 4
+          items:
+            $ref: '#/components/schemas/Balance'
+    TestAllNumbers:
+      type: object
+      properties:
+        field_number:
+          type: number
+          minimum: 100
+        field_number_float:
+          type: number
+          format: float
+          minimum: 101
+          exclusiveMinimum: true
+          multipleOf: 5
+        field_number_double:
+          type: number
+          maximum: 100
+          format: double
+          multipleOf: 5
+        field_integer:
+          type: integer
+          maximum: 103
+          exclusiveMaximum: true
+        field_integer_int32:
+          type: integer
+          format: int32
+          multipleOf: 5
+        field_integer_int64:
+          type: integer
+          format: int64
+    TestAllStrings:
+      type: object
+      properties:
+        field:
+          type: string
+          minLength: 4
+          maxLength: 6
+          pattern: pet
+        field_date:
+          type: string
+          format: date
+        field_datetime:
+          type: string
+          format: date-time
+        field_uri:
+          type: string
+          format: uri
+        field_ipv4:
+          type: string
+          format: ipv4
+        field_ipv6:
+          type: string
+          format: ipv6
+        field_uuid:
+          type: string
+          format: uuid
+          maximum: 99
+        type:
+          type: string
+          enum:
+            - percentOff
+            - dollarOff
+            - dollar
+            - access
+            - stored
+            - voucher
+            - "$$"
+    TestLink:
+      type: object
+      x-go-type: github.com/lavaai/kit/auth.LavaUser
+    TestPropLink:
+      type: object
+      properties:
+        field:
+          type: string
+          minLength: 4
+          maxLength: 6
+          pattern: pet
+        field_typed:
+          x-go-type: github.com/google/uuid.UUID

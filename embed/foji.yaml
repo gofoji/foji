@@ -1,0 +1,78 @@
+formats:
+  go:
+    case: pascal
+    post:
+      - [ "goimports", "-w", "$FILE" ]
+    maps:
+      type:
+        oid: int64
+        name: string
+        text: "*string"
+        int2: int16
+        int4: int32
+        int8: int64
+        varchar: string
+        "_name": "[]string"
+        timestamptz: time.Time
+        integer: int32
+        integer,int64: int64
+        number: float32
+        number,float: float32
+        number,double: float64
+        number,int32: int32
+        number,int64: int64
+        string: string
+        string,date: time.Time
+        string,date-time: time.Time
+        string,uri: net/url.URL
+        string,ipv4: net.IP
+        string,ipv6: net.IP
+        string,uuid: github.com/google/uuid.UUID
+        object: interface{}
+        boolean: bool
+  openapi:
+    case: pascal
+    maps:
+      type:
+        name: string
+        text: string
+        int2: integer,int32
+        int4: integer,int64
+        varchar: string
+        timestamptz: string,date-time
+processes:
+  repo:
+    processes: [ sqlRepo, dbRepo ]
+  embed:
+    format: go
+    resources: [ embed ]
+    EmbedAll:
+      embed/embeds_gen.go: foji/embed.go.tpl
+  dbList:
+    format: console
+    case: unchanged
+    DbAll:
+      stdout: foji/dbList.console.tpl
+  openApiStub:
+    format: openapi
+    resources: [ openapi ]
+    DbAll:
+      '!swagger.yaml': foji/openAPIStub.yaml.tpl
+  sqlRepo:
+    format: go
+    resources: [ sql ]
+    maps:
+      type:
+        public.reward.parameters: object
+    SQLFile:
+      '{{ fileWithExt .File.Source "_gen.go" }}': foji/sqlRepo.go.tpl
+  dbRepo:
+    format: go
+    DbAll:
+      '!pg/repo_gen.go': foji/pgx/db.go.tpl
+      fields_gen.go: foji/fields.go.tpl
+    DbTable:
+      'pg/{{toLower .Table.Name}}_gen.go': foji/pgx/table.go.tpl
+      '{{toLower .Table.Name}}_gen.go': foji/pgx/model.go.tpl
+    DbEnum:
+      '{{toLower .Enum.Name}}_gen.go': foji/enum.go.tpl

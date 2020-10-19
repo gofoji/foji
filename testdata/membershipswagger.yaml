@@ -1,0 +1,2496 @@
+openapi: 3.0.0
+info:
+  version: "1.0"
+  title: Membership
+  description: >-
+    # Lava Membership API
+
+
+    All amounts are in the smallest denomination of the currency (cents for USD).
+
+
+    # Flows
+
+
+    Two primary transaction flows are supported:
+
+
+    ## Simple Flow (POS side discounting)
+
+
+    **POS** scans QR code from customer device.  POS then calls:
+
+
+    ```GET {serviceUrl}/v1/memberships/{QR Code}```
+
+
+    Note, the membership ```id``` returned in the response is a canonical membership id, not the QR code sent.
+
+
+    **POS** validates the response code (http status code ```404``` indicates an invalid membership or QR Code)
+
+
+    **POS** summarizes the balances to inform the user, see [Get Membership](#operation/getMembership) notes below
+
+
+    **POS** Completes transaction using appropriate funds from balance summary
+
+
+    **POS** posts transaction using ```membership_id``` returned in the first call along with ```sub_total``` and ```total```.
+
+
+    Membership service will validate and capture the funds and populate all supporting fields.
+
+
+    **POS** validates the response code (http status code ```404``` indicates an invalid response - such as lack of funds or invalid ```membership_id```)
+
+
+    **POS** Displays optional information on customer receipt (see below).
+
+
+    ### Optional Full Refund / Reverse / Void Flow
+
+
+    **POS** scan receipt to get transaction ID.
+
+
+    **POS** calls [Void Transaction](#operation/voidTransaction) for transaction ID.
+
+
+    Membership service will void the entire transaction and credit the appropriate balances, and return new balances.
+
+
+    **POS** Displays optional information on customer receipt (see below).
+
+
+    ## Advanced Flow (membership service side discounting)
+
+
+    **POS** Processes standard transaction until Payment step.
+
+
+    **POS** scans QR code from customer device (QR Code).  POS then calls:
+
+
+    ```POST {serviceUrl}/v1/transactions/```
+
+
+    with a ```authorize_only=true``` and ```membership_id = QRCode```.
+
+
+    This requires a minimum of ```total``` to be populated.  Additional fields can be populated as well to allow more promotions.  For example, promotions that are scoped to certain categories or brands must have the relevant item information provided for validation.
+
+
+    **POS** validates the response code (http status code ```400``` indicates an invalid response - such as lack of funds or invalid ```membership_id```)
+
+
+    Note, the membership_id returned in the response is a canonical membership_id, not the QR code sent.
+
+
+    **POS** can then revise the transaction any number of times (add or remove items) and post to the update endpoint (keeping the ```authorize_only=true```)
+
+
+    **POS** can cancel the transaction by calling  [Void Transaction](#operation/voidTransaction)
+
+
+    **POS** can complete the transaction by  [Capture Transaction](#operation/captureTransaction)
+
+
+    **POS** Displays optional information on customer receipt (see below).
+
+
+    ## Customer Receipts
+
+
+    You have several items potentially available for a customer receipt:
+
+    For overall transactions:
+
+
+    ```Membership.customer.[first|last]_name``` Customer name
+
+
+    ```Transaction.adjustment_description``` (e.g. "Gold Member 20% off").  This can be a multi line list if multiple promotions are used for a single transaction.
+
+
+    ```Transaction.balances[*].amount``` will provide the updated balances available  (e.g. "$43 available of your $100 promo").  Note this will require client logic for summation.
+
+
+    ```Transaction.id``` This is unnecessary if reference_id was provided.
+
+
+
+    For each individual item (if applicable)
+
+
+    ```Transaction.item[*].adjustment_description``` (e.g. "Gold 20% off")
+paths:
+  "/transactions/{id}":
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getTransaction
+      summary: Get Transaction
+      tags:
+        - Transactions
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/transaction-output"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    put:
+      operationId: putTransaction
+      summary: Update Transaction
+      tags:
+        - Transactions
+      description: >-
+        # Notes on Transactions
+
+
+        Funds are only removed from Membership balances when Transactions are _captured_.  By default creating a Transaction will automatically capture the funds, unless you set ```authorize_only=true```.
+
+
+        Discounts can apply to both the transaction and item level depending on integration options.  The transaction level discounts are NOT a summary of item discounts.  They are distinct lists.  One or both can be populated based on available balances.
+
+
+        Fixed amount discounts always apply before percentage discounts.
+
+
+        When creating or updating a transaction if ```redeemed_amount``` is specified the service will validate the availability of funds and not modify them.  If no redeemed fields are populated the service will calculate the maximum redemption valid for the transaction.  In either case the ```discounts_applied``` and ```discount_description``` fields are populated based on the source of funds.
+
+
+        ### Allowable updates
+
+        Once a transaction is Captured the only update allowed is to void or refund.  Any attempt to pass in other fields will return http status code ```412```.
+      requestBody:
+        $ref: "#/components/requestBodies/transaction-input"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/transaction-output"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "412":
+          $ref: "#/components/responses/BadRequest"
+      security:
+        - Authorization: []
+  /transactions:
+    get:
+      operationId: listTransactions
+      summary: List Transactions
+      tags:
+        - Transactions
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/transaction-output"
+    post:
+      operationId: postTransaction
+      summary: Create Transaction
+      tags:
+        - Transactions
+      requestBody:
+        $ref: "#/components/requestBodies/transaction-input"
+      responses:
+        "201":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/transaction-output"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+      security:
+        - Authorization: []
+  /discounts:
+    post:
+      operationId: checkDiscounts
+      summary: Check Transaction for Discounts
+      tags:
+        - Transactions
+      requestBody:
+        $ref: "#/components/requestBodies/transaction-input"
+      responses:
+        "201":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/transaction-output"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+      security:
+        - Authorization: []
+  "/transactions/{id}/void":
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: voidTransaction
+      summary: Void Transaction
+      tags:
+        - Transactions
+      description: Voids an entire transaction.  Previously captured funds are returned to
+        the available balances.
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/transaction-output"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      security:
+        - Authorization: []
+  "/reference/{id}/void":
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: voidTransactionByReference
+      summary: Void Transaction By Reference
+      tags:
+        - Transactions
+      description: Voids an entire transaction by integration Reference ID.  Previously
+        captured funds are returned to the available balances.
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/transaction-output"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      security:
+        - Authorization: []
+  "/transactions/{id}/capture":
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: captureTransaction
+      summary: Capture Transaction
+      tags:
+        - Transactions
+      description: >-
+        Captures a transaction that was created with the Charge endpoint with a
+        ```authorize_only``` value of ```true```
+
+
+        Prequisite: Transaction must currently be __authorized__
+
+
+        Funds are moved from pending to captured in the affected balances.
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/transaction-output"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      security:
+        - Authorization: []
+  "/memberships/{id}":
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getMembership
+      summary: Get Membership
+      tags:
+        - Memberships
+      parameters:
+        - name: stored_only
+          in: query
+          required: false
+          description: By default will only return stored value balance.
+          schema:
+            type: boolean
+            default: true
+        - name: positive_only
+          in: query
+          required: false
+          description: By default will not return any balance with amount = 0.
+          schema:
+            type: boolean
+            default: true
+      description: >-
+        ### Balances
+
+
+        Membership balances provide a snapshot of all available promotions and their balances.  To calculate available funds you must look at the promotion type and amount.  For example to get all available fixed funds:
+
+        ```
+
+        var available = 0
+
+        for (let balance of membership.balances){
+          if (balance.promotion.type == "fixed"){
+            available += balance.amount
+          }
+        }
+
+        ```
+
+
+        ```available``` will now hold the available fixed funds (USD - $ by default).
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/membership-output"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      security:
+        - Authorization: []
+    put:
+      operationId: putMembership
+      summary: Update Membership
+      tags:
+        - Memberships
+      requestBody:
+        $ref: "#/components/requestBodies/membership-input"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/membership-output"
+      security:
+        - Authorization: []
+    delete:
+      operationId: deleteMembership
+      summary: Delete Membership
+      tags:
+        - Memberships
+      responses:
+        "204":
+          description: ""
+  "/memberships/{id}/totp":
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getMembershipTOTP
+      summary: Get Membership TOTP Config
+      tags:
+        - Memberships
+      description: |-
+        ### URL
+        Returns TOTP config used to generated QRCode for membershipID scanning
+
+        Secret (base 32 encoded array of bytes)
+
+        Algorithm (default SHA1)
+
+        Digits (default 6)
+
+        Period (default 30s)
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/membership-totp"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      security:
+        - Authorization: []
+  "/memberships/{id}/ledger":
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getMembershipLedger
+      summary: Get Ledger
+      tags:
+        - Memberships
+      description: returns list of ledger items
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ledgers"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      security:
+        - Authorization: []
+  "/memberships/{id}/ledger/{rewardID}":
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: rewardID
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getMembershipRewardLedger
+      summary: Get Reward Ledger
+      tags:
+        - Memberships
+      description: returns list of ledger items for s specific Reward
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ledgers"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      security:
+        - Authorization: []
+  "/memberships/{id}/redeem":
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: redeem
+      summary: Redeem reward
+      tags:
+        - Redeem
+      description: Update balance and create ledger entry for consumption
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/redeem"
+      responses:
+        "201":
+          description: Redeemed
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      security:
+        - Authorization: []
+  /memberships:
+    get:
+      operationId: listMemberships
+      summary: List Memberships
+      tags:
+        - Memberships
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/membership-output"
+    post:
+      operationId: createMembership
+      summary: Create Membership
+      tags:
+        - Memberships
+      requestBody:
+        $ref: "#/components/requestBodies/membership-input"
+      responses:
+        "201":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/membership-output"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+      security:
+        - Authorization: []
+  /promotions:
+    get:
+      operationId: listPromotions
+      summary: List Promotions
+      tags:
+        - Promotions
+      security:
+        - Authorization: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/promotion-output"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /reward:
+    get:
+      operationId: listRewards
+      summary: List Rewards
+      tags:
+        - Reward
+      security:
+        - Authorization: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/reward"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      operationId: createReward
+      summary: Create Reward
+      tags:
+        - Reward
+      requestBody:
+        $ref: "#/components/requestBodies/reward"
+      security:
+        - Authorization: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/reward"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  "/reward/{id}":
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int32
+    get:
+      operationId: getReward
+      summary: Get Reward
+      tags:
+        - Reward
+      description: Returns reward
+      responses:
+        "200":
+          description: reward
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/reward"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      security:
+        - Authorization: []
+    put:
+      operationId: updateReward
+      summary: Update Reward
+      tags:
+        - Reward
+      description: Updates reward
+      requestBody:
+        $ref: "#/components/requestBodies/reward"
+      responses:
+        "200":
+          description: reward
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/reward"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      security:
+        - Authorization: []
+    delete:
+      operationId: deleteReward
+      summary: Delete Reward
+      tags:
+        - Reward
+      description: Returns reward
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      security:
+        - Authorization: []
+  /pass:
+    get:
+      operationId: getPass
+      summary: get a pass
+      tags:
+        - Pass
+      parameters:
+        - name: m
+          in: query
+          description: Membership reference ID
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+        "302":
+          description: 302 response
+          headers:
+            Location:
+              schema:
+                type: string
+        "400":
+          description: Invalid input
+          content:
+            text/html:
+              schema:
+                description: Invalid request
+                type: string
+        "404":
+          $ref: "#/components/responses/NotFound"
+  "/signup/{id}":
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: signUpForm
+      summary: Get sign up form
+      tags:
+        - Pass
+      responses:
+        "200":
+          description: ok
+        "400":
+          description: Invalid input
+          content:
+            text/html:
+              schema:
+                description: Invalid request
+                type: string
+  /signup:
+    post:
+      operationId: signUp
+      summary: Initiate sign up flow
+      tags:
+        - Pass
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                mobile:
+                  type: string
+                email:
+                  type: string
+                template_id:
+                  type: integer
+                zip:
+                  type: string
+                sms_opt:
+                  type: boolean
+                email_opt:
+                  type: boolean
+                backstage_pass:
+                  type: string
+      responses:
+        "302":
+          description: 302 response
+          headers:
+            Location:
+              schema:
+                type: string
+        "400":
+          description: Invalid input
+          content:
+            text/html:
+              schema:
+                description: Invalid request
+                type: string
+  "/verify/{id}":
+    parameters:
+      - name: id
+        description: Membership ID or QR Code
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getVerify
+      summary: Get Membership Verify
+      tags:
+        - Verify
+      description: Returns latest for all Verify attributes
+      parameters:
+        - in: query
+          name: f
+          description: Filters attributes by name
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/verify-attributes"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      security:
+        - Authorization: []
+    post:
+      parameters:
+        - in: header
+          name: X-Idempotence-ID
+          description: Protects against multiple requests
+          required: false
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/verify-attributes"
+      operationId: createVerifyRecording
+      summary: Create Verify Recording
+      tags:
+        - Verify
+      description: Sets latest recording for Verify attributes
+      responses:
+        "200":
+          description: Validated Attributes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/verify-attributes"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      security:
+        - Authorization: []
+  /quest:
+    post:
+      operationId: questTransaction
+      summary: Proxy interface for Quest API
+      tags:
+        - Quest
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+        "400":
+          description: Invalid input - Response is XML payload response
+          content:
+            text/plain:
+              schema:
+                description: Invalid request
+                type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+      security:
+        - Authorization: []
+  /ops/cache:
+    delete:
+      operationId: deleteCache
+      summary: Resets the cache
+      tags:
+        - Ops
+      description: returns "OK"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+      security:
+        - Authorization: []
+  /ops/ping:
+    get:
+      operationId: ping
+      summary: Simple echo
+      tags:
+        - Ops
+      description: returns "OK"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: string
+  /ops/info:
+    get:
+      tags:
+        - Ops
+      summary: List of arbitrary values to describe service
+      operationId: info
+      responses:
+        "200":
+          description: List of registered labels and values
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        "503":
+          description: Returned if the service is detected as unhealthy
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+  /internal/dashboardHistory:
+    post:
+      summary: Trigger Build of Dashboard History
+      operationId: dashboardHistory
+      tags:
+        - Periodic
+      responses:
+        "204":
+          description: ""
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+      security:
+        - Authorization: []
+  /internal/expireTransactions:
+    post:
+      summary: Trigger Expiration of Transactions
+      operationId: expireTransactions
+      tags:
+        - Periodic
+      responses:
+        "204":
+          description: ""
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+      security:
+        - Authorization: []
+  /log:
+    post:
+      operationId: logData
+      summary: Create Log Entry
+      tags:
+        - Integrations
+      parameters:
+        - name: label
+          in: query
+          required: false
+          schema:
+            type: string
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              type: string
+          application/json:
+            schema:
+              type: string
+      responses:
+        "201":
+          description: ""
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+      security:
+        - Authorization: []
+  /config:
+    get:
+      operationId: getConfig
+      summary: Get Config for Integration
+      tags:
+        - Integrations
+      responses:
+        "200":
+          description: ""
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      security:
+        - Authorization: []
+  /dashboard/products:
+    post:
+      operationId: createProducts
+      summary: create Dashboard Products
+      tags:
+        - Dashboard
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/products"
+      security:
+        - Authorization: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error-response"
+  /dashboard/locations:
+    post:
+      operationId: createLocations
+      summary: create Dashboard Locations
+      tags:
+        - Dashboard
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/locations"
+      security:
+        - Authorization: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error-response"
+  /dashboard/transactions:
+    post:
+      operationId: logTransactions
+      summary: create Dashboard Transactions
+      tags:
+        - Dashboard
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/transaction-inputs"
+      security:
+        - Authorization: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error-response"
+  /skidata/parking/entry:
+    post:
+      operationId: skidataEntry
+      summary: import Skidata Parking Entries
+      tags:
+        - Ingest
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/skidata-entries"
+      security:
+        - Authorization: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error-response"
+  /skidata/parking/revenue:
+    post:
+      operationId: skidataParkingRevenue
+      summary: import Skidata Parking Revenue
+      tags:
+        - Ingest
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/skidata-revenues"
+      security:
+        - Authorization: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error-response"
+  /skidata/parking/metadata:
+    post:
+      operationId: skidataParkingMetadata
+      summary: import Skidata Parking Metadata
+      tags:
+        - Ingest
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/skidata-parking-metadata"
+      security:
+        - Authorization: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error-response"
+  /mdm/field:
+    get:
+      operationId: field
+      summary: Get Fields
+      tags:
+        - mdm
+      security:
+        - Authorization: []
+        - LavaUserToken: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/field"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /mdm/query/sample:
+    post:
+      operationId: sample
+      summary: Execute query and sample results
+      tags:
+        - mdm
+      requestBody:
+        $ref: "#/components/requestBodies/query"
+      security:
+        - Authorization: []
+        - LavaUserToken: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /mdm/query/csv:
+    post:
+      operationId: csv
+      summary: Execute query and return csv
+      tags:
+        - mdm
+      requestBody:
+        $ref: "#/components/requestBodies/query"
+      security:
+        - Authorization: []
+        - LavaUserToken: []
+      responses:
+        "200":
+          description: ""
+          headers:
+            Content-type:
+              description: text/csv; charset=utf-8
+              schema:
+                type: string
+            Content-Disposition:
+              description: attachment; filename=export.csv
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: string
+                format: binary
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /mdm/query/count:
+    post:
+      operationId: count
+      summary: Execute query and count
+      tags:
+        - mdm
+      requestBody:
+        $ref: "#/components/requestBodies/query"
+      security:
+        - Authorization: []
+        - LavaUserToken: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /mdm/segment:
+    post:
+      operationId: createSegment
+      summary: Create Segment
+      tags:
+        - mdm
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/segment"
+      security:
+        - Authorization: []
+        - LavaUserToken: []
+      responses:
+        "201":
+          description: created
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  "/mdm/segment/{id}":
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getSegment
+      summary: Get Segment
+      tags:
+        - mdm
+      security:
+        - Authorization: []
+        - LavaUserToken: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/segment"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error-response"
+  "/mdm/segment/{id}/match":
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getSegmentMatches
+      summary: Get Segment Matches
+      tags:
+        - mdm
+      security:
+        - Authorization: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        "500":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error-response"
+  "/mdm/segment/{id}/match/{lavaUserId}":
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: lavaUserId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getSegmentMatch
+      summary: Get Segment Match
+      tags:
+        - mdm
+      security:
+        - Authorization: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  match:
+                    type: boolean
+        "500":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error-response"
+  /compconfig:
+    get:
+      summary: GetCompConfig
+      tags:
+        - Comps
+      security:
+        - Authorization: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/comp-config"
+      operationId: getCompConfig
+      description: Return list of available comp configs for current user
+  /grant:
+    post:
+      summary: CreateGrant
+      security:
+        - Authorization: []
+      operationId: createGrant
+      responses:
+        "201":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/grant"
+      description: Creates a grant on a member.  If the *member.id* is empty the other
+        member fields are required and a temp member is created to send an SMS
+        with the standalone card.
+      tags:
+        - Comps
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/grant"
+    get:
+      summary: ListGrants
+      security:
+        - Authorization: []
+      tags:
+        - Comps
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/grant"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+      operationId: listGrants
+      description: List all grants by the current user
+  "/membership/{membershipID}/grant":
+    parameters:
+      - description: ""
+        name: membershipID
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: ListMemberGrants
+      security:
+        - Authorization: []
+      tags:
+        - Comps
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/grant"
+      operationId: listMemberGrants
+      description: List all grants on the member
+  "/membership/{membershipID}":
+    parameters:
+      - description: ""
+        name: membershipID
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      summary: UpdateMember
+      security:
+        - Authorization: []
+      operationId: updateMember
+      responses:
+        "200":
+          description: OK
+      description: Allows updating mobile only
+      tags:
+        - Memberships
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                mobile:
+                  type: string
+  "/grant/{grantID}:cancel":
+    parameters:
+      - description: ""
+        name: grantID
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      summary: CancelGrant
+      security:
+        - Authorization: []
+      operationId: cancelGrant
+      responses:
+        "200":
+          description: OK
+      description: Cancels the grant
+      tags:
+        - Comps
+  "/grant/{grantID}":
+    parameters:
+      - description: ""
+        name: grantID
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      summary: UpdateGrant
+      operationId: updateGrant
+      security:
+        - Authorization: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/grant-update"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/grant"
+      description: Allows updating reason or comment
+      tags:
+        - Comps
+  /membership:find:
+    get:
+      summary: FindMember
+      operationId: findMember
+      security:
+        - Authorization: []
+      tags:
+        - Memberships
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/membership-output"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+      parameters:
+        - in: query
+          name: f
+          description: Email or Phone Number for lookup
+          required: true
+          schema:
+            type: string
+      description: Find a member by email or mobile number
+  /publish:
+    post:
+      summary: Publish Message
+      operationId: publishMessage
+      security:
+        - Authorization: []
+      tags:
+        - Messaging
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/message"
+      responses:
+        "201":
+          description: Ok
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+servers:
+  - url: /v1
+components:
+  responses:
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            description: Missing or invalid bearer token provided
+    BadRequest:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/error-response"
+    NotFound:
+      description: Not Found
+      content:
+        application/json:
+          schema:
+            description: Primary resource not found
+  requestBodies:
+    query:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/query"
+    membership-input:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/membership-input"
+    reward:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/reward"
+    transaction-input:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/transaction-input"
+  securitySchemes:
+    Authorization:
+      name: Authorization
+      type: apiKey
+      in: header
+    LavaUserToken:
+      name: Lava-User-Token
+      type: apiKey
+      in: header
+  schemas:
+    customer-input:
+      title: Customer Input
+      type: object
+      properties:
+        first_name:
+          type: string
+        last_name:
+          type: string
+        email:
+          type: string
+          format: email
+        mobile:
+          type: string
+        image:
+          type: string
+          format: uri
+    reward:
+      title: reward
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        description:
+          type: string
+        slug:
+          type: string
+        reward_type:
+          type: string
+          enum:
+            - offer
+            - stored
+            - access
+        updated_at:
+          type: string
+          format: date-time
+        updated_by:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        created_by:
+          type: string
+        params:
+          type: object
+          x-go-type:
+            import:
+              package: github.com/lavaai/membership/db
+              alias: db
+            type: RewardParam
+          properties:
+            action:
+              type: string
+              enum:
+                - percent_off
+                - dollar_off
+                - override
+            unlimited:
+              type: boolean
+              default: false
+            transferable:
+              type: boolean
+              default: false
+            refundable:
+              type: boolean
+              default: false
+            scope:
+              type: string
+              enum:
+                - txn
+                - item
+            amount:
+              type: integer
+              format: int32
+            brands:
+              type: array
+              items:
+                type: string
+            categories:
+              type: array
+              items:
+                type: string
+            integrations:
+              type: array
+              items:
+                type: integer
+            locations:
+              type: array
+              items:
+                type: string
+            sku:
+              type: array
+              items:
+                type: string
+            upc:
+              type: array
+              items:
+                type: string
+            max_actions:
+              type: integer
+              format: int32
+            min_amount:
+              type: integer
+              format: int32
+            min_count:
+              type: integer
+              format: int32
+            total:
+              type: integer
+              format: int32
+    promotion-output:
+      title: Promotion Output
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        applies_to_transaction:
+          type: boolean
+        type:
+          type: string
+          enum:
+            - fixed
+            - percentage
+        amount:
+          type: integer
+          format: int32
+        show_balance:
+          type: boolean
+        slug:
+          type: string
+    balance:
+      title: Balance
+      type: object
+      description: If the promotion.type is percentage, the discount is defined in
+        promotion.amount (as a whole number %, i.e. promotion.amount=20 means
+        20% discount).  Balance.amount is provided if and only if there is a
+        limit defined against the total fixed of the percentage discount.
+      properties:
+        amount:
+          type: integer
+          format: int32
+          description: "Fixed amount of the promotion still available.  If the promotion
+            type is percentage and no limit is set this value will be empty. "
+        update_time:
+          type: string
+          format: date-time
+          description: Timestamp of the last transaction to impact the balance
+        expires_time:
+          type: string
+          format: date-time
+          description: Timestamp the funds expire (if applicable)
+          nullable: true
+        promotion:
+          $ref: "#/components/schemas/promotion-output"
+      required:
+        - update_time
+        - promotion
+        - amount
+    membership-input:
+      title: Membership Input
+      type: object
+      properties:
+        first_name:
+          type: string
+        last_name:
+          type: string
+        email:
+          type: string
+        mobile:
+          type: string
+        data:
+          description: Any json payload
+    membership-output:
+      title: Membership Output
+      allOf:
+        - type: object
+          properties:
+            id:
+              type: string
+            balances:
+              x-omitempty: true
+              type: array
+              description: To understand the available funds you can summarize the balances
+                by promotion type.  For all fixed promotions a simple sum of
+                balance.amount will yield  the total available funds.  For
+                percentage discounts you must group them by
+                balance.promotion.amount.
+              items:
+                $ref: "#/components/schemas/balance"
+            customer:
+              $ref: "#/components/schemas/customer-input"
+          required:
+            - id
+        - $ref: "#/components/schemas/membership-input"
+    membership-totp:
+      title: Membership TOTP Config
+      type: object
+      properties:
+        secret:
+          type: string
+        algorithm:
+          type: string
+        digits:
+          type: integer
+          format: int32
+        period:
+          type: integer
+          format: int32
+    transaction-item:
+      title: TransactionItem
+      type: object
+      properties:
+        category:
+          type: string
+          description: "Optional product category.  Examples include: Alcohol, Books,
+            Clothing, Sports Equipment, Restaurant. "
+        sub_category:
+          type: string
+          description: "Optional product sub category.  Examples include: wine, beer, pens,
+            jersey, hat, snacks. "
+        brand:
+          type: string
+          description: Optional brand identifier.
+        sku:
+          type: string
+          description: Optional stock keeping unit code.
+        upc:
+          type: string
+          description: Optional universal product code.
+          maxLength: 18
+        slug:
+          type: string
+          description: Optional short string human readable name used to describe product.
+        returned_quantity:
+          type: integer
+          format: int32
+        quantity:
+          type: integer
+          format: int32
+          default: 1
+        amount:
+          type: integer
+          format: int32
+          description: Cost of each item before any discount.
+        adjusted_total:
+          type: integer
+          format: int32
+          description: Total cost of all items after applied discounts.
+          nullable: true
+        discounts_applied:
+          x-omitempty: true
+          type: array
+          description: Optional list of discounts applied.  If not provided the service
+            will auto calculate the optimal usage based on the discounts used in
+            the product.
+          items:
+            $ref: "#/components/schemas/discount-input"
+        discount_description:
+          type: string
+          description: Short label for adjustment source.  For example "Gold Member
+            discount" or "Season Pass Bonus"
+      required:
+        - amount
+    transaction-input:
+      title: Transaction Input
+      type: object
+      properties:
+        sub_total:
+          type: integer
+          format: int32
+          description: Sum of all items after discounts, before taxes
+          nullable: true
+        taxes:
+          type: integer
+          format: int32
+          description: Taxes on sub_total
+          nullable: true
+        location:
+          type: string
+          description: Workstation, Terminal, or Store identifier
+          nullable: true
+        user:
+          type: string
+          description: Cashier processing the transaction
+          nullable: true
+        redeemed_amount:
+          type: integer
+          format: int32
+          description: "Total amount of the membership stored value redeemed on this
+            transaction. "
+          nullable: true
+        total:
+          type: integer
+          format: int32
+          description: Final balance of the transaction after all discounts, taxes, and
+            stored value payment.
+          nullable: true
+        redeemed_promotion:
+          $ref: "#/components/schemas/promotion-output"
+        items:
+          x-omitempty: true
+          type: array
+          description: Optional list of items.  Used when the membership service is
+            validating discounts based on items purchased.  All optional fields
+            in the TransactionItem objects are used to match against discount
+            scopes.
+          items:
+            $ref: "#/components/schemas/transaction-item"
+        membership_id:
+          type: string
+          description: Lava specific membership identifier
+        discounts_applied:
+          x-omitempty: true
+          type: array
+          description: Optional list of discounts applied.  If not provided the service
+            will automatically calculate the optimal usage of discounts based on
+            the amounts.
+          items:
+            $ref: "#/components/schemas/discount-input"
+        discount_description:
+          type: string
+          description: Short label for adjustment source.  For example "Gold Member
+            discount" or "Season Pass Bonus"
+        reference_id:
+          type: string
+          description: "Reference transaction id from originating system.  Optional, but
+            used for idempotency enforcement.  It must be unique per
+            integration.  If not provided, the id should be logged by initiator.
+            "
+          maxLength: 128
+        authorize_only:
+          type: boolean
+          default: false
+          description: If true then the transaction status will be set to authorized.  You
+            can then revise the transaction as needed.  You must then call
+            Capture to complete the transaction.
+        refunds:
+          x-omitempty: true
+          type: array
+          description: Only provide if returning items previously purchased in other
+            transactions.
+          items:
+            $ref: "#/components/schemas/transaction-refund"
+        created_at:
+          type: string
+          format: date-time
+          x-omitempty: true
+        duration:
+          type: integer
+          format: int32
+          description: Duration of the transaction in seconds
+          x-omitempty: true
+    transaction-output:
+      title: Transaction Output
+      allOf:
+        - type: object
+          properties:
+            id:
+              type: string
+              description: Unique identifier for the transaction.  Should be printed on any
+                receipt for tracking if not providing reference_id
+            status:
+              type: string
+              description: Authorized indicates the funds as reported are available in the
+                balances.  Captured status indicates the funds are now
+                secured.  Voided is used when the entire transaction was
+                cancelled and all captured funds returned.
+              enum:
+                - authorized
+                - captured
+                - voided
+            balances:
+              x-omitempty: true
+              type: array
+              description: ""
+              items:
+                $ref: "#/components/schemas/balance"
+            customer:
+              $ref: "#/components/schemas/customer-input"
+          required:
+            - id
+        - $ref: "#/components/schemas/transaction-input"
+    discount-input:
+      title: Discount Input
+      type: object
+      description: Details the discounts applied either to an item or transaction as a
+        whole.  Optionally includes a reference to the promotion code used for
+        the discount.  If not specified the service will match and populate
+        before returning.
+      properties:
+        amount:
+          type: integer
+          format: int32
+          description: Total amount of the discount.  In cents.
+          minimum: 0
+        slug:
+          type: string
+          description: Short description of discount.  Only used for adhoc discounts.  For
+            membership managed discounts see ```promotion.slug```.
+        promotion_id:
+          type: string
+          description: If a ```promotion_id``` is not provided, the slug must be set.
+      required:
+        - amount
+    error-response:
+      title: Error Response
+      type: object
+      x-go-type:
+        import:
+          package: github.com/lavaai/membership/errs
+          alias: errs
+        type: LavaError
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        field:
+          type: string
+    transaction-refund:
+      title: Transaction Refund
+      type: object
+      properties:
+        transaction_id:
+          type: string
+          description: ID of the original transaction issued by the service.
+        items:
+          x-omitempty: true
+          type: array
+          description: Optional list of items returned.
+          items:
+            $ref: "#/components/schemas/transaction-refund-item"
+        refund_discounts:
+          x-omitempty: true
+          type: array
+          description: Optional transaction level discount refunds.
+          items:
+            $ref: "#/components/schemas/discount-input"
+        redeemed_amount:
+          type: integer
+          format: int32
+          description: Amount of the membership stored value to return to the user from the
+            original transaction. Only use if not using redeemed_amount at the
+            Transaction Refund Item level.
+    transaction-refund-item:
+      title: Transaction Refund Item
+      allOf:
+        - type: object
+          properties:
+            redeemed_amount:
+              type: integer
+              format: int32
+              description: Amount of the membership stored value to return to the user from
+                the original transaction for this item.  Only use if not using
+                redeemed_amount at the TransactionRefund level.
+        - $ref: "#/components/schemas/transaction-item"
+    redeem:
+      type: object
+      properties:
+        ID:
+          type: string
+          description: UUID formatted string, used as idempotency key.  Subsequent calls
+            with same ID will return success
+        MembershipID:
+          type: string
+        Reason:
+          type: string
+          description: Recorded as Comment
+        ReasonID:
+          type: integer
+          format: int32
+          description: Optional
+        RewardID:
+          type: integer
+          format: int32
+        PromotionID:
+          type: integer
+          format: int32
+          description: Legacy, only used if RewardID is not specified
+        Amount:
+          type: integer
+          format: int32
+          default: 1
+    ledgers:
+      type: array
+      items:
+        $ref: "#/components/schemas/ledger"
+    ledger:
+      type: object
+      x-go-type:
+        import:
+          package: github.com/lavaai/membership/db
+          alias: db
+        type: Ledger
+      properties:
+        RewardID:
+          type: integer
+          format: int32
+        Amount:
+          type: integer
+          format: int32
+        Reason:
+          type: string
+        Cancelled:
+          type: boolean
+        CreatedBy:
+          type: string
+        UpdatedAt:
+          type: string
+          format: date-time
+    locations:
+      type: array
+      items:
+        $ref: "#/components/schemas/location"
+    location:
+      type: object
+      properties:
+        ID:
+          type: string
+        Name:
+          type: string
+        Location:
+          type: string
+        Venue:
+          type: string
+    products:
+      type: array
+      items:
+        $ref: "#/components/schemas/product"
+    product:
+      type: object
+      properties:
+        ID:
+          type: string
+        Name:
+          type: string
+        Description:
+          type: string
+        Category:
+          type: string
+        Price:
+          type: integer
+        Venue:
+          type: string
+    transaction-inputs:
+      type: array
+      items:
+        $ref: "#/components/schemas/transaction-input"
+    skidata-entry:
+      type: object
+      properties:
+        Time:
+          type: string
+          format: date-time
+        Entry:
+          type: boolean
+        ParkingTransNo:
+          type: integer
+        DeviceNo:
+          type: integer
+        CarparkNo:
+          type: integer
+        ArticleNo:
+          type: integer
+        CardNo:
+          type: string
+        ParkingDuration:
+          type: integer
+        CountingCategoryNo:
+          type: integer
+    skidata-revenue:
+      type: object
+      properties:
+        Time:
+          type: string
+          format: date-time
+        DeviceNo:
+          type: integer
+        CarparkNo:
+          type: integer
+        TransactionNo:
+          type: integer
+        InvoiceNo:
+          type: integer
+        StaffCode:
+          type: integer
+        Revenue:
+          type: integer
+        ArticleNo:
+          type: integer
+        CardNo:
+          type: string
+        ParkingDuration:
+          type: integer
+        RateNo:
+          type: integer
+    skidata-devices:
+      type: object
+      properties:
+        DeviceNo:
+          type: integer
+        DeviceDesig:
+          type: string
+        DeviceAbbr:
+          type: string
+        DeviceType:
+          type: integer
+    skidata-carpark:
+      type: object
+      properties:
+        CarparkNo:
+          type: integer
+        CarparkDesig:
+          type: string
+        CarparkAbbr:
+          type: string
+    skidata-article:
+      type: object
+      properties:
+        ArticleCategory:
+          type: integer
+        ArticleNo:
+          type: integer
+        ArticleDesig:
+          type: string
+        ArticleAbbr:
+          type: string
+    skidata-counting:
+      type: object
+      properties:
+        CountingCategoryNo:
+          type: integer
+        CountingCategory:
+          type: string
+    skidata-staff:
+      type: object
+      properties:
+        StaffCode:
+          type: integer
+        OperatorSurname:
+          type: string
+        OperatorFirstName:
+          type: string
+    skidata-rate:
+      type: object
+      properties:
+        RateNo:
+          type: integer
+        RateDesig:
+          type: string
+    skidata-parking-metadata:
+      type: object
+      properties:
+        devices:
+          type: array
+          items:
+            $ref: "#/components/schemas/skidata-devices"
+        carparks:
+          type: array
+          items:
+            $ref: "#/components/schemas/skidata-carpark"
+        articles:
+          type: array
+          items:
+            $ref: "#/components/schemas/skidata-article"
+        countings:
+          type: array
+          items:
+            $ref: "#/components/schemas/skidata-counting"
+        staff:
+          type: array
+          items:
+            $ref: "#/components/schemas/skidata-staff"
+        rates:
+          type: array
+          items:
+            $ref: "#/components/schemas/skidata-rate"
+    skidata-entries:
+      type: array
+      items:
+        $ref: "#/components/schemas/skidata-entry"
+    skidata-revenues:
+      type: array
+      items:
+        $ref: "#/components/schemas/skidata-revenue"
+    field:
+      type: object
+      x-tags:
+        - mdm
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        type:
+          type: string
+          enum:
+            - integer
+            - enum
+            - text
+            - float
+        description:
+          type: string
+        source:
+          type: string
+        minimum:
+          type: integer
+        maximum:
+          type: integer
+        values:
+          type: array
+          items:
+            type: object
+            properties:
+              value:
+                type: string
+              label:
+                type: string
+    query:
+      type: object
+      x-tags:
+        - mdm
+      properties:
+        id:
+          type: string
+        field:
+          type: string
+        value:
+          type: string
+        values:
+          type: array
+          items:
+            type: string
+        operator:
+          type: string
+        combinator:
+          type: string
+          enum:
+            - and
+            - or
+        not:
+          type: boolean
+        disabled:
+          type: boolean
+        rules:
+          type: array
+          items:
+            $ref: "#/components/schemas/query"
+    segment:
+      type: object
+      x-tags:
+        - mdm
+      properties:
+        name:
+          type: string
+        query:
+          $ref: "#/components/schemas/query"
+    verify-attributes:
+      type: array
+      x-tags:
+        - verify
+      items:
+        $ref: "#/components/schemas/verify-attribute"
+    verify-attribute:
+      type: object
+      x-tags:
+        - verify
+      properties:
+        Name:
+          type: string
+        Recorded_At:
+          type: string
+          format: date-time
+        Data:
+          type: object
+        Valid:
+          type: boolean
+    reason:
+      title: Reason
+      type: object
+      x-tags:
+        - Comps
+      properties:
+        id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        description:
+          type: string
+    comp-config:
+      title: CompConfig
+      type: object
+      properties:
+        grant_options:
+          type: array
+          items:
+            $ref: "#/components/schemas/grant-option"
+        reasons:
+          type: array
+          items:
+            $ref: "#/components/schemas/reason"
+    grant-reward:
+      title: GrantReward
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        type:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        icon:
+          type: string
+    grant-option:
+      title: GrantOption
+      type: object
+      properties:
+        reward:
+          $ref: "#/components/schemas/grant-reward"
+        amounts:
+          type: array
+          description: empty array means limited only by budget
+          items:
+            type: integer
+        budget:
+          type: integer
+          description: total budget for the given schedule
+        balance:
+          type: integer
+          description: sum of existing grants against the current budget
+    grant:
+      title: Grant
+      type: object
+      properties:
+        id:
+          type: string
+          description: Optionally provided on input as idempotency key for grant
+        reward_id:
+          type: integer
+          format: int32
+        expires_time:
+          type: string
+          format: date-time
+        comment:
+          type: string
+        cancelled:
+          type: boolean
+        member:
+          type: object
+          properties:
+            id:
+              type: string
+            email:
+              type: string
+            mobile:
+              type: string
+            last_name:
+              type: string
+            first_name:
+              type: string
+          title: Member
+        update_time:
+          type: string
+          format: date-time
+        reason_id:
+          type: integer
+          format: int32
+        amount:
+          type: integer
+          format: int32
+    grant-update:
+      title: UpdateGrant
+      type: object
+      properties:
+        reason_id:
+          type: integer
+          format: int32
+        comment:
+          type: string
+    LavaUser:
+      type: object
+      description: Used for mapping auth, makes the swagger generation much faster
+      x-go-type: github.com/lavaai/kit/auth.LavaUser
+    message:
+      title: Message
+      type: object
+      properties:
+        subject:
+          type: string
+        data:
+          type: object

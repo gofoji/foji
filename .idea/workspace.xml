@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="5db69c29-a1f9-475e-8464-13618ffdfdcd" name="Default Changelist" comment="" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Go File" />
+        <option value="Go Application" />
+      </list>
+    </option>
+  </component>
+  <component name="GOROOT" url="file:///usr/local/Cellar/go/1.15.3/libexec" />
+  <component name="GoLibraries">
+    <option name="indexEntireGoPath" value="false" />
+  </component>
+  <component name="ProjectId" id="1ejfX8Rlq0YRZpVnjRYOOIrhtD6" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="DatabaseDriversLRU" value="postgresql" />
+    <property name="DefaultGoTemplateProperty" value="Go Application" />
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="go.import.settings.migrated" value="true" />
+    <property name="go.sdk.automatically.set" value="true" />
+    <property name="go.tried.to.enable.integration.vgo.integrator" value="true" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/foji" />
+    <property name="node.js.detected.package.eslint" value="true" />
+    <property name="node.js.detected.package.tslint" value="true" />
+    <property name="node.js.path.for.package.eslint" value="project" />
+    <property name="node.js.path.for.package.tslint" value="project" />
+    <property name="node.js.selected.package.eslint" value="(autodetect)" />
+    <property name="node.js.selected.package.tslint" value="(autodetect)" />
+    <property name="settings.editor.selected.configurable" value="project.propVCSSupport.Mappings" />
+  </component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/foji" />
+      <recent name="$PROJECT_DIR$/membership" />
+      <recent name="$PROJECT_DIR$" />
+      <recent name="$PROJECT_DIR$/foji/openapi" />
+      <recent name="$PROJECT_DIR$/output" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/testdata" />
+      <recent name="$PROJECT_DIR$/foji/openapi" />
+      <recent name="$PROJECT_DIR$/foji/pgtree" />
+      <recent name="$PROJECT_DIR$/input/sql" />
+      <recent name="$PROJECT_DIR$/foji" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Go Build.foji openAPIResource">
+    <configuration name="foji embed" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true">
+      <module name="foji" />
+      <working_directory value="$PROJECT_DIR$" />
+      <parameters value="weld embed  -v" />
+      <kind value="PACKAGE" />
+      <filePath value="$PROJECT_DIR$/main.go" />
+      <package value="github.com/gofoji/foji" />
+      <directory value="$PROJECT_DIR$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="foji openAPIResource" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true">
+      <module name="foji" />
+      <working_directory value="$PROJECT_DIR$" />
+      <parameters value="weld openAPIResource  -v" />
+      <kind value="PACKAGE" />
+      <filePath value="$PROJECT_DIR$/main.go" />
+      <package value="github.com/gofoji/foji" />
+      <directory value="$PROJECT_DIR$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="foji openApiStub" type="GoApplicationRunConfiguration" factoryName="Go Application">
+      <module name="foji" />
+      <working_directory value="$PROJECT_DIR$" />
+      <parameters value="weld openApiStub" />
+      <kind value="PACKAGE" />
+      <filePath value="$PROJECT_DIR$/main.go" />
+      <package value="github.com/gofoji/foji" />
+      <directory value="$PROJECT_DIR$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="go build github.com/gofoji/foji/runtime/test" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true" nameIsGenerated="true">
+      <module name="foji" />
+      <working_directory value="$PROJECT_DIR$" />
+      <kind value="PACKAGE" />
+      <filePath value="$PROJECT_DIR$/runtime/test/test.go" />
+      <package value="github.com/gofoji/foji/runtime/test" />
+      <directory value="$PROJECT_DIR$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="go build github.com/gofoji/foji/test/cmd/serve" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true" nameIsGenerated="true">
+      <module name="foji" />
+      <working_directory value="$PROJECT_DIR$/test" />
+      <kind value="PACKAGE" />
+      <filePath value="$PROJECT_DIR$/test/cmd/serve/main.go" />
+      <package value="github.com/gofoji/foji/test/cmd/serve" />
+      <directory value="$PROJECT_DIR$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="TestParameterString in github.com/gofoji/foji/color" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="foji" />
+      <working_directory value="$PROJECT_DIR$/color" />
+      <framework value="gotest" />
+      <kind value="PACKAGE" />
+      <package value="github.com/gofoji/foji/color" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <pattern value="^\QTestParameterString\E$" />
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Go Build.foji openApiStub" />
+      <item itemvalue="Go Build.foji embed" />
+      <item itemvalue="Go Build.foji openAPIResource" />
+      <item itemvalue="Go Build.go build github.com/gofoji/foji/runtime/test" />
+      <item itemvalue="Go Test.TestParameterString in github.com/gofoji/foji/color" />
+      <item itemvalue="Go Build.go build github.com/gofoji/foji/test/cmd/serve" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Go Build.foji openAPIResource" />
+        <item itemvalue="Go Build.go build github.com/gofoji/foji/test/cmd/serve" />
+        <item itemvalue="Go Build.foji embed" />
+        <item itemvalue="Go Test.TestParameterString in github.com/gofoji/foji/color" />
+        <item itemvalue="Go Build.go build github.com/gofoji/foji/runtime/test" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <ignored-roots>
+      <path value="$PROJECT_DIR$" />
+    </ignored-roots>
+  </component>
+  <component name="VgoProject">
+    <integration-enabled>true</integration-enabled>
+  </component>
+</project>

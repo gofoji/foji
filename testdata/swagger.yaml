@@ -1,0 +1,177 @@
+openapi: "3.0.0"
+info:
+  title: test
+  version: 0.1.0
+paths:
+  /bar:
+    get:
+      operationId: listBar
+      summary: List Bar
+      tags:
+        - bar
+      parameters:
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/limit'
+      responses:
+        '200':
+          description: |-
+            200 response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/bars'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      operationId: createBar
+      summary: Create Bar
+      tags:
+        - bar
+      responses:
+        '201':
+          description: |-
+            200 response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Bar'
+
+  /bar/{id}:
+    parameters:
+      - name: id
+        in: path
+        description: id of Bar
+        required: true
+        schema:
+          type: UNKNOWN:path(public.bar.id):type(int4)
+    get:
+      description: Get Bar
+      operationId: getBar
+      summary: Get Bar
+      tags:
+        - bar
+      responses:
+        '200':
+          description: successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Bar'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      description: updates a Bar
+      operationId: updateBar
+      summary: Update Bar
+      tags:
+        - bar
+      responses:
+        '200':
+          description: Bar updated
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      description: deletes a Bar
+      operationId: deleteBar
+      summary: Delete Bar
+      tags:
+        - bar
+      responses:
+        '204':
+          description: Bar deleted
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  responses:
+    BadRequest:
+      description: The specified resource was not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: The specified resource was not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  parameters:
+    limit:
+      name: limit
+      in: query
+      description: How many items to return for each page
+      required: false
+      schema:
+        type: integer
+        format: int32
+        default: 100
+        maximum: 255
+        minimum: 10
+    offset:
+      name: offset
+      in: query
+      description: Offset of page to return
+      required: false
+      schema:
+        type: integer
+        format: int32
+        default: 0
+        minimum: 0
+  schemas:
+    Bar:
+      type: object
+      properties:
+        id:
+          type: UNKNOWN:path(public.bar.id):type(int4)
+        barCreatedOn:
+          type: UNKNOWN:path(public.bar.bar_created_on):type(timestamptz)
+        fooID:
+          type: UNKNOWN:path(public.bar.foo_id):type(int4)
+        fooCreatedOn:
+          type: UNKNOWN:path(public.bar.foo_created_on):type(timestamptz)
+    bars:
+      type: object
+      properties:
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        totalRecordCount:
+          type: integer
+        list:
+            type: array
+            items:
+              $ref: '#/components/schemas/Bar'
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string

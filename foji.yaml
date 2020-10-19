@@ -1,0 +1,44 @@
+db:
+  connection: "host=localhost dbname=test sslmode=disable"
+  filter:
+    - "public\\.r.*"
+    - "public\\.c.*"
+    - ".*\\.schema_migrations"
+files:
+  templates:
+    files:
+      - "foji/*"
+      - "foji/*/*"
+    filter:
+      - ".*\\.go$"
+  configs:
+    files:
+      - "embed/*"
+    filter:
+      - ".*\\.go"
+    rewrite:
+      'embed/(.*)': '$1'
+  api:
+    files:
+      - "testdata/pet*wagger.yaml"
+processes:
+  embed:
+    resources: [ "templates","configs" ]
+    params:
+      PackageName: embed
+  openAPIResource:
+    format: go
+    resources: [api]
+    maps:
+      type:
+        parameters: bool
+    params:
+      Package: github.com/gofoji/foji/test
+      Auth: github.com/gofoji/foji/test.User
+    OpenAPIFile:
+      'test/auth_gen.go': foji/openapi/auth.go.tpl
+#      'test/models_gen.go': foji/openapi/model.go.tpl
+#      'test/service.go': foji/openapi/service.go.tpl
+#      'test/http/handler_gen.go': foji/openapi/handler.go.tpl
+#      'test/http/error.go': foji/openapi/error.go.tpl
+#      'test/cmd/serve/main.go': foji/openapi/main.go.tpl

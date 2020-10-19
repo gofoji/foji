@@ -1,0 +1,17 @@
+db:
+  connection: "host=localhost dbname=MyProject sslmode=disable"
+  filter:
+    - "*.schema_migrations"
+sql:
+  files:
+    - "*/*.sql"
+    - "*/*/*.sql"
+    - "*/*/*/*.sql"
+  filter:
+    - "db/migrations/.*"
+embed:
+  files:
+    - "embed/*"
+    - "embed/*/*"
+  filter:
+    - "*.go"
