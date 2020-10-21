@@ -83,6 +83,9 @@ func (p Process) Merge(from Process) Process {
 	if len(p.Post) == 0 {
 		p.Post = from.Post
 	}
+	if len(p.Resources) == 0 {
+		p.Resources = from.Resources
+	}
 	p.Output = p.Output.Merge(from.Output)
 	p.Maps = p.Maps.Merge(from.Maps)
 	p.Params = p.Params.Merge(from.Params)
@@ -99,11 +102,16 @@ func (m Maps) Merge(from Maps) Maps {
 }
 
 func (pp ParamMap) Merge(from ParamMap) ParamMap {
+	var out = pp
+	if out == nil {
+		out = ParamMap{}
+	}
+
 	for key, p := range from {
-		_, ok := pp[key]
+		_, ok := out[key]
 		if !ok {
-			pp[key] = p
+			out[key] = p
 		}
 	}
-	return pp
+	return out
 }

@@ -46,6 +46,8 @@ processes:
   embed:
     format: go
     resources: [ embed ]
+    params:
+      PackageName: embed
     EmbedAll:
       embed/embeds_gen.go: foji/embed.go.tpl
   dbList:
@@ -76,3 +78,13 @@ processes:
       '{{toLower .Table.Name}}_gen.go': foji/pgx/model.go.tpl
     DbEnum:
       '{{toLower .Enum.Name}}_gen.go': foji/enum.go.tpl
+  openAPI:
+    format: go
+    resources: [api]
+    OpenAPIFile:
+      'test/http/auth_gen.go': foji/openapi/auth.go.tpl
+      'test/models_gen.go': foji/openapi/model.go.tpl
+      '!test/service.go': foji/openapi/service.go.tpl
+      'test/http/handler_gen.go': foji/openapi/handler.go.tpl
+      '!test/http/error.go': foji/openapi/error.go.tpl
+      '!test/cmd/serve/main.go': foji/openapi/main.go.tpl

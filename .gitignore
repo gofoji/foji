@@ -1,3 +1,11 @@
+/.idea/shelf/
+/.idea/workspace.xml
+.idea/
+
+# Datasource local storage ignored files
+/.idea/dataSources/
+dataSources.local.xml
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
@@ -13,3 +21,9 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+
+/.idea/httpRequests/
+rest-client.private.env.json
+http-client.private.env.json
+.DS_Store
+scratch/

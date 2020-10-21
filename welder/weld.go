@@ -104,7 +104,7 @@ func (w *Welder) Run(simulate bool) error {
 				return err
 			}
 
-			err = output.Proto(p, w.postProcessor(p), w.logger, pp,simulate)
+			err = output.Proto(p, w.postProcessor(p), w.logger, pp, simulate)
 			if err != nil {
 				return err
 			}
