@@ -16,12 +16,17 @@ type RuntimeParams map[string]interface{}
 type Context struct {
 	RuntimeParams
 	cfg.Process
-	Logger  logrus.FieldLogger
-	Imports Imports
+	Logger     logrus.FieldLogger
+	Imports    Imports
+	AbortError error
 }
 
 func (c *Context) Funcs() template.FuncMap {
 	return runtime.CaseFuncs(c.Case)
+}
+
+func (c *Context) Aborted() error {
+	return c.AbortError
 }
 
 func (c *Context) WithParams(values ...interface{}) (*Context, error) {

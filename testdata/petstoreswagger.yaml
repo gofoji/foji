@@ -58,7 +58,14 @@ paths:
       description: Creates a new pet in the store. Duplicates are allowed
       operationId: addPet
       security:
-        - queryKey: [ ]
+        - A: []
+#        - c: [a]
+#          d: []
+#        - C: [scopeC]
+#          D: [scopeD,scopeE]
+#        - A: [scopeF, scopeX]
+#        - A: [scopeD]
+#        - A: []
       requestBody:
         description: Pet to add to the store
         required: true
@@ -126,13 +133,28 @@ paths:
                 $ref: '#/components/schemas/Error'
 components:
   securitySchemes:
-    apiKey:
+    a:
       type: http
-      scheme: bearer
-    queryKey:
-      type: apiKey
-      in: query
-      name: key
+      scheme: basic
+#    b:
+#      type: http
+#      scheme: bearer
+#    c:
+#      type: apiKey
+#      in: query
+#      name: key
+#    d:
+#      type: apiKey
+#      in: header
+#      name: X-API-Key
+#    e:
+#      type: openIdConnect
+#      openIdConnectUrl: https://example.com/.well-known/openid-configuration
+#    f:
+#      type: apiKey
+#      in: cookie
+#      name: SESSIONID
+
   schemas:
     Pet:
       allOf:

@@ -1,7 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="5db69c29-a1f9-475e-8464-13618ffdfdcd" name="Default Changelist" comment="" />
+    <list default="true" id="5db69c29-a1f9-475e-8464-13618ffdfdcd" name="Default Changelist" comment="Add optional support for complex Authorization&#10;Optimize Auth generation">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/foji.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/foji.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/foji/openapi/auth.go.tpl" beforeDir="false" afterPath="$PROJECT_DIR$/foji/openapi/auth.go.tpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/foji/openapi/handler.go.tpl" beforeDir="false" afterPath="$PROJECT_DIR$/foji/openapi/handler.go.tpl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/output/context.go" beforeDir="false" afterPath="$PROJECT_DIR$/output/context.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/output/openapi.go" beforeDir="false" afterPath="$PROJECT_DIR$/output/openapi.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/output/utils.go" beforeDir="false" afterPath="$PROJECT_DIR$/output/utils.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/auth_gen.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/http/handler_gen.go" beforeDir="false" afterPath="$PROJECT_DIR$/test/http/handler_gen.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/testdata/petstoreswagger.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/testdata/petstoreswagger.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tpl/wrapper.go" beforeDir="false" afterPath="$PROJECT_DIR$/tpl/wrapper.go" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -16,6 +29,9 @@
     </option>
   </component>
   <component name="GOROOT" url="file:///usr/local/Cellar/go/1.15.3/libexec" />
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
   <component name="GoLibraries">
     <option name="indexEntireGoPath" value="false" />
   </component>
@@ -119,20 +135,20 @@
       <method v="2" />
     </configuration>
     <list>
-      <item itemvalue="Go Build.foji openApiStub" />
       <item itemvalue="Go Build.foji embed" />
       <item itemvalue="Go Build.foji openAPIResource" />
+      <item itemvalue="Go Build.foji openApiStub" />
       <item itemvalue="Go Build.go build github.com/gofoji/foji/runtime/test" />
-      <item itemvalue="Go Test.TestParameterString in github.com/gofoji/foji/color" />
       <item itemvalue="Go Build.go build github.com/gofoji/foji/test/cmd/serve" />
+      <item itemvalue="Go Test.TestParameterString in github.com/gofoji/foji/color" />
     </list>
     <recent_temporary>
       <list>
         <item itemvalue="Go Build.foji openAPIResource" />
-        <item itemvalue="Go Build.go build github.com/gofoji/foji/test/cmd/serve" />
-        <item itemvalue="Go Build.foji embed" />
         <item itemvalue="Go Test.TestParameterString in github.com/gofoji/foji/color" />
+        <item itemvalue="Go Build.go build github.com/gofoji/foji/test/cmd/serve" />
         <item itemvalue="Go Build.go build github.com/gofoji/foji/runtime/test" />
+        <item itemvalue="Go Build.foji embed" />
       </list>
     </recent_temporary>
   </component>

@@ -20,10 +20,17 @@ func (e Error) Error() string {
 	return string(e)
 }
 
-const ErrPermExists = Error("file exists")
+const (
+	ErrNotNeeded  = Error("not needed")
+	ErrPermExists = Error("file exists")
+)
 
 type FuncMapper interface {
 	Funcs() template.FuncMap
+}
+
+type Initializer interface {
+	Init()
 }
 
 func fileExists(filename string) bool {
@@ -48,6 +55,11 @@ func invokeProcess(tm stringlist.StringMap, dir string, fn cfg.FileHandler, logg
 
 func invokeTemplate(logger logrus.FieldLogger, dir, targetFile, templateFile string, data interface{}, fn cfg.FileHandler, simulate bool) error {
 	logger.WithField("target", targetFile).WithField("template", templateFile).Info("executing template")
+
+	init, ok := data.(Initializer)
+	if ok {
+		init.Init()
+	}
 
 	permFile := false
 	if strings.HasPrefix(targetFile, PermPrefix) {
@@ -87,6 +99,10 @@ func invokeTemplate(logger logrus.FieldLogger, dir, targetFile, templateFile str
 	t.Funcs(sprig.TxtFuncMap())
 	err = t.FromFile(templateFile).ToFile(targetFile, data)
 	if err != nil {
+		if errors.Is(err, ErrNotNeeded) {
+			logger.WithField("target", targetFile).WithField("template", templateFile).Info("skipped output - Not Needed")
+			return nil
+		}
 		return errors.Wrap(err, "executing template")
 	}
 

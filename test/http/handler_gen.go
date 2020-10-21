@@ -21,20 +21,18 @@ type Service interface {
 	FindPetByID(ctx context.Context, id int64) (*test.Pet, error)
 }
 
-type AuthFunc = func(ctx *fasthttp.RequestCtx) (*test.User, error)
-
 type OpenAPIHandlers struct {
 	service      Service
 	errorHandler fastutil.ErrorHandlerFunc
-	apiKeyAuth   AuthFunc
-	queryKeyAuth AuthFunc
+	aAuth        HttpAuthFunc
 }
 
-func RegisterHTTP(svc Service, r *router.Router, e fastutil.ErrorHandlerFunc, apiKeyAuth, queryKeyAuth AuthFunc) *OpenAPIHandlers {
-	s := OpenAPIHandlers{service: svc, errorHandler: e, apiKeyAuth: apiKeyAuth, queryKeyAuth: queryKeyAuth}
+func RegisterHTTP(svc Service, r *router.Router, e fastutil.ErrorHandlerFunc, aAuth HttpAuthFunc) *OpenAPIHandlers {
+	s := OpenAPIHandlers{service: svc, errorHandler: e, aAuth: aAuth}
 
 	r.GET("/pets", s.FindPets)
 	r.POST("/pets", s.AddPet)
+
 	r.DELETE("/pets/{id}", s.DeletePet)
 	r.GET("/pets/{id}", s.FindPetByID)
 
@@ -48,7 +46,10 @@ func (h *OpenAPIHandlers) doJSONWrite(ctx *fasthttp.RequestCtx, code int, obj in
 }
 
 func (h *OpenAPIHandlers) FindPets(ctx *fasthttp.RequestCtx) {
-	var err error
+	var (
+		err error
+	)
+
 	fastctx.SetOp(ctx, "findPets")
 
 	tags := fastutil.QueryStringsOptional(ctx, "tags")
@@ -64,12 +65,15 @@ func (h *OpenAPIHandlers) FindPets(ctx *fasthttp.RequestCtx) {
 }
 
 func (h *OpenAPIHandlers) AddPet(ctx *fasthttp.RequestCtx) {
-	var err error
+	var (
+		authUser *test.User
+		err      error
+	)
+
 	fastctx.SetOp(ctx, "addPet")
 
-	var authUser *test.User
+	authUser, err = h.aAuth(ctx)
 
-	authUser, err = h.queryKeyAuth(ctx)
 	if err != nil {
 		h.errorHandler(ctx, err)
 		return
@@ -104,7 +108,10 @@ func (h *OpenAPIHandlers) AddPet(ctx *fasthttp.RequestCtx) {
 }
 
 func (h *OpenAPIHandlers) DeletePet(ctx *fasthttp.RequestCtx) {
-	var err error
+	var (
+		err error
+	)
+
 	fastctx.SetOp(ctx, "deletePet")
 
 	id, err := fastutil.PathInt64(ctx, "id")
@@ -123,7 +130,10 @@ func (h *OpenAPIHandlers) DeletePet(ctx *fasthttp.RequestCtx) {
 }
 
 func (h *OpenAPIHandlers) FindPetByID(ctx *fasthttp.RequestCtx) {
-	var err error
+	var (
+		err error
+	)
+
 	fastctx.SetOp(ctx, "find pet by id")
 
 	id, err := fastutil.PathInt64(ctx, "id")

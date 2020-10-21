@@ -27,7 +27,7 @@ func OpenAPI(p cfg.Process, fn cfg.FileHandler, logger logrus.FieldLogger, group
 				Context: Context{Process: p, Logger: logger},
 				File:    f,
 			}
-			ctx.init()
+			ctx.Init()
 
 			err := invokeProcess(p.Output[OpenAPIFile], p.RootDir, fn, logger, &ctx, simulate)
 			if err != nil {
@@ -134,8 +134,9 @@ func (o *OpenAPIFileContext) GetType(pkg, name string, s *openapi3.SchemaRef) st
 	return fmt.Sprintf("UNKNOWN:name(%s):ref(%s):type(%s)", name, s.Ref, s.Value.Type)
 }
 
-func (o *OpenAPIFileContext) init() {
+func (o *OpenAPIFileContext) Init() {
 	pkg, _ := o.Params.HasString("PackageName")
+	o.AbortError = nil
 
 	for _, s := range o.API.Components.Schemas {
 		for key, schema := range s.Value.Properties {
@@ -204,25 +205,95 @@ func (o *OpenAPIFileContext) GetOpHappyResponseKey(op *openapi3.Operation) strin
 	return key
 }
 
-func securityNames(ss openapi3.SecurityRequirements) []string {
-	var out []string
-	for _, security := range ss {
-		for key := range security {
-			out = append(out, key)
+func (o *OpenAPIFileContext) OpSecurity(op *openapi3.Operation) openapi3.SecurityRequirements {
+	if op.Security != nil {
+		return *op.Security
+	}
+
+	return o.File.API.Security
+}
+
+func hasAuthorization(security openapi3.SecurityRequirements) bool {
+	for _, ss := range security {
+		for _, scopes := range ss {
+			if len(scopes) > 0 {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (o *OpenAPIFileContext) HasAuthorization() bool {
+	if hasAuthorization(o.API.Security) {
+		return true
+	}
+
+	for _, p := range o.API.Paths {
+		for _, op := range p.Operations() {
+			if op.Security != nil && hasAuthorization(*op.Security) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (o *OpenAPIFileContext) IsSimpleAuth(op *openapi3.Operation) bool {
+	s := o.OpSecurity(op)
+	if len(s) == 0 {
+		return true
+	}
+	authName := ""
+	for _, group := range s {
+		for key, _ := range group {
+			if authName == "" {
+				authName = key
+			} else if authName != key {
+				return false
+			}
 		}
 	}
 
-	return out
+	return true
 }
 
-func (o *OpenAPIFileContext) OpSecurity(op *openapi3.Operation) []string {
-	if op.Security != nil && len(*op.Security) > 0 {
-		return securityNames(*op.Security)
+func (o *OpenAPIFileContext) HasComplexAuth() bool {
+	for _, p := range o.API.Paths {
+		for _, op := range p.Operations() {
+			if !o.IsSimpleAuth(op) {
+				return true
+			}
+		}
 	}
 
-	if len(o.File.API.Security) > 0 {
-		return securityNames(o.File.API.Security)
+	return false
+}
+
+func (o *OpenAPIFileContext) HasBasicAuth() bool {
+	for _, ss := range o.API.Components.SecuritySchemes {
+		if ss != nil && ss.Value != nil && ss.Value.Scheme == "basic" {
+			return true
+		}
 	}
 
-	return nil
+	return false
+}
+
+func (o *OpenAPIFileContext) HasBearerAuth() bool {
+	for _, ss := range o.API.Components.SecuritySchemes {
+		if ss != nil && ss.Value != nil && ss.Value.Scheme == "bearer" {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (o *OpenAPIFileContext) NotNeededIfNoAuth() string {
+	if len(o.API.Components.SecuritySchemes) == 0 {
+		o.AbortError = ErrNotNeeded
+	}
+
+	return ""
 }

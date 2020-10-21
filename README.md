@@ -64,16 +64,14 @@ Overrides
 - [x] Input Validation 
 - [x] Authentication
 - [x] Publish Swagger Spec
-- [ ] Authorization 
+- [x] Authorization 
 - [ ] Optionally Merge large param sets into struct 
 - [ ] Filter private attributes from Spec for export
 - [ ] Support multiple encodings
+- [x] Support [OR auth](https://swagger.io/docs/specification/authentication/) 
 - [ ] Support AsyncAPI
 
-
 Standard HTTP
-
-https://github.com/julienschmidt/httprouter
 
 Validation
 
@@ -151,9 +149,3 @@ Each package
 The Custom SQL evaluator is unable to determine if a result field is nullable in some cases (especially calculated fields).  So if the output template requires a distinction, either map the overrides.Type directly to the type that supports nulls (`varchar -> *string`), or use the qualified param name for the mapping (`GetTodoByCategoryLabel.label_nullable->*string`) 
 
 
-
-
-Generator: Query
-
-TODO: Convert post run to template syntax
-TODO: Type func

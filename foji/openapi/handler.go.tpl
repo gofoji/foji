@@ -57,7 +57,7 @@ import (
 )
 
 type Service interface {
-{{- range $name, $path := .File.API.Paths }}
+{{- range $name, $path := .API.Paths }}
 	{{- range $verb, $op := $path.Operations }}
 	{{ pascal $op.OperationID}}(ctx context.Context,
 	{{- template "methodSignature" ($.WithParams "op" $op) }}
@@ -65,35 +65,69 @@ type Service interface {
 {{- end }}
 }
 
-type AuthFunc = func(ctx *fasthttp.RequestCtx)(*{{ $.CheckPackage $.Params.Auth "http" }}, error)
-
 type OpenAPIHandlers struct {
 	service      Service
 	errorHandler fastutil.ErrorHandlerFunc
-	{{- range $security, $value := .File.API.Components.SecuritySchemes }}
-	{{ camel $security }}Auth AuthFunc
+	{{- range $security, $value := .API.Components.SecuritySchemes }}
+	{{ camel $security }}Auth HttpAuthFunc
 	{{- end }}
+	{{- if .HasAuthorization }}
+	authorize Authorizer
+	{{- end}}
+{{- range $name, $path := .API.Paths }}
+	{{- range $verb, $op := $path.Operations }}
+		{{- if not ($.IsSimpleAuth $op) }}
+	{{ camel $op.OperationID}}AuthGroups SecurityGroups
+		{{- end}}
+	{{- end}}
+{{- end}}
 }
 
 func RegisterHTTP(svc Service, r *router.Router, e fastutil.ErrorHandlerFunc
 {{- $hasSecurity := false -}}
-{{- range $security, $value := .File.API.Components.SecuritySchemes -}}
+{{- range $security, $value := .API.Components.SecuritySchemes -}}
 	, {{ camel $security }}Auth
 {{- $hasSecurity = true -}}
 {{- end -}}
-{{- if $hasSecurity }} AuthFunc {{- end -}}
+{{- if $hasSecurity }} HttpAuthFunc {{- end -}}
+{{- if .HasAuthorization -}}
+	, authorize Authorizer
+{{- end -}}
 ) *OpenAPIHandlers {
     s := OpenAPIHandlers{service: svc, errorHandler: e
-{{- range $security, $value := .File.API.Components.SecuritySchemes -}}
+{{- range $security, $value := .API.Components.SecuritySchemes -}}
 	,{{ camel $security }}Auth: {{ camel $security }}Auth
 {{- end -}}
+	{{- if .HasAuthorization }}, authorize: authorize{{- end -}}
 }
 
-{{ range $name, $path := .File.API.Paths }}
-	{{- range $verb, $op := $path.Operations }}
+{{- range $name, $path := .API.Paths }}
+
+	{{ range $verb, $op := $path.Operations }}
 		r.{{upper $verb}}("{{$name}}", s.{{ pascal $op.OperationID}})
 	{{- end }}
 {{- end }}
+
+{{- range $name, $path := .API.Paths }}
+	{{ range $verb, $op := $path.Operations }}
+		{{- if not ($.IsSimpleAuth $op) }}
+			s.{{ camel $op.OperationID}}AuthGroups = NewSecurityGroups(
+			{{- $securityList := $.OpSecurity $op }}
+			{{- range $securityGroup := $securityList -}}
+				SecurityGroup{}
+				{{- range $security, $scopes := $securityGroup -}}
+					.Add("{{camel $security}}",{{camel $security}}Auth
+					{{- if not (empty $scopes) -}}
+						{{- range $scopes -}}
+						, "{{.}}"
+						{{- end -}}
+					{{- end -}}
+					)
+				{{- end -}}
+			{{- end -}})
+		{{- end}}
+	{{- end}}
+{{- end}}
 
 	return &s
 }
@@ -104,25 +138,58 @@ func (h *OpenAPIHandlers) doJSONWrite(ctx *fasthttp.RequestCtx, code int, obj in
 	}
 }
 
-{{- range $name, $path := .File.API.Paths }}
+{{- range $name, $path := .API.Paths }}
 	{{- range $verb, $op := $path.Operations }}
 
 func (h *OpenAPIHandlers) {{ pascal $op.OperationID}}(ctx *fasthttp.RequestCtx) {
-	var err error
-	fastctx.SetOp(ctx, "{{$op.OperationID}}")
-{{ $securityList := $.OpSecurity $op }}
+{{- $securityList := $.OpSecurity $op }}
+	var (
 {{- if not (empty $securityList)}}
-	var authUser *{{ $.CheckPackage $.Params.Auth "http" }}
+		authUser *{{ $.CheckPackage $.Params.Auth "http" }}
 {{- end}}
-{{- range $security := $securityList }}
+		err error
+	)
+
+	fastctx.SetOp(ctx, "{{$op.OperationID}}")
+
+{{- if $.IsSimpleAuth $op }}
+
+{{- $lastAuth := "" }}
+	{{- range $securityGroup := $securityList }}
+		{{- range $security, $scopes := $securityGroup }}
+			{{- if eq $lastAuth $security }}
+			{{- else }}
 
 	authUser, err = h.{{ camel $security }}Auth(ctx)
+	{{- $lastAuth = $security }}
+			{{- end}}
+		{{- end}}
+	{{- end}}
+
+{{- $authCt := 0 }}
+	{{- range $securityGroup := $securityList }}
+		{{- range $security, $scopes := $securityGroup }}
+			{{- if not (empty $scopes) }}
+				{{- if eq $authCt 0 }}
+	if err == nil {
+				{{- else }}
+	if err != nil {
+				{{- end }}
+		err = h.authorize(authUser{{range $scopes}}, "{{.}}"{{end}})
+	{{- $authCt = inc $authCt }}
+			{{- end}}
+		{{- end}}
+	{{- end}}
+{{ repeat $authCt "}\n" }}
+{{- else }}
+	authUser, err = doAuthorize(ctx, {{- if $.HasAuthorization }}h.authorize,{{end}} h.{{ camel $op.OperationID}}AuthGroups...)
+{{- end}}
+{{- if not (empty $securityList)}}
+
 	if err != nil {
 		h.errorHandler(ctx, err)
 		return
 	}
-{{- end}}
-{{- if not (empty $securityList)}}
 
 	if authUser == nil {
 		h.errorHandler(ctx, fastutil.ErrUnauthorized)
@@ -130,8 +197,6 @@ func (h *OpenAPIHandlers) {{ pascal $op.OperationID}}(ctx *fasthttp.RequestCtx) 
 	}
 {{- end}}
 
-{{- /*// TODO: Authenticate*/}}
-{{- /*// TODO: Authorize*/}}
 		{{- range $param := $op.Parameters }}
 			{{- template "paramExtraction" ($.WithParams "param" $param) }}
 		{{- end }}

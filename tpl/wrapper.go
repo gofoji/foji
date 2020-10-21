@@ -82,12 +82,26 @@ func (t *Wrapper) From(s string) *Wrapper {
 	return t
 }
 
+type Aborted interface {
+	Aborted() error
+}
+
 func (t *Wrapper) ToWriter(w io.Writer, data interface{}) error {
 	if t.err != nil {
 		return t.err
 	}
 
-	return t.t.Execute(w, data)
+	err := t.t.Execute(w, data)
+
+	a, ok := data.(Aborted)
+	if ok {
+		abortErr := a.Aborted()
+		if abortErr != nil {
+			return abortErr
+		}
+	}
+
+	return err
 }
 
 func (t *Wrapper) ToBytes(data interface{}) ([]byte, error) {
@@ -131,6 +145,11 @@ func (t *Wrapper) ToFile(file string, data interface{}) error {
 		return t.ToWriter(os.Stderr, data)
 	}
 
+	b, err := t.ToBytes(data)
+	if err != nil {
+		return err
+	}
+
 	if err := os.MkdirAll(filepath.Dir(file), 0700); err != nil {
 		return errors.Wrap(err, "error creating output directory")
 	}
@@ -140,7 +159,7 @@ func (t *Wrapper) ToFile(file string, data interface{}) error {
 		return err
 	}
 
-	err = t.ToWriter(f, data)
+	_, err = f.Write(b)
 	if closeErr := f.Close(); err == nil {
 		return closeErr
 	}
