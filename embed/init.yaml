@@ -1,5 +1,5 @@
 db:
-  connection: "host=localhost dbname=MyProject sslmode=disable"
+  connection: "host=localhost dbname=my_project sslmode=disable"
   filter:
     - "*.schema_migrations"
 sql:

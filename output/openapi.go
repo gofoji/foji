@@ -27,7 +27,6 @@ func OpenAPI(p cfg.Process, fn cfg.FileHandler, logger logrus.FieldLogger, group
 				Context: Context{Process: p, Logger: logger},
 				File:    f,
 			}
-			ctx.Init()
 
 			err := invokeProcess(p.Output[OpenAPIFile], p.RootDir, fn, logger, &ctx, simulate)
 			if err != nil {
@@ -41,6 +40,7 @@ func OpenAPI(p cfg.Process, fn cfg.FileHandler, logger logrus.FieldLogger, group
 
 type OpenAPIFileContext struct {
 	Context
+	Imports
 	openapi.File
 }
 
@@ -134,7 +134,7 @@ func (o *OpenAPIFileContext) GetType(pkg, name string, s *openapi3.SchemaRef) st
 	return fmt.Sprintf("UNKNOWN:name(%s):ref(%s):type(%s)", name, s.Ref, s.Value.Type)
 }
 
-func (o *OpenAPIFileContext) Init() {
+func (o *OpenAPIFileContext) Init() error {
 	pkg, _ := o.Params.HasString("PackageName")
 	o.AbortError = nil
 
@@ -143,6 +143,8 @@ func (o *OpenAPIFileContext) Init() {
 			o.GetType(pkg, key, schema)
 		}
 	}
+
+	return nil
 }
 
 func hasValidation(s *openapi3.Schema) bool {
@@ -288,12 +290,4 @@ func (o *OpenAPIFileContext) HasBearerAuth() bool {
 	}
 
 	return false
-}
-
-func (o *OpenAPIFileContext) NotNeededIfNoAuth() string {
-	if len(o.API.Components.SecuritySchemes) == 0 {
-		o.AbortError = ErrNotNeeded
-	}
-
-	return ""
 }

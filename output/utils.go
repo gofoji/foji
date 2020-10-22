@@ -30,7 +30,7 @@ type FuncMapper interface {
 }
 
 type Initializer interface {
-	Init()
+	Init() error
 }
 
 func fileExists(filename string) bool {
@@ -58,7 +58,10 @@ func invokeTemplate(logger logrus.FieldLogger, dir, targetFile, templateFile str
 
 	init, ok := data.(Initializer)
 	if ok {
-		init.Init()
+		err := init.Init()
+		if err != nil {
+			return err
+		}
 	}
 
 	permFile := false
@@ -100,7 +103,7 @@ func invokeTemplate(logger logrus.FieldLogger, dir, targetFile, templateFile str
 	err = t.FromFile(templateFile).ToFile(targetFile, data)
 	if err != nil {
 		if errors.Is(err, ErrNotNeeded) {
-			logger.WithField("target", targetFile).WithField("template", templateFile).Info("skipped output - Not Needed")
+			logger.WithField("target", targetFile).WithField("template", templateFile).Info("skipped, " + err.Error())
 			return nil
 		}
 		return errors.Wrap(err, "executing template")

@@ -25,15 +25,11 @@ func HasSQLOutput(o cfg.Output) bool {
 
 func SQL(p cfg.Process, fn cfg.FileHandler, logger logrus.FieldLogger, fileGroups sql.FileGroups, simulate bool) error {
 	base := SQLContext{
-		Context: Context{Process:p, Logger: logger},
+		Context:    Context{Process: p, Logger: logger},
 		FileGroups: fileGroups,
 	}
-	err := base.init()
-	if err != nil {
-		return err
-	}
 
-	err = invokeProcess(p.Output[SQLAll], p.RootDir, fn, logger, &base, simulate)
+	err := invokeProcess(p.Output[SQLAll], p.RootDir, fn, logger, &base, simulate)
 	if err != nil {
 		return err
 	}
@@ -41,10 +37,6 @@ func SQL(p cfg.Process, fn cfg.FileHandler, logger logrus.FieldLogger, fileGroup
 		ctx := SQLFileGroupContext{
 			SQLContext: base,
 			Files:      ff,
-		}
-		err = ctx.init()
-		if err != nil {
-			return err
 		}
 
 		err := invokeProcess(p.Output[SQLFiles], p.RootDir, fn, logger, &ctx, simulate)
@@ -57,11 +49,6 @@ func SQL(p cfg.Process, fn cfg.FileHandler, logger logrus.FieldLogger, fileGroup
 				SQLContext: base,
 				File:       f,
 			}
-			err = ctx.init()
-			if err != nil {
-				return err
-			}
-
 			err := invokeProcess(p.Output[SQLFile], p.RootDir, fn, logger, &ctx, simulate)
 			if err != nil {
 				return err
@@ -71,10 +58,6 @@ func SQL(p cfg.Process, fn cfg.FileHandler, logger logrus.FieldLogger, fileGroup
 				ctx := SQLQueryContext{
 					SQLContext: base,
 					Query:      q,
-				}
-				err = ctx.init()
-				if err != nil {
-					return err
 				}
 				err := invokeProcess(p.Output[SQLQuery], p.RootDir, fn, logger, &ctx, simulate)
 				if err != nil {
@@ -92,6 +75,7 @@ func SQL(p cfg.Process, fn cfg.FileHandler, logger logrus.FieldLogger, fileGroup
 type SQLContext struct {
 	Context
 	sql.FileGroups
+	Imports
 }
 
 type SQLFileGroupContext struct {
@@ -146,10 +130,10 @@ func (q SQLContext) GetType(c *sql.Param, pkg string) string {
 	return fmt.Sprintf("UNKNOWN:path(%s):type(%s)", c.Path(), c.Type)
 }
 
-func (q *SQLContext) init() error {
-	name, ok := q.Params.HasString("RootPkg")
+func (q *SQLContext) Init() error {
+	name, ok := q.Params.HasString("Package")
 	if !ok {
-		return errors.New("missing process.param.RootPkg")
+		return errors.New("missing Param.Package")
 	}
 	for _, set := range q.FileGroups {
 		for _, ff := range set {
@@ -164,10 +148,10 @@ func (q *SQLContext) init() error {
 	return nil
 }
 
-func (q *SQLFileGroupContext) init() error {
-	name, ok := q.Params.HasString("RootPkg")
+func (q *SQLFileGroupContext) Init() error {
+	name, ok := q.Params.HasString("Package")
 	if !ok {
-		return errors.New("missing process.param.name")
+		return errors.New("missing Param.Package")
 	}
 	for _, ff := range q.Files {
 		for _, qry := range ff.Queries {
@@ -180,10 +164,10 @@ func (q *SQLFileGroupContext) init() error {
 	return nil
 }
 
-func (q *SQLFileContext) init() error {
-	name, ok := q.Params.HasString("RootPkg")
+func (q *SQLFileContext) Init() error {
+	name, ok := q.Params.HasString("Package")
 	if !ok {
-		return errors.New("missing process.param.name")
+		return errors.New("missing Param.Package")
 	}
 	for _, qry := range q.File.Queries {
 		q.CheckPackage(qry.Result.Type, name)
@@ -194,10 +178,10 @@ func (q *SQLFileContext) init() error {
 	return nil
 }
 
-func (q *SQLQueryContext) init() error {
-	name, ok := q.Process.Params.HasString("RootPkg")
+func (q *SQLQueryContext) Init() error {
+	name, ok := q.Process.Params.HasString("Package")
 	if !ok {
-		return errors.New("missing process.param.name")
+		return errors.New("missing Param.Package")
 	}
 	for _, p := range q.Query.Params {
 		q.CheckPackage(p.Type, name)

@@ -5,13 +5,11 @@ package enum
 import (
 	"database/sql/driver"
 
-	"{{.Params.RootImport}}/{{.Params.RootPkg}}"
+	"{{.Params.Package}}"
 	"github.com/pkg/errors"
 )
 
-{{$rootPkg := .Params.RootPkg}}
-
-{{- $type := case .Enum.Name -}}
+{{- $type := case .Enum.Name }}
 
 // {{ $type }} is the '{{ .Enum.Name }}' enum type from schema '{{ .Enum.Schema.Name  }}'.
 type {{ $type }} uint16
@@ -79,71 +77,71 @@ func (e *{{ $type }}) Scan(src interface{}) error {
 	return e.UnmarshalText(buf)
 }
 
-// {{$type}}Field is a component that returns a {{$rootPkg}}.Where that contains a
+// {{$type}}Field is a component that returns a {{ $.PackageName }}.Where that contains a
 // comparison based on its field and a strongly typed value.
 type {{$type}}Field string
 
-// Equals returns a {{$rootPkg}}.WhereClause for this field.
-func (f {{$type}}Field) Equals(v {{$type}}) {{$rootPkg}}.Where {
-	return {{$rootPkg}}.Where{
+// Equals returns a {{$.PackageName}}.WhereClause for this field.
+func (f {{$type}}Field) Equals(v {{$type}}) {{$.PackageName}}.Where {
+	return {{$.PackageName}}.Where{
 		Field: string(f),
-		Comp:  {{$rootPkg}}.CompEqual,
+		Comp:  {{$.PackageName}}.CompEqual,
 		Value: v,
 	}
 }
 
-// GreaterThan returns a {{$rootPkg}}.Where for this field.
-func (f {{$type}}Field) GreaterThan(v {{$type}}) {{$rootPkg}}.Where {
-	return {{$rootPkg}}.Where{
+// GreaterThan returns a {{$.PackageName}}.Where for this field.
+func (f {{$type}}Field) GreaterThan(v {{$type}}) {{$.PackageName}}.Where {
+	return {{$.PackageName}}.Where{
 		Field: string(f),
-		Comp:  {{$rootPkg}}.CompGreater,
+		Comp:  {{$.PackageName}}.CompGreater,
 		Value: v,
 	}
 }
 
-// LessThan returns a {{$rootPkg}}.Where for this field.
-func (f {{$type}}Field) LessThan(v {{$type}}) {{$rootPkg}}.Where {
-	return {{$rootPkg}}.Where{
+// LessThan returns a {{$.PackageName}}.Where for this field.
+func (f {{$type}}Field) LessThan(v {{$type}}) {{$.PackageName}}.Where {
+	return {{$.PackageName}}.Where{
 		Field: string(f),
-		Comp:  {{$rootPkg}}.CompEqual,
+		Comp:  {{$.PackageName}}.CompEqual,
 		Value: v,
 	}
 }
 
-// GreaterOrEqual returns a {{$rootPkg}}.Where for this field.
-func (f {{$type}}Field) GreaterOrEqual(v {{$type}}) {{$rootPkg}}.Where {
-	return {{$rootPkg}}.Where{
+// GreaterOrEqual returns a {{$.PackageName}}.Where for this field.
+func (f {{$type}}Field) GreaterOrEqual(v {{$type}}) {{$.PackageName}}.Where {
+	return {{$.PackageName}}.Where{
 		Field: string(f),
-		Comp:  {{$rootPkg}}.CompGTE,
+		Comp:  {{$.PackageName}}.CompGTE,
 		Value: v,
 	}
 }
 
-// LessOrEqual returns a {{$rootPkg}}.Where for this field.
-func (f {{$type}}Field) LessOrEqual(v {{$type}}) {{$rootPkg}}.Where {
-	return {{$rootPkg}}.Where{
+// LessOrEqual returns a {{$.PackageName}}.Where for this field.
+func (f {{$type}}Field) LessOrEqual(v {{$type}}) {{$.PackageName}}.Where {
+	return {{$.PackageName}}.Where{
 		Field: string(f),
-		Comp:  {{$rootPkg}}.CompLTE,
+		Comp:  {{$.PackageName}}.CompLTE,
 		Value: v,
 	}
 }
 
-// NotEqual returns a {{$rootPkg}}.Where for this field.
-func (f {{$type}}Field) NotEqual(v {{$type}}) {{$rootPkg}}.Where {
-	return {{$rootPkg}}.Where{
+// NotEqual returns a {{$.PackageName}}.Where for this field.
+func (f {{$type}}Field) NotEqual(v {{$type}}) {{$.PackageName}}.Where {
+	return {{$.PackageName}}.Where{
 		Field: string(f),
-		Comp:  {{$rootPkg}}.CompNE,
+		Comp:  {{$.PackageName}}.CompNE,
 		Value: v,
 	}
 }
 
-// In returns a {{$rootPkg}}.Where for this field.
-func (f {{$type}}Field) In(vals []{{$type}}) {{$rootPkg}}.InClause {
+// In returns a {{$.PackageName}}.Where for this field.
+func (f {{$type}}Field) In(vals []{{$type}}) {{$.PackageName}}.InClause {
 	values := make([]interface{}, len(vals))
 	for x := range vals {
 		values[x] = vals[x]
 	}
-	return {{$rootPkg}}.InClause{
+	return {{$.PackageName}}.InClause{
 		Field: string(f),
 		Vals:  values,
 	}

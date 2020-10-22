@@ -113,7 +113,7 @@ func (t *Wrapper) ToBytes(data interface{}) ([]byte, error) {
 
 	err := t.ToWriter(buf, data)
 	if err != nil {
-		return nil, errors.Wrap(err, "error executing template")
+		return nil, err
 	}
 
 	return buf.Bytes(), nil
