@@ -214,18 +214,20 @@ func (w *Welder) initDBConnection() error {
 }
 
 func (w Welder) postProcessor(p cfg.Process) cfg.FileHandler {
-	if len(p.Post) == 0 {
+	if len(p.Post) == 0 || len(p.Post[0]) == 0 {
 		return nil
 	}
 
 	return func(filename string) error {
 		for _, post := range p.Post {
 			w.logger.WithField("cmd", post).Debug("post processor")
+
 			err := runtime.Invoke(filename, post)
 			if err != nil {
 				return err
 			}
 		}
+
 		return nil
 	}
 }

@@ -77,15 +77,19 @@ func (p Process) Merge(from Process) Process {
 	if p.Case == "" {
 		p.Case = from.Case
 	}
+
 	if p.Format == "" {
 		p.Format = from.Format
 	}
+
 	if len(p.Post) == 0 {
 		p.Post = from.Post
 	}
+
 	if len(p.Resources) == 0 {
 		p.Resources = from.Resources
 	}
+
 	p.Output = p.Output.Merge(from.Output)
 	p.Maps = p.Maps.Merge(from.Maps)
 	p.Params = p.Params.Merge(from.Params)

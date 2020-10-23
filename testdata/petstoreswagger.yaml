@@ -58,7 +58,7 @@ paths:
       description: Creates a new pet in the store. Duplicates are allowed
       operationId: addPet
       security:
-        - A: []
+#        - A: []
 #        - c: [a]
 #          d: []
 #        - C: [scopeC]
@@ -132,10 +132,10 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 components:
-  securitySchemes:
-    a:
-      type: http
-      scheme: basic
+#  securitySchemes:
+#    a:
+#      type: http
+#      scheme: basic
 #    b:
 #      type: http
 #      scheme: bearer

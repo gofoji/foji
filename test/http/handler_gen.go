@@ -16,7 +16,7 @@ import (
 
 type Service interface {
 	FindPets(ctx context.Context, tags []string, limit *int32) ([]test.Pet, error)
-	AddPet(ctx context.Context, user *test.User, testNewPet test.NewPet) (*test.Pet, error)
+	AddPet(ctx context.Context, testNewPet test.NewPet) (*test.Pet, error)
 	DeletePet(ctx context.Context, id int64) error
 	FindPetByID(ctx context.Context, id int64) (*test.Pet, error)
 }
@@ -24,11 +24,10 @@ type Service interface {
 type OpenAPIHandlers struct {
 	service      Service
 	errorHandler fastutil.ErrorHandlerFunc
-	aAuth        HttpAuthFunc
 }
 
-func RegisterHTTP(svc Service, r *router.Router, e fastutil.ErrorHandlerFunc, aAuth HttpAuthFunc) *OpenAPIHandlers {
-	s := OpenAPIHandlers{service: svc, errorHandler: e, aAuth: aAuth}
+func RegisterHTTP(svc Service, r *router.Router, e fastutil.ErrorHandlerFunc) *OpenAPIHandlers {
+	s := OpenAPIHandlers{service: svc, errorHandler: e}
 
 	r.GET("/pets", s.FindPets)
 	r.POST("/pets", s.AddPet)
@@ -66,23 +65,10 @@ func (h *OpenAPIHandlers) FindPets(ctx *fasthttp.RequestCtx) {
 
 func (h *OpenAPIHandlers) AddPet(ctx *fasthttp.RequestCtx) {
 	var (
-		authUser *test.User
-		err      error
+		err error
 	)
 
 	fastctx.SetOp(ctx, "addPet")
-
-	authUser, err = h.aAuth(ctx)
-
-	if err != nil {
-		h.errorHandler(ctx, err)
-		return
-	}
-
-	if authUser == nil {
-		h.errorHandler(ctx, fastutil.ErrUnauthorized)
-		return
-	}
 
 	body := test.NewPet{}
 
@@ -98,7 +84,7 @@ func (h *OpenAPIHandlers) AddPet(ctx *fasthttp.RequestCtx) {
 		return
 	}
 
-	response, err := h.service.AddPet(ctx, authUser, body)
+	response, err := h.service.AddPet(ctx, body)
 	if err != nil {
 		h.errorHandler(ctx, err)
 		return
