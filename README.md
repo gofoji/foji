@@ -161,12 +161,12 @@ completely.  Maps are merged, where each value for each key is replaced with the
 `foji dumpConfig -d` to see all available processes fully merged.  The flow is  
 `default Format -> Format -> default Process -> Process`.
 
-For example the default format for go runs `goimports` in the post processor.  To disable this simply override in :
+For example the default format for go runs `goimports` in the post processor.  To disable this simply set the post to 
+an empty array like:
 ```yaml
     post:
       -
 ```
-
 
 To remove a value from an inherited map key simple set the value to `-`.  For example:
 

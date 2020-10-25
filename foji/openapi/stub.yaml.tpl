@@ -1,3 +1,4 @@
+{{ .NotNeededIf (empty .Params.Name) "params.Name not set" -}}
 openapi: "3.0.0"
 info:
   title: {{case .Params.Name}}

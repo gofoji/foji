@@ -25,7 +25,7 @@ func HasDBOutput(o cfg.Output) bool {
 
 func DB(p cfg.Process, fn cfg.FileHandler, logger logrus.FieldLogger, schemas db.DB, simulate bool) error {
 	ctx := SchemasContext{
-		Context: Context{Process:p, Logger: logger},
+		Context: Context{Process: p, Logger: logger},
 		DB:      schemas,
 	}
 
@@ -82,6 +82,7 @@ func DB(p cfg.Process, fn cfg.FileHandler, logger logrus.FieldLogger, schemas db
 
 type SchemasContext struct {
 	Context
+	Imports
 	db.DB
 }
 

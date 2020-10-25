@@ -366,7 +366,7 @@ func (t Time) ExactEqual(other Time) bool {
   return t.Valid == other.Valid && (!t.Valid || t.Time == other.Time)
 }
 
-{{ range (toSlice "PString" "PInt32" "Jsonb" "int" "int32" "string"  "int64" "float64" "bool"  "time.Time" "Time" "uint32" "uuid.UUID" ) }}
+{{ range (toSlice "PString" "PInt32" "Jsonb" "int" "int32" "string"  "int64" "float64" "bool"  "time.Time" "Time" "uint32" "uuid.UUID") }}
 {{ $fieldName := title (replace "." "" .) }}// {{$fieldName}}Field is a component that returns a WhereClause that contains a
 // comparison based on its field and a strongly typed value.
 type {{$fieldName}}Field string
@@ -482,3 +482,8 @@ func (f {{$fieldName}}Field) IsNotNull() NullClause {
 }
 
 {{end}}
+
+// InterfaceField is a component that returns a WhereClause that contains a
+// comparison based on its field and a strongly typed value.  Currently interface{} is not supported.
+type InterfaceField string
+

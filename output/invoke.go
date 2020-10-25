@@ -77,7 +77,7 @@ func invokeTemplate(logger logrus.FieldLogger, dir, targetFile, templateFile str
 		targetFile = dir + targetFile
 	}
 
-	targetFile, err := tpl.New("outputMapper").Funcs(runtime.Funcs).From(targetFile).To(data)
+	targetFile, err := tpl.New("outputMapper").Funcs(runtime.Funcs).Funcs(sprig.TxtFuncMap()).From(targetFile).To(data)
 	if err != nil {
 		return errors.Wrap(err, "mapping output filename")
 	}

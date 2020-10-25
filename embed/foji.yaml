@@ -5,31 +5,35 @@ formats:
       - [ "goimports", "-w", "$FILE" ]
     maps:
       type:
-        oid: int64
-        name: string
-        text: "*string"
+        "_name": "[]string"
+        bool: bool
+        boolean: bool
+        double: float64
         int2: int16
+        int32: int32
         int4: int32
         int8: int64
-        varchar: string
-        "_name": "[]string"
-        timestamptz: time.Time
         integer: int32
         integer,int64: int64
+        jsonb: interface{}
+        name: string
         number: float32
-        number,float: float32
         number,double: float64
+        number,float: float32
         number,int32: int32
         number,int64: int64
+        object: interface{}
+        oid: int64
         string: string
-        string,date: time.Time
         string,date-time: time.Time
-        string,uri: net/url.URL
+        string,date: time.Time
         string,ipv4: net.IP
         string,ipv6: net.IP
+        string,uri: net/url.URL
         string,uuid: github.com/google/uuid.UUID
-        object: interface{}
-        boolean: bool
+        text: "*string"
+        timestamptz: time.Time
+        varchar: string
   openapi:
     case: pascal
     maps:
@@ -40,6 +44,21 @@ formats:
         int4: integer,int64
         varchar: string
         timestamptz: string,date-time
+        jsonb: object
+files:
+  sql:
+    files:
+      - "*/*/*.sql"
+    filter:
+      - "^db*"
+  embed:
+    files:
+      - "embed/*"
+    filter:
+      - ".*\\.go"
+  api:
+    files:
+      - "swagger.yaml"
 processes:
   repo:
     processes: [ sqlRepo, dbRepo ]
@@ -55,17 +74,11 @@ processes:
     case: unchanged
     DbAll:
       stdout: foji/dbList.console.tpl
-  openApiStub:
-    format: openapi
-    resources: [ openapi ]
-    DbAll:
-      '!swagger.yaml': foji/openAPIStub.yaml.tpl
   sqlRepo:
     format: go
     resources: [ sql ]
-    maps:
-      type:
-        public.reward.parameters: object
+    params:
+      Package: pg
     SQLFile:
       '{{ fileWithExt .File.Source "_gen.go" }}': foji/sqlRepo.go.tpl
   dbRepo:
@@ -74,17 +87,41 @@ processes:
       '!pg/repo_gen.go': foji/pgx/db.go.tpl
       fields_gen.go: foji/fields.go.tpl
     DbTable:
-      'pg/{{toLower .Table.Name}}_gen.go': foji/pgx/table.go.tpl
-      '{{toLower .Table.Name}}_gen.go': foji/pgx/model.go.tpl
+      'pg/{{lower .Table.Name}}_gen.go': foji/pgx/table.go.tpl
+      '{{lower .Table.Name}}_gen.go': foji/pgx/model.go.tpl
     DbEnum:
-      '{{toLower .Enum.Name}}_gen.go': foji/enum.go.tpl
+      '{{lower .Schema.Name}}/enum/{{lower .Enum.Name}}.go': foji/pgx/enum.go.tpl
+  openAPIStub:
+    format: openapi
+    resources: [ api ]
+    DbAll:
+      '!swagger.yaml': foji/openapi/stub.yaml.tpl
   openAPI:
     format: go
-    resources: [api]
+    resources: [ api ]
     OpenAPIFile:
-      'test/http/auth_gen.go': foji/openapi/auth.go.tpl
-      'test/models_gen.go': foji/openapi/model.go.tpl
-      '!test/service.go': foji/openapi/service.go.tpl
-      'test/http/handler_gen.go': foji/openapi/handler.go.tpl
-      '!test/http/error.go': foji/openapi/error.go.tpl
-      '!test/cmd/serve/main.go': foji/openapi/main.go.tpl
+      'http/auth_gen.go': foji/openapi/auth.go.tpl
+      'models_gen.go': foji/openapi/model.go.tpl
+      '!service.go': foji/openapi/service.go.tpl
+      'http/handler_gen.go': foji/openapi/handler.go.tpl
+      '!http/error.go': foji/openapi/error.go.tpl
+      '!cmd/serve/main.go': foji/openapi/main.go.tpl
+  openAPIByTag:
+    format: go
+    resources: [ api ]
+    OpenAPIFile:
+      '{{lower .}}/models_gen.go': foji/openapi/model.go.tpl
+      '{{lower .}}/http/auth_gen.go': foji/openapi/auth.go.tpl
+      '{{lower .}}/http/handler_gen.go': foji/openapi/handler.go.tpl
+      '!{{lower .}}/http/error.go': foji/openapi/error.go.tpl
+      '!{{lower .}}/service.go': foji/openapi/service.go.tpl
+      '!{{lower .}}/cmd/serve/main.go': foji/openapi/main.go.tpl
+  openAPIDocs:
+    format: go
+    resources: [ api ]
+    params:
+      Package: doc
+      RedocOptions: hide-download-button=true hide-loading=true
+    EmbedAll:
+      doc/embed_gen.go: foji/embed.go.tpl
+      '!doc/handler.go': foji/openapi/docs.go.tpl

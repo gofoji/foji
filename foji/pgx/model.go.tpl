@@ -30,7 +30,7 @@ func (r {{$goName}}) String() string {
 // Field values for every column in {{.Table.Name}}.  These are used for custom where clause queries
 var (
 {{- range .Table.Columns.ByOrdinal }}
-	{{$goName}}{{case .Name}} {{ title (replaceEach ( $.GetType . $.PackageName) "" "." "*" ) }}Field = "{{ .Name }}"
+	{{$goName}}{{case .Name}} {{ title (replaceEach ( $.GetType . $.PackageName) "" "." "*" "{" "}" ) }}Field = "{{ .Name }}"
 {{- end}}
 )
 

@@ -4,6 +4,7 @@ import "github.com/gofoji/foji/stringlist"
 
 func (c Config) Merge(from Config) Config {
 	c.Formats = c.Formats.Merge(from.Formats)
+	c.Files = c.Files.Merge(from.Files)
 	c.Processes = c.Processes.Merge(from.Processes)
 	c.Processes = c.Processes.Formats(c.Formats)
 	return c
@@ -90,6 +91,7 @@ func (p Process) Merge(from Process) Process {
 		p.Resources = from.Resources
 	}
 
+	p.Files = p.Files.Merge(from.Files)
 	p.Output = p.Output.Merge(from.Output)
 	p.Maps = p.Maps.Merge(from.Maps)
 	p.Params = p.Params.Merge(from.Params)
@@ -118,4 +120,27 @@ func (pp ParamMap) Merge(from ParamMap) ParamMap {
 		}
 	}
 	return out
+}
+
+func (ff FileInputMap) Merge(from FileInputMap) FileInputMap {
+	var out = ff
+	if out == nil {
+		out = FileInputMap{}
+	}
+
+	for key, p := range from {
+		_, ok := out[key]
+		if !ok {
+			out[key] = p
+		}
+	}
+	return out
+}
+
+func (f FileInput) Merge(from FileInput) FileInput {
+	if len(f.Files) > 0 || len(f.Filter) > 0 || len(f.Rewrite) > 0 {
+		return f
+	}
+
+	return from
 }

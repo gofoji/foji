@@ -292,7 +292,7 @@ func (r Repo) UndeleteWhere{{$goName}}(ctx context.Context, where {{$.PackageNam
 // {{$FuncName}} retrieves a row from '{{$.Table.Schema.Name}}.{{$.Table.Name}}'.
 //
 // Generated from index '{{.Name}}'.
-func (r Repo) {{ $FuncName }}(ctx context.Context, {{ $.Parameterize .Columns "%s %s" $pkgName }}) ({{ if not .IsUnique }}[]{{ end }}*{{$$.PackageName}}.{{$goName}}, error) {
+func (r Repo) {{ $FuncName }}(ctx context.Context, {{ $.Parameterize .Columns "%s %s" $pkgName }}) ({{ if not .IsUnique }}[]{{ end }}*{{$.PackageName}}.{{$goName}}, error) {
 	query := querySelect{{$goName}} + ` WHERE {{csv .Columns.Names.Sort }} = {{template "values" (len .Columns)}}
 {{- if $hasSoftDeletes }} AND deleted_at is NULL{{ end}}`
 
