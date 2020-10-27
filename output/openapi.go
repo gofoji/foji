@@ -291,3 +291,35 @@ func (o *OpenAPIFileContext) HasBearerAuth() bool {
 
 	return false
 }
+
+func (o *OpenAPIFileContext) HasAnyAuth(op *openapi3.Operation) bool {
+	s := o.OpSecurity(op)
+	if len(s) == 0 {
+		return false
+	}
+
+	for _, group := range s {
+		for key, _ := range group {
+			if key != "" {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func (o *OpenAPIFileContext) RequiresAuthUser(op *openapi3.Operation) bool {
+	s := o.OpSecurity(op)
+	if len(s) == 0 {
+		return false
+	}
+
+	for _, group := range s {
+		if len(group) == 0 {
+			return false
+		}
+	}
+
+	return true
+}

@@ -1296,14 +1296,10 @@ func (h *OpenAPIHandlers) {{ pascal $op.OperationID}}(ctx *fasthttp.RequestCtx) 
 
 	fastctx.SetOp(ctx, "{{$op.OperationID}}")
 
-{{- $hasNoAuth := false }}
 {{- if $.IsSimpleAuth $op }}
 
 {{- $lastAuth := "" }}
 	{{- range $securityGroup := $securityList }}
-		{{- if empty $securityGroup }}
-			{{- $hasNoAuth = true }}
-		{{- end}}
 		{{- range $security, $scopes := $securityGroup }}
 			{{- if eq $lastAuth $security }}
 			{{- else }}
@@ -1332,14 +1328,14 @@ func (h *OpenAPIHandlers) {{ pascal $op.OperationID}}(ctx *fasthttp.RequestCtx) 
 {{- else }}
 	authUser, err = doAuthorize(ctx, {{- if $.HasAuthorization }}h.authorize,{{end}} h.{{ camel $op.OperationID}}AuthGroups...)
 {{- end}}
-{{- if not (empty $securityList)}}
+{{- if $.HasAnyAuth $op }}
 
 	if err != nil {
 		h.errorHandler(ctx, err)
 		return
 	}
 
-	{{- if not $hasNoAuth }}
+	{{- if $.RequiresAuthUser $op }}
 	if authUser == nil {
 		h.errorHandler(ctx, fastutil.ErrUnauthorized)
 		return
