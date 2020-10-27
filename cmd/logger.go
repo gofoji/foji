@@ -2,15 +2,19 @@ package cmd
 
 import "github.com/sirupsen/logrus"
 
-func getLogger(quiet, verbose bool) logrus.FieldLogger {
+func getLogger(quiet, trace, verbose bool) logrus.FieldLogger {
 	l := logrus.New()
 
-	if quiet {
+	switch {
+	case quiet:
 		l.SetLevel(logrus.FatalLevel)
-	} else if verbose {
+	case trace:
 		l.SetLevel(logrus.TraceLevel)
-	} else {
+	case verbose:
+		l.SetLevel(logrus.DebugLevel)
+	default:
 		l.SetLevel(logrus.InfoLevel)
 	}
+
 	return l
 }

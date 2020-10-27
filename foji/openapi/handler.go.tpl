@@ -152,10 +152,14 @@ func (h *OpenAPIHandlers) {{ pascal $op.OperationID}}(ctx *fasthttp.RequestCtx) 
 
 	fastctx.SetOp(ctx, "{{$op.OperationID}}")
 
+{{- $hasNoAuth := false }}
 {{- if $.IsSimpleAuth $op }}
 
 {{- $lastAuth := "" }}
 	{{- range $securityGroup := $securityList }}
+		{{- if empty $securityGroup }}
+			{{- $hasNoAuth = true }}
+		{{- end}}
 		{{- range $security, $scopes := $securityGroup }}
 			{{- if eq $lastAuth $security }}
 			{{- else }}
@@ -191,10 +195,12 @@ func (h *OpenAPIHandlers) {{ pascal $op.OperationID}}(ctx *fasthttp.RequestCtx) 
 		return
 	}
 
+	{{- if not $hasNoAuth }}
 	if authUser == nil {
 		h.errorHandler(ctx, fastutil.ErrUnauthorized)
 		return
 	}
+	{{- end}}
 {{- end}}
 
 		{{- range $param := $op.Parameters }}

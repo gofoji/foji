@@ -16,7 +16,7 @@ var listCmd = &cobra.Command{
 }
 
 func list(_ *cobra.Command, args []string) {
-	l := getLogger(quiet, verbose)
+	l := getLogger(quiet, trace, verbose)
 
 	c, err := cfg.Load(cfgFile, true)
 	if err != nil {

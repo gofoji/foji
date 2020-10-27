@@ -11,6 +11,7 @@ import (
 var (
 	cfgFile         string
 	verbose         bool
+	trace           bool
 	quiet           bool
 	overwrite       bool
 	includeDefaults bool
@@ -46,7 +47,8 @@ func Execute() {
 func registerFlags() {
 
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "foji.yaml", "config file (default is foji.yaml)")
-	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "include trace level logging")
+	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "include verbose logging")
+	rootCmd.PersistentFlags().BoolVarP(&trace, "trace", "t", false, "include trace logging")
 	rootCmd.PersistentFlags().BoolVarP(&quiet, "quiet", "q", false, "mutes all logging (overrides verbose)")
 
 	initCmd.PersistentFlags().BoolVarP(&overwrite, "overwrite", "y", false, "force overwrite an existing output file")
@@ -62,5 +64,4 @@ func registerFlags() {
 	copyTemplatesCmd.PersistentFlags().BoolVarP(&overwrite, "overwrite", "y", false, "force overwrite an existing output file")
 
 	weldCmd.PersistentFlags().BoolVarP(&simulate, "simulate", "s", false, "simulates the processing, only displays files that would be generated")
-
 }

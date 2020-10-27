@@ -35,10 +35,20 @@ func (c *Context) Aborted() error {
 	return c.AbortError
 }
 
-// NotNeededIf if given bool is true the execution is aborted, and can be used to prevent generation of a file.
+// NotNeededIf given bool is true the execution is aborted, and can be used to prevent generation of a file.
 func (c *Context) NotNeededIf(t bool, reason string) (string, error) {
 	if t {
 		c.AbortError = fmt.Errorf("%w: %s", ErrNotNeeded, reason)
+		return "", c.AbortError
+	}
+
+	return "", nil
+}
+
+// ErrorIf if given bool is true the execution is fatally aborted, and stops processing.
+func (c *Context) ErrorIf(t bool, reason string) (string, error) {
+	if t {
+		c.AbortError = fmt.Errorf("%w: %s", ErrMissingRequirement, reason)
 		return "", c.AbortError
 	}
 

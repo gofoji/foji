@@ -20,7 +20,7 @@ var copyTemplateCmd = &cobra.Command{
 }
 
 func copyTemplate(_ *cobra.Command, args []string) {
-	l := getLogger(quiet, verbose)
+	l := getLogger(quiet, trace, verbose)
 
 	err := writeTemplate(l, dir, args[0], stdout, overwrite)
 	if err != nil {

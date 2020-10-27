@@ -29,7 +29,7 @@ func (l *Logger) Log(ctx context.Context, level pgx.LogLevel, msg string, data m
 	case pgx.LogLevelDebug:
 		logger.Debug(msg)
 	case pgx.LogLevelInfo:
-		logger.Debug(msg) // Down shifted to debug for chattiness
+		logger.WithField("PGX_LOG_LEVEL", level).Trace(msg) // Down shifted to Trace for chattiness
 	case pgx.LogLevelWarn:
 		logger.Warn(msg)
 	case pgx.LogLevelError:

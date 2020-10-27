@@ -11,8 +11,8 @@ import (
 )
 
 var commentRE = regexp.MustCompile(`^--[-]*`)
-var paramRE = regexp.MustCompile(`^:`)
-var nameRE = regexp.MustCompile(`^#`)
+var paramRE = regexp.MustCompile(`^@`)
+var nameRE = regexp.MustCompile(`^.`)
 
 type Repo interface {
 	DescribeQuery(ctx context.Context, q *Query) error
@@ -54,7 +54,7 @@ type Result struct {
 
 func (r Result) TypeParam() *Param {
 	return &Param{
-		Type: r.Type,
+		Type:      r.Type,
 		Generated: r.GenerateType(),
 	}
 }
@@ -92,9 +92,9 @@ func (p Parser) parseDescriptorLine(line string, q *Query) {
 func (p Parser) parseDescriptorHeader(l string, q *Query) {
 	/*
 		Example headers:
-		--# FuncName
-		--# FuncName ResultType
-		--# FuncName ResultType QueryType
+		-- .FuncName
+		-- .FuncName ResultType
+		-- .FuncName ResultType QueryType
 	*/
 	ll := strings.Split(strings.TrimSpace(nameRE.ReplaceAllString(l, "")), " ")
 	if len(ll) > 0 {
@@ -118,7 +118,7 @@ func (p Parser) parseDescriptorParam(l string, f *Query) {
 		param := Param{
 			Ordinal: len(f.Params),
 			Name:    l,
-			Query: f,
+			Query:   f,
 		}
 		f.Params = append(f.Params, &param)
 
@@ -128,7 +128,7 @@ func (p Parser) parseDescriptorParam(l string, f *Query) {
 			Ordinal: len(f.Params),
 			Name:    pp[0],
 			Type:    pp[1],
-			Query: f,
+			Query:   f,
 		}
 		f.Params = append(f.Params, &param)
 
@@ -173,7 +173,7 @@ func Parse(ctx context.Context, logger logrus.FieldLogger, repo Repo, inGroups [
 							Ordinal: len(q.Params),
 							Name:    name,
 							Type:    "string",
-							Query: &q,
+							Query:   &q,
 						}
 						q.Params = append(q.Params, p)
 					}

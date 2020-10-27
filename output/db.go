@@ -138,6 +138,7 @@ func stripPackage(typ, pkg string) string {
 	}
 	return typ
 }
+
 func (s SchemasContext) GetType(c *db.Column, pkg string) string {
 	pp := strings.Split(c.Path(), ".")
 	for i := range pp {

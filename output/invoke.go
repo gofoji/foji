@@ -21,8 +21,9 @@ func (e Error) Error() string {
 }
 
 const (
-	ErrNotNeeded  = Error("not needed")
-	ErrPermExists = Error("file exists")
+	ErrMissingRequirement = Error("requires")
+	ErrNotNeeded          = Error("not needed")
+	ErrPermExists         = Error("file exists")
 )
 
 type FuncMapper interface {
@@ -106,6 +107,11 @@ func invokeTemplate(logger logrus.FieldLogger, dir, targetFile, templateFile str
 			logger.WithField("target", targetFile).WithField("template", templateFile).Info("skipped, " + err.Error())
 			return nil
 		}
+
+		if errors.Is(err, ErrMissingRequirement) {
+			return err
+		}
+
 		return errors.Wrap(err, "executing template")
 	}
 

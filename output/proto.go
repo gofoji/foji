@@ -21,8 +21,8 @@ func HasProtoOutput(o cfg.Output) bool {
 
 func Proto(p cfg.Process, fn cfg.FileHandler, logger logrus.FieldLogger, groups proto.PBFileGroups, simulate bool) error {
 	base := ProtoContext{
-		Context: Context{Process:p, Logger: logger},
-		FileGroups:     groups,
+		Context:    Context{Process: p, Logger: logger},
+		FileGroups: groups,
 	}
 	err := invokeProcess(p.Output[ProtoAll], p.RootDir, fn, logger, &base, simulate)
 	if err != nil {
@@ -109,7 +109,7 @@ func (q ProtoContext) GetType(f proto.Field, pkg string) string {
 	pp := strings.Split(f.Path(), ".")
 	for i := range pp {
 		p := strings.Join(pp[i:], ".")
-		t, ok := q.Maps.Type["." + p]
+		t, ok := q.Maps.Type["."+p]
 		if ok {
 			return stripPackage(t, pkg)
 		}
@@ -119,11 +119,12 @@ func (q ProtoContext) GetType(f proto.Field, pkg string) string {
 	if ok {
 		return stripPackage(t, pkg)
 	}
+
 	// TODO Valid assumption for type reference?
 	// If not in the above mappings, then assume it is a reference to another Message in the package
 	if q.IsEnum(f.Type) {
 		return f.Type
 	}
+
 	return fmt.Sprintf("*%s", f.Type)
-	//return fmt.Sprintf("UNKNOWN:path(%s):type(%s)", f.Path(), f.Type)
 }

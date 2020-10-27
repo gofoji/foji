@@ -63,7 +63,6 @@ func SQL(p cfg.Process, fn cfg.FileHandler, logger logrus.FieldLogger, fileGroup
 				if err != nil {
 					return err
 				}
-
 			}
 
 		}
@@ -95,6 +94,7 @@ type SQLQueryContext struct {
 
 func (q SQLContext) Parameterize(cc sql.Params, format, pkg string) string {
 	ss := make(stringlist.Strings, len(cc))
+
 	for x := range cc {
 		ss[x] = fmt.Sprintf(format, kace.Camel(cc[x].Name), q.GetType(cc[x], pkg))
 	}
@@ -122,9 +122,15 @@ func (q SQLContext) GetType(c *sql.Param, pkg string) string {
 			return stripPackage(t, pkg)
 		}
 	}
+
 	t, ok := q.Maps.Type[c.Type]
 	if ok {
 		return stripPackage(t, pkg)
+	}
+
+	if strings.ContainsAny(c.Type, "./") {
+		// Qualified Name
+		return q.CheckPackage(c.Type, pkg)
 	}
 
 	return fmt.Sprintf("UNKNOWN:path(%s):type(%s)", c.Path(), c.Type)
@@ -135,6 +141,7 @@ func (q *SQLContext) Init() error {
 	if !ok {
 		return errors.New("missing Param.Package")
 	}
+
 	for _, set := range q.FileGroups {
 		for _, ff := range set {
 			for _, qry := range ff.Queries {
@@ -145,6 +152,7 @@ func (q *SQLContext) Init() error {
 			}
 		}
 	}
+
 	return nil
 }
 
@@ -153,9 +161,11 @@ func (q *SQLFileGroupContext) Init() error {
 	if !ok {
 		return errors.New("missing Param.Package")
 	}
+
 	for _, ff := range q.Files {
 		for _, qry := range ff.Queries {
 			q.CheckPackage(qry.Result.Type, name)
+
 			for _, p := range qry.Params {
 				q.CheckPackage(p.Type, name)
 			}
@@ -169,12 +179,15 @@ func (q *SQLFileContext) Init() error {
 	if !ok {
 		return errors.New("missing Param.Package")
 	}
+
 	for _, qry := range q.File.Queries {
 		q.CheckPackage(qry.Result.Type, name)
+
 		for _, p := range qry.Params {
 			q.CheckPackage(p.Type, name)
 		}
 	}
+
 	return nil
 }
 
@@ -183,8 +196,10 @@ func (q *SQLQueryContext) Init() error {
 	if !ok {
 		return errors.New("missing Param.Package")
 	}
+
 	for _, p := range q.Query.Params {
 		q.CheckPackage(p.Type, name)
 	}
+
 	return nil
 }
