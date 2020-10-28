@@ -2,51 +2,61 @@ package cfg
 
 import "github.com/gofoji/foji/stringlist"
 
+// Merge merges all properties from an ancestor Config.
 func (c Config) Merge(from Config) Config {
 	c.Formats = c.Formats.Merge(from.Formats)
 	c.Files = c.Files.Merge(from.Files)
-	c.Processes = c.Processes.Merge(from.Processes)
-	c.Processes = c.Processes.Formats(c.Formats)
+	c.Processes = c.Processes.Merge(from.Processes).ApplyFormat(c.Formats)
+
 	return c
 }
 
-func (pp Processes) Formats(formats Processes) Processes {
+// ApplyFormat merges linked format into each process config.
+func (pp Processes) ApplyFormat(formats Processes) Processes {
 	if pp == nil {
 		return pp
 	}
+
 	for key, p := range pp {
 		f, ok := formats[p.Format]
 		if ok {
 			p = p.Merge(f)
 		}
+
 		pp[key] = p
 	}
+
 	return pp
 }
 
+// Merge merges all properties from an ancestor Processes.
 func (pp Processes) Merge(from Processes) Processes {
-	if pp == nil {
-		pp = Processes{}
+	out := pp
+	if out == nil {
+		out = Processes{}
 	} else {
 		for key, p := range pp {
 			p.ID = key
-			pp[key] = p
+			out[key] = p
 		}
-
 	}
+
 	for key, p := range from {
-		to, ok := pp[key]
+		to, ok := out[key]
 		if ok {
 			to = to.Merge(p)
 		} else {
 			to = p
 		}
+
 		to.ID = key
-		pp[key] = to
+		out[key] = to
 	}
-	return pp
+
+	return out
 }
 
+// mergeOutputs merges all output lists, and has the special function to treat "-" as an empty array.
 func mergeOutputs(to, from stringlist.StringMap) stringlist.StringMap {
 	if len(to) == 0 {
 		return from
@@ -58,9 +68,11 @@ func mergeOutputs(to, from stringlist.StringMap) stringlist.StringMap {
 			return stringlist.StringMap{}
 		}
 	}
+
 	return to
 }
 
+// Merge merges all properties from an ancestor Output.
 func (o Output) Merge(from Output) Output {
 	result := o
 	if result == nil {
@@ -74,6 +86,7 @@ func (o Output) Merge(from Output) Output {
 	return result
 }
 
+// Merge merges all properties from an ancestor Process.
 func (p Process) Merge(from Process) Process {
 	if p.Case == "" {
 		p.Case = from.Case
@@ -99,16 +112,19 @@ func (p Process) Merge(from Process) Process {
 	return p
 }
 
+// Merge merges all properties from an ancestor Maps.
 func (m Maps) Merge(from Maps) Maps {
 	m.Type = MergeTypesMaps(from.Type, m.Type)
 	m.Nullable = MergeTypesMaps(from.Nullable, m.Nullable)
 	m.Name = MergeTypesMaps(from.Name, m.Name)
 	m.Case = MergeTypesMaps(from.Case, m.Case)
+
 	return m
 }
 
+// Merge merges all properties from an ancestor ParamMap.
 func (pp ParamMap) Merge(from ParamMap) ParamMap {
-	var out = pp
+	out := pp
 	if out == nil {
 		out = ParamMap{}
 	}
@@ -119,11 +135,13 @@ func (pp ParamMap) Merge(from ParamMap) ParamMap {
 			out[key] = p
 		}
 	}
+
 	return out
 }
 
+// Merge merges all properties from an ancestor FileInputMap.
 func (ff FileInputMap) Merge(from FileInputMap) FileInputMap {
-	var out = ff
+	out := ff
 	if out == nil {
 		out = FileInputMap{}
 	}
@@ -134,13 +152,28 @@ func (ff FileInputMap) Merge(from FileInputMap) FileInputMap {
 			out[key] = p
 		}
 	}
+
 	return out
 }
 
+// Merge merges all properties from an ancestor FileInput.
 func (f FileInput) Merge(from FileInput) FileInput {
 	if len(f.Files) > 0 || len(f.Filter) > 0 || len(f.Rewrite) > 0 {
 		return f
 	}
 
 	return from
+}
+
+// Merge merges all properties from an ancestor TypeMap.
+func MergeTypesMaps(maps ...stringlist.StringMap) stringlist.StringMap {
+	result := stringlist.StringMap{}
+
+	for _, m := range maps {
+		for k, v := range m {
+			result[k] = v
+		}
+	}
+
+	return result
 }

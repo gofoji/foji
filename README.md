@@ -65,6 +65,7 @@ Overrides
 - [x] Authentication
 - [x] Publish Swagger Spec
 - [x] Authorization 
+- [ ] Wrap Open API structs with helpers
 - [ ] Primary Tag OpenAPI generation 
 - [ ] Optionally Merge large param sets into struct 
 - [ ] Filter private attributes from Spec for export
