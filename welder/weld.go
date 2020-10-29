@@ -18,7 +18,6 @@ import (
 	"github.com/gofoji/foji/runtime"
 	"github.com/jackc/pgtype/pgxtype"
 	"github.com/jackc/pgx/v4"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -41,6 +40,14 @@ type Processor struct {
 	guard func(o cfg.Output) bool
 	run   func(simulate bool, p cfg.Process, ff []input.FileGroup) error
 }
+
+type Error string
+
+func (e Error) Error() string {
+	return string(e)
+}
+
+const ErrWeld = Error("welding error")
 
 // New creates a new welder.
 func New(logger logrus.FieldLogger, config cfg.Config, targets []cfg.Process) *Welder {
@@ -72,6 +79,8 @@ func (w *Welder) Run(simulate bool) error {
 		if err != nil {
 			return err
 		}
+
+		w.logger.WithField("Process", ff).Trace("Files")
 
 		for _, processor := range pp {
 			if !processor.guard(p.Output) {
@@ -159,7 +168,7 @@ func (w *Welder) getResource(resource string) (input.FileGroup, error) {
 
 		in, ok := w.config.Files[resource]
 		if !ok {
-			return r.Loaded, errors.Errorf("invalid resource reference:%s", resource)
+			return r.Loaded, fmt.Errorf("%w: invalid resource reference: %s", ErrWeld, resource)
 		}
 
 		f, err := input.Parse(w.ctx, w.logger, in)
@@ -204,14 +213,14 @@ func (w *Welder) getProcessFiles(p cfg.Process) ([]input.FileGroup, error) {
 
 func (w *Welder) parseDB() (db.DB, error) {
 	if w.conn == nil {
-		return nil, errors.New("DB Not Initialized")
+		return nil, fmt.Errorf("%w: db not initialized", ErrWeld)
 	}
 
 	repo := pg.New(w.conn, w.logger)
 
 	s, err := repo.Get(w.ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "parsing DB schema")
+		return nil, fmt.Errorf("parsing db schema: %w", err)
 	}
 
 	return s.Filter(w.config.DB.Filter), nil
@@ -223,7 +232,7 @@ func (w *Welder) initDBConnection() error {
 	}
 
 	if w.config.DB.Connection == "" {
-		return errors.New("missing DB connection")
+		return fmt.Errorf("%w: missing db.connection", ErrWeld)
 	}
 
 	w.logger.WithField("Connection", w.config.DB.Connection).Debug("Loading Database")

@@ -14,20 +14,22 @@ type Param struct {
 	Name          string // Database field name
 	Type          string // DB type
 	TypeID        uint32 // DB type ID
-	Nullable      bool   //
-	Query         *Query
-	Generated bool
+	Nullable      bool   // True means the param is nullable
+	Generated     bool   // Indicates type should be generated (locally defined)
+	Query         *Query // The owning query
 }
 
 func (p Param) Path() string {
 	if p.Query != nil {
 		return p.Query.Name + "." + p.Name
 	}
+
 	return p.Name
 }
 
 func (pp Params) Names() stringlist.Strings {
 	ss := make(stringlist.Strings, len(pp))
+
 	for x := range pp {
 		ss[x] = pp[x].Name
 	}
@@ -58,9 +60,11 @@ func (cc byOrdinal) Swap(i, j int) {
 
 func (pp Params) copy() Params {
 	r := make(Params, len(pp))
+
 	for i, p := range pp {
 		r[i] = p
 	}
+
 	return r
 }
 

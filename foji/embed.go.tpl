@@ -14,7 +14,20 @@ func List() []string {
 		}
 }
 
-func Get(filename string) (string, error) {
+func Get(filename string) ([]byte, error) {
+	switch filename {
+{{- range .FileGroups }}
+{{- range .Files }}
+	case "{{ .Name }}":
+		return {{ case (goToken .Name) }}Bytes, nil
+{{- end }}
+{{- end}}
+	}
+
+	return nil, os.ErrNotExist
+}
+
+func GetString(filename string) (string, error) {
 	switch filename {
 {{- range .FileGroups }}
 {{- range .Files }}

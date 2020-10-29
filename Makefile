@@ -10,8 +10,15 @@ testStub:
 testDumpConfig:
 	go run main.go dumpConfig --config embed.yaml
 
-qc:
-	golangci-lint run --enable-all -D prealloc -D lll -D gochecknoglobals,gomnd,nolintlint --skip-dirs test,cmd,scratch,gen --tests=false
+lint:
+	golangci-lint run --sort-results
+
+test:
+	go test ./...
+
+cover:
+	go test	-coverprofile cp.out ./...
+	go tool cover -html=cp.out
 
 tidy:
 	go mod tidy
@@ -23,4 +30,4 @@ install:
 	go install
 
 
-.PHONY:	qc testStub testList genPGQueries update tidy
+.PHONY:	lint testStub testList genPGQueries update tidy

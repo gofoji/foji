@@ -9,7 +9,7 @@ import (
 var weldCmd = &cobra.Command{
 	Use:     "weld [list of processes]",
 	Aliases: []string{"w"},
-	Short:   "Runs the processes defined by the config file",
+	Short:   "Runs the list of processes.",
 	Long:    ``,
 	Args:    cobra.MinimumNArgs(1),
 	Run:     weld,
@@ -28,8 +28,7 @@ func weld(_ *cobra.Command, args []string) {
 		l.WithError(err).Fatal("getting targets")
 	}
 
-	w := welder.New(l, c, targets)
-	err = w.Run(simulate)
+	err = welder.New(l, c, targets).Run(simulate)
 	if err != nil {
 		l.WithError(err).Fatal("welding")
 	}

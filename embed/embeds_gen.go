@@ -27,7 +27,50 @@ func List() []string {
 	}
 }
 
-func Get(filename string) (string, error) {
+func Get(filename string) ([]byte, error) {
+	switch filename {
+	case "foji/dbList.console.tpl":
+		return FojiSlashDbListDotConsoleDotTplBytes, nil
+	case "foji/embed.go.tpl":
+		return FojiSlashEmbedDotGoDotTplBytes, nil
+	case "foji/enum.go.tpl":
+		return FojiSlashEnumDotGoDotTplBytes, nil
+	case "foji/fields.go.tpl":
+		return FojiSlashFieldsDotGoDotTplBytes, nil
+	case "foji/sqlRepo.go.tpl":
+		return FojiSlashSqlRepoDotGoDotTplBytes, nil
+	case "foji/openapi/auth.go.tpl":
+		return FojiSlashOpenapiSlashAuthDotGoDotTplBytes, nil
+	case "foji/openapi/docs.go.tpl":
+		return FojiSlashOpenapiSlashDocsDotGoDotTplBytes, nil
+	case "foji/openapi/error.go.tpl":
+		return FojiSlashOpenapiSlashErrorDotGoDotTplBytes, nil
+	case "foji/openapi/handler.go.tpl":
+		return FojiSlashOpenapiSlashHandlerDotGoDotTplBytes, nil
+	case "foji/openapi/main.go.tpl":
+		return FojiSlashOpenapiSlashMainDotGoDotTplBytes, nil
+	case "foji/openapi/model.go.tpl":
+		return FojiSlashOpenapiSlashModelDotGoDotTplBytes, nil
+	case "foji/openapi/service.go.tpl":
+		return FojiSlashOpenapiSlashServiceDotGoDotTplBytes, nil
+	case "foji/openapi/stub.yaml.tpl":
+		return FojiSlashOpenapiSlashStubDotYamlDotTplBytes, nil
+	case "foji/pgx/db.go.tpl":
+		return FojiSlashPgxSlashDbDotGoDotTplBytes, nil
+	case "foji/pgx/model.go.tpl":
+		return FojiSlashPgxSlashModelDotGoDotTplBytes, nil
+	case "foji/pgx/table.go.tpl":
+		return FojiSlashPgxSlashTableDotGoDotTplBytes, nil
+	case "foji.yaml":
+		return FojiDotYamlBytes, nil
+	case "init.yaml":
+		return InitDotYamlBytes, nil
+	}
+
+	return nil, os.ErrNotExist
+}
+
+func GetString(filename string) (string, error) {
 	switch filename {
 	case "foji/dbList.console.tpl":
 		return FojiSlashDbListDotConsoleDotTpl, nil
@@ -120,7 +163,20 @@ func List() []string {
 		}
 }
 
-func Get(filename string) (string, error) {
+func Get(filename string) ([]byte, error) {
+	switch filename {
+{{- range .FileGroups }}
+{{- range .Files }}
+	case "{{ .Name }}":
+		return {{ case (goToken .Name) }}Bytes, nil
+{{- end }}
+{{- end}}
+	}
+
+	return nil, os.ErrNotExist
+}
+
+func GetString(filename string) (string, error) {
 	switch filename {
 {{- range .FileGroups }}
 {{- range .Files }}
@@ -2416,7 +2472,6 @@ processes:
       '{{lower .Schema.Name}}/enum/{{lower .Enum.Name}}.go': foji/pgx/enum.go.tpl
   openAPIStub:
     format: openapi
-    resources: [ api ]
     DbAll:
       '!swagger.yaml': foji/openapi/stub.yaml.tpl
   openAPI:

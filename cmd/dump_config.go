@@ -19,7 +19,6 @@ var dumpConfigCmd = &cobra.Command{
 
 func dumpConfig(_ *cobra.Command, _ []string) {
 	c, err := cfg.Load(cfgFile, includeDefaults)
-
 	if err != nil {
 		logrus.WithError(err).Fatal("Loading Config")
 	}

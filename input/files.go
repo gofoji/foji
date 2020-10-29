@@ -21,7 +21,7 @@ type FileGroup struct {
 type File struct {
 	Source  string // Original filename
 	Name    string // Name after any rewrite conversions
-	Content string // Contents of file
+	Content []byte // Contents of file
 }
 
 func rewrite(rules stringlist.StringMap, name string) string {
@@ -31,6 +31,7 @@ func rewrite(rules stringlist.StringMap, name string) string {
 			return re.ReplaceAllString(name, replace)
 		}
 	}
+
 	return name
 }
 
@@ -41,6 +42,7 @@ func Parse(_ context.Context, logger logrus.FieldLogger, input cfg.FileInput) (F
 
 	for _, glob := range input.Files {
 		logger.WithField("source", glob).Debug("Searching Glob")
+
 		files, err := filepath.Glob(glob)
 		if err != nil {
 			return result, errors.Wrapf(err, "error processing glob: %s", glob)
@@ -51,14 +53,18 @@ func Parse(_ context.Context, logger logrus.FieldLogger, input cfg.FileInput) (F
 			if loadedFiles.Contains(filename) {
 				continue
 			}
+
 			if input.Filter.AnyMatches(filename) {
 				logger.WithField("file", filename).Debug("Filtering File")
+
 				continue
 			}
+
 			fileInfo, err := os.Stat(filename)
 			if err != nil {
 				return result, errors.Wrapf(err, "error reading file: %s", filename)
 			}
+
 			if fileInfo.IsDir() {
 				continue
 			}
@@ -69,10 +75,11 @@ func Parse(_ context.Context, logger logrus.FieldLogger, input cfg.FileInput) (F
 			if err != nil {
 				return result, errors.Wrapf(err, "error reading file: %s", filename)
 			}
+
 			file := File{
 				Source:  filename,
 				Name:    rewrite(input.Rewrite, filename),
-				Content: string(b),
+				Content: b,
 			}
 			logger.WithField("name", file.Name).Debug("File Loaded")
 			result.Files = append(result.Files, file)

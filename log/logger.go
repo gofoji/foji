@@ -17,6 +17,7 @@ func NewLogger(l logrus.FieldLogger) *Logger {
 
 func (l *Logger) Log(ctx context.Context, level pgx.LogLevel, msg string, data map[string]interface{}) {
 	var logger logrus.FieldLogger
+
 	if data != nil {
 		logger = l.l.WithFields(data)
 	} else {

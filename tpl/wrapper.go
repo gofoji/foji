@@ -2,6 +2,7 @@ package tpl
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -9,7 +10,6 @@ import (
 	"text/template"
 
 	"github.com/gofoji/foji/embed"
-	"github.com/pkg/errors"
 )
 
 type Wrapper struct {
@@ -17,23 +17,17 @@ type Wrapper struct {
 	err error
 }
 
-func loadLocalOrEmbed(filename string) (string, error) {
+func loadLocalOrEmbed(filename string) ([]byte, error) {
 	_, err := os.Stat(filename)
-
 	if err != nil {
 		if os.IsNotExist(err) {
 			return embed.Get(filename)
 		}
 
-		return "", err
+		return nil, fmt.Errorf("error accessing file: %s: %w", filename, err)
 	}
 
-	b, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return "", err
-	}
-
-	return string(b), nil
+	return ioutil.ReadFile(filename)
 }
 
 func New(name string) *Wrapper {
@@ -61,12 +55,12 @@ func (t *Wrapper) FromFile(templateFile string) *Wrapper {
 		return t
 	}
 
-	s, err := loadLocalOrEmbed(templateFile)
+	b, err := loadLocalOrEmbed(templateFile)
 	if err != nil {
-		t.err = errors.Wrapf(err, "error reading template: %s", templateFile)
+		t.err = fmt.Errorf("error reading template: %s: %w", templateFile, err)
 	}
 
-	return t.From(s)
+	return t.From(string(b))
 }
 
 func (t *Wrapper) From(s string) *Wrapper {
@@ -76,7 +70,7 @@ func (t *Wrapper) From(s string) *Wrapper {
 
 	_, err := t.t.Parse(s)
 	if err != nil {
-		t.err = errors.Wrapf(err, "error parsing template")
+		t.err = fmt.Errorf("error parsing template: %w", err)
 	}
 
 	return t
@@ -97,11 +91,11 @@ func (t *Wrapper) ToWriter(w io.Writer, data interface{}) error {
 	if ok {
 		abortErr := a.Aborted()
 		if abortErr != nil {
-			return abortErr
+			return abortErr //nolint:wrapcheck
 		}
 	}
 
-	return err
+	return err //nolint:wrapcheck
 }
 
 func (t *Wrapper) ToBytes(data interface{}) ([]byte, error) {
@@ -151,18 +145,18 @@ func (t *Wrapper) ToFile(file string, data interface{}) error {
 	}
 
 	if err := os.MkdirAll(filepath.Dir(file), 0700); err != nil {
-		return errors.Wrap(err, "error creating output directory")
+		return fmt.Errorf("error creating output directory: %w", err)
 	}
 
 	f, err := os.OpenFile(file, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
-		return err
+		return err //nolint:wrapcheck
 	}
 
 	_, err = f.Write(b)
 	if closeErr := f.Close(); err == nil {
-		return closeErr
+		return closeErr //nolint:wrapcheck
 	}
 
-	return err
+	return err //nolint:wrapcheck
 }

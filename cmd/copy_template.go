@@ -1,12 +1,12 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/gofoji/foji/embed"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -31,31 +31,36 @@ func copyTemplate(_ *cobra.Command, args []string) {
 func writeTemplate(l logrus.FieldLogger, dir, filename string, useStdout, overwrite bool) error {
 	c, err := embed.Get(filename)
 	if err != nil {
-		return errors.Wrap(err, "Failed to Read Template")
+		return fmt.Errorf("failed to read template:%w", err)
 	}
 
 	if useStdout {
-		_, err = os.Stdout.WriteString(c)
-		return err
+		_, err = os.Stdout.Write(c)
+
+		return err //nolint:wrapcheck
 	}
+
 	if dir != "" {
 		filename = changeDirectory(dir, "foji", filename)
 	}
 
 	if useStdout || overwrite || !fileExists(filename) {
 		l.WithField("template", filename).Debug("Writing")
-		err = WriteStringToFile(c, filename)
+
+		err = WriteToFile(c, filename)
 		if err != nil {
-			return errors.Wrap(err, "Failed to Write Template")
+			return fmt.Errorf("failed to write template:%w", err)
 		}
 	} else {
 		l.WithField("template", filename).Warn("Skipping, specify `overwrite` to replace")
 	}
+
 	return nil
 }
 
 func fileExists(filename string) bool {
 	fileInfo, err := os.Stat(filename)
+
 	return err == nil && fileInfo.Mode().IsRegular()
 }
 
@@ -64,10 +69,12 @@ func changeDirectory(dir, swapDir, filename string) string {
 	if len(path) == 0 {
 		return filename
 	}
+
 	if path[0] == swapDir {
 		path[0] = dir
 	} else {
 		path = append([]string{dir}, path...)
 	}
+
 	return filepath.Join(path...)
 }

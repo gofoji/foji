@@ -1,6 +1,7 @@
 package sql
 
 import (
+	"bytes"
 	"context"
 	"regexp"
 	"strings"
@@ -10,9 +11,11 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var commentRE = regexp.MustCompile(`^--[-]*`)
-var paramRE = regexp.MustCompile(`^@`)
-var nameRE = regexp.MustCompile(`^.`)
+var (
+	commentRE = regexp.MustCompile(`^--[-]*`)
+	paramRE   = regexp.MustCompile(`^@`)
+	nameRE    = regexp.MustCompile(`^.`)
+)
 
 type Repo interface {
 	DescribeQuery(ctx context.Context, q *Query) error
@@ -89,6 +92,12 @@ func (p Parser) parseDescriptorLine(line string, q *Query) {
 	}
 }
 
+const (
+	positionName   = 0
+	positionResult = 1
+	positionType   = 2
+)
+
 func (p Parser) parseDescriptorHeader(l string, q *Query) {
 	/*
 		Example headers:
@@ -97,16 +106,16 @@ func (p Parser) parseDescriptorHeader(l string, q *Query) {
 		-- .FuncName ResultType QueryType
 	*/
 	ll := strings.Split(strings.TrimSpace(nameRE.ReplaceAllString(l, "")), " ")
-	if len(ll) > 0 {
-		q.Name = ll[0]
+	if len(ll) > positionName {
+		q.Name = ll[positionName]
 	}
 
-	if len(ll) > 1 {
-		q.Result.Type = ll[1]
+	if len(ll) > positionResult {
+		q.Result.Type = ll[positionResult]
 	}
 
-	if len(ll) > 2 {
-		q.Type = ll[2]
+	if len(ll) > positionType {
+		q.Type = ll[positionType]
 	}
 
 	p.logger.WithField("name", q.Name).Debug("Query Info")
@@ -137,7 +146,7 @@ func (p Parser) parseDescriptorParam(l string, f *Query) {
 }
 
 func Parse(ctx context.Context, logger logrus.FieldLogger, repo Repo, inGroups []input.FileGroup) (FileGroups, error) {
-	var result FileGroups
+	result := make(FileGroups, len(inGroups))
 
 	p := Parser{
 		repo:   repo,
@@ -145,56 +154,68 @@ func Parse(ctx context.Context, logger logrus.FieldLogger, repo Repo, inGroups [
 		ctx:    ctx,
 	}
 
-	for _, source := range inGroups {
-		var fileSet FileGroup
-		for _, f := range source.Files {
-			logger.WithField("filename", f.Name).Debug("Parsing")
+	for i, source := range inGroups {
+		fileSet := make(FileGroup, len(source.Files))
 
-			resultFile := File{File: f}
-			statements := strings.Split(f.Content, ";")
-			for _, s := range statements {
-				s := strings.TrimSpace(s)
-				if s == "" {
-					continue
-				}
+		for j, f := range source.Files {
+			logger.WithField("filename", f.Name).Debug("SQL Parsing")
 
-				logger.WithField("sql", s).Trace("Parsing")
-
-				q := p.readDescriptor(s)
-				q.Filename = f.Name
-
-				s, params := parseParams(s)
-				for a, b := range params {
-					name := b
-					p := q.Params.ByName(name)
-
-					if p == nil {
-						p = &Param{
-							Ordinal: len(q.Params),
-							Name:    name,
-							Type:    "string",
-							Query:   &q,
-						}
-						q.Params = append(q.Params, p)
-					}
-
-					p.QueryPosition = a
-				}
-
-				q.SQL = s
-
-				err := p.repo.DescribeQuery(context.Background(), &q)
-				if err != nil {
-					return nil, errors.Wrap(err, "DescribeQuery")
-				}
-
-				resultFile.Queries = append(resultFile.Queries, q)
+			resultFile, err := parseFile(f, logger, p)
+			if err != nil {
+				return nil, err
 			}
-			fileSet = append(fileSet, resultFile)
+
+			fileSet[j] = resultFile
 		}
 
-		result = append(result, fileSet)
+		result[i] = fileSet
 	}
 
 	return result, nil
+}
+
+func parseFile(f input.File, logger logrus.FieldLogger, p Parser) (File, error) {
+	resultFile := File{File: f}
+
+	statements := bytes.Split(f.Content, []byte(";"))
+	for _, stmt := range statements {
+		s := strings.TrimSpace(string(stmt))
+		if s == "" {
+			continue
+		}
+
+		logger.WithField("sql", s).Trace("Parsing")
+
+		q := p.readDescriptor(s)
+		q.Filename = f.Name
+
+		s, params := parseParams(s)
+		for a, b := range params {
+			name := b
+			p := q.Params.ByName(name)
+
+			if p == nil {
+				p = &Param{
+					Ordinal: len(q.Params),
+					Name:    name,
+					Type:    "string",
+					Query:   &q,
+				}
+				q.Params = append(q.Params, p)
+			}
+
+			p.QueryPosition = a
+		}
+
+		q.SQL = s
+
+		err := p.repo.DescribeQuery(context.Background(), &q)
+		if err != nil {
+			return resultFile, errors.Wrap(err, "DescribeQuery")
+		}
+
+		resultFile.Queries = append(resultFile.Queries, q)
+	}
+
+	return resultFile, nil
 }

@@ -5,9 +5,11 @@ import (
 	"regexp"
 )
 
-var paramSearch = regexp.MustCompile(`@([[:alpha:]_][[:alnum:]_]+)(?:[\s)]|$)`)
-var paramReplace = `(@%s)([\s)]|$)`
-var paramFormat = `$$%d`
+var (
+	paramSearch  = regexp.MustCompile(`@([[:alpha:]_][[:alnum:]_]+)(?:[\s)]|$)`)
+	paramReplace = `(@%s)([\s)]|$)`
+	paramFormat  = `$$%d`
+)
 
 func sliceUniqMap(s [][]string, index int) []string {
 	seen := make(map[string]struct{}, len(s))

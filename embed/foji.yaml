@@ -93,7 +93,6 @@ processes:
       '{{lower .Schema.Name}}/enum/{{lower .Enum.Name}}.go': foji/pgx/enum.go.tpl
   openAPIStub:
     format: openapi
-    resources: [ api ]
     DbAll:
       '!swagger.yaml': foji/openapi/stub.yaml.tpl
   openAPI:

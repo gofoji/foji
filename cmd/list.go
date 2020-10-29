@@ -22,5 +22,6 @@ func list(_ *cobra.Command, args []string) {
 	if err != nil {
 		l.WithError(err).Fatal("Failed to load config")
 	}
+
 	fmt.Printf("Available Processes: %v\n", c.Processes.Keys())
 }

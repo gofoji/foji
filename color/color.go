@@ -1,7 +1,6 @@
 package color
 
 //go:generate stringify Parameter
-//--go:generate stringer -type=Parameter
 
 import (
 	"fmt"
@@ -15,7 +14,7 @@ type Parameter uint8
 
 const Escape = "\x1b"
 
-// Base params
+// Base params.
 const (
 	Reset Parameter = iota
 	Bold
@@ -30,7 +29,7 @@ const (
 	PrimaryFont
 )
 
-// Foreground
+// Foreground.
 const (
 	FgBlack Parameter = iota + 30
 	FgRed
@@ -42,7 +41,7 @@ const (
 	FgWhite
 )
 
-// Foreground Bright
+// Foreground Bright.
 const (
 	FgBBlack Parameter = iota + 90
 	FgBRed
@@ -54,7 +53,7 @@ const (
 	FgBWhite
 )
 
-// Background
+// Background.
 const (
 	BgBlack Parameter = iota + 40
 	BgRed
@@ -66,7 +65,7 @@ const (
 	BgWhite
 )
 
-// Background Bright
+// Background Bright.
 const (
 	BgBBlack Parameter = iota + 100
 	BgBRed
@@ -95,12 +94,15 @@ func ByNames(name ...string) string {
 	if len(name) == 0 {
 		return ""
 	}
+
 	if len(name) == 1 {
 		return ByName(name[0])
 	}
-	var params []Parameter
-	for _, n := range name {
-		params = append(params, NewParameter(n))
+
+	params := make([]Parameter, len(name))
+
+	for i, n := range name {
+		params[i] = NewParameter(n)
 	}
 
 	return color(params...)

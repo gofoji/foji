@@ -8,5 +8,6 @@ run:
   sort-results: true
 linters:
   enable-all: true
-#  disable:
-#    - gochecknoglobals
+  disable:
+    - exhaustivestruct
+    - gochecknoglobals
