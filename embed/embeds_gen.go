@@ -192,7 +192,7 @@ func GetString(filename string) (string, error) {
 {{- range .Files }}
 
 var {{ case (goToken .Name) }}Bytes = []byte({{ case (goToken .Name) }})
-const {{ case (goToken .Name) }} = ` + "`" + `{{ backQuote .Content }}` + "`" + `
+const {{ case (goToken .Name) }} = ` + "`" + `{{ backQuote (toString .Content) }}` + "`" + `
 {{- end -}}
 {{end -}}`
 
@@ -204,9 +204,9 @@ package enum
 
 import (
 	"database/sql/driver"
+	"fmt"
 
 	"{{.Params.Package}}"
-	"github.com/pkg/errors"
 )
 
 {{- $type := case .Enum.Name }}
@@ -258,7 +258,7 @@ func Parse{{$type}}(s string) ({{$type}}, error) {
 		return {{ case . }}{{ $type }}, nil
 {{- end }}
 	default:
-		return Unknown{{$type}}, errors.New("invalid {{ $type }}")
+		return Unknown{{$type}}, fmt.Errorf("invalid {{ $type }}")
 	}
 }
 
