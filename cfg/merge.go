@@ -13,10 +13,6 @@ func (c Config) Merge(from Config) Config {
 
 // ApplyFormat merges linked format into each process config.
 func (pp Processes) ApplyFormat(formats Processes) Processes {
-	if pp == nil {
-		return pp
-	}
-
 	for key, p := range pp {
 		f, ok := formats[p.Format]
 		if ok {

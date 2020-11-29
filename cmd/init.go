@@ -61,7 +61,7 @@ func WriteToFile(source []byte, file string) error {
 	}
 
 	_, err = f.Write(source)
-	if closeErr := f.Close(); err == nil {
+	if closeErr := f.Close(); err != nil {
 		return fmt.Errorf("error closing output file:%w", closeErr)
 	}
 

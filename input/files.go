@@ -2,6 +2,7 @@ package input
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -9,7 +10,6 @@ import (
 
 	"github.com/gofoji/foji/cfg"
 	"github.com/gofoji/foji/stringlist"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -45,7 +45,7 @@ func Parse(_ context.Context, logger logrus.FieldLogger, input cfg.FileInput) (F
 
 		files, err := filepath.Glob(glob)
 		if err != nil {
-			return result, errors.Wrapf(err, "error processing glob: %s", glob)
+			return result, fmt.Errorf("error processing glob: %s: %w", glob, err)
 		}
 
 		for _, filename := range files {
@@ -62,7 +62,7 @@ func Parse(_ context.Context, logger logrus.FieldLogger, input cfg.FileInput) (F
 
 			fileInfo, err := os.Stat(filename)
 			if err != nil {
-				return result, errors.Wrapf(err, "error reading file: %s", filename)
+				return result, fmt.Errorf("error reading file: %s: %w", filename, err)
 			}
 
 			if fileInfo.IsDir() {
@@ -73,7 +73,7 @@ func Parse(_ context.Context, logger logrus.FieldLogger, input cfg.FileInput) (F
 
 			b, err := ioutil.ReadFile(filename)
 			if err != nil {
-				return result, errors.Wrapf(err, "error reading file: %s", filename)
+				return result, fmt.Errorf("error reading file: %s: %w", filename, err)
 			}
 
 			file := File{

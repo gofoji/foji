@@ -2,6 +2,7 @@ package cfg
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/gofoji/foji/stringlist"
 )
@@ -87,6 +88,8 @@ func (pp Processes) Keys() stringlist.Strings {
 		ss[i] = x
 		i++
 	}
+
+	sort.Strings(ss)
 
 	return ss
 }

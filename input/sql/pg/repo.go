@@ -2,11 +2,12 @@ package pg
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/gofoji/foji/input/sql"
 	"github.com/jackc/pgconn"
+	"github.com/jackc/pgproto3/v2"
 	"github.com/jackc/pgx/v4"
-	"github.com/pkg/errors"
 )
 
 // DB is the common interface for database operations.
@@ -37,7 +38,7 @@ func (r *Repo) GetTypeNameByID(ctx context.Context, id uint32) (string, error) {
 
 	err := r.db.QueryRow(ctx, qry, id).Scan(&result)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("scan: %w", err)
 	}
 
 	r.typeCache[id] = result
@@ -59,13 +60,13 @@ WHERE c.oid = $1`
 func (r *Repo) DescribeQuery(ctx context.Context, q *sql.Query) error {
 	sd, err := r.db.Prepare(ctx, q.Name, q.SQL)
 	if err != nil {
-		return err
+		return fmt.Errorf("prepare: %w", err)
 	}
 
 	for i, oid := range sd.ParamOIDs {
 		t, err := r.GetTypeNameByID(ctx, oid)
 		if err != nil {
-			return errors.Wrapf(err, "unable to locate data type: %d", oid)
+			return fmt.Errorf("unable to locate data type: %d: %w", oid, err)
 		}
 
 		q.Params[i].Type = t
@@ -79,34 +80,17 @@ func (r *Repo) DescribeQuery(ctx context.Context, q *sql.Query) error {
 	)
 
 	for i, f := range sd.Fields {
-		t, err := r.GetTypeNameByID(ctx, f.DataTypeOID)
+		p, err := r.describeParam(ctx, q, f, fields, i)
 		if err != nil {
-			return errors.Wrapf(err, "unable to locate data type: %d", f.DataTypeOID)
+			return err
 		}
 
-		name := string(f.Name)
-		if fields != nil && fields.ByName(name) != nil {
-			schema, tableName, err := r.GetTableNameByID(ctx, f.TableOID)
-			if err != nil {
-				return errors.Wrapf(err, "unable to locate data type: %d", f.DataTypeOID)
-			}
-			name = tableName + "_" + name
-			if fields.ByName(name) != nil {
-				name = schema + "_" + name
-			}
-		}
-		p := sql.Param{
-			Ordinal:       i,
-			QueryPosition: i,
-			Name:          name,
-			Type:          t,
-			TypeID:        f.DataTypeOID,
-			Query:         q,
-		}
 		fields = append(fields, &p)
+
 		if table != 0 && table != f.TableOID {
 			q.Result.IsSingleTable = false
 		}
+
 		table = f.TableOID
 	}
 
@@ -115,9 +99,41 @@ func (r *Repo) DescribeQuery(ctx context.Context, q *sql.Query) error {
 	if q.Result.IsSingleTable && table != 0 {
 		q.Result.Schema, q.Result.Table, err = r.GetTableNameByID(ctx, table)
 		if err != nil {
-			return errors.Wrap(err, "unable to locate result table")
+			return fmt.Errorf("unable to locate result table: %w", err)
 		}
 	}
 
 	return nil
+}
+
+func (r *Repo) describeParam(ctx context.Context, q *sql.Query,
+	f pgproto3.FieldDescription, fields sql.Params, i int) (sql.Param, error) {
+	t, err := r.GetTypeNameByID(ctx, f.DataTypeOID)
+	if err != nil {
+		return sql.Param{}, fmt.Errorf("unable to locate data type: %d: %w", f.DataTypeOID, err)
+	}
+
+	name := string(f.Name)
+	if fields != nil && fields.ByName(name) != nil {
+		schema, tableName, err := r.GetTableNameByID(ctx, f.TableOID)
+		if err != nil {
+			return sql.Param{}, fmt.Errorf("unable to locate data type: %d: %w", f.DataTypeOID, err)
+		}
+
+		name = tableName + "_" + name
+		if fields.ByName(name) != nil {
+			name = schema + "_" + name
+		}
+	}
+
+	p := sql.Param{
+		Ordinal:       i,
+		QueryPosition: i,
+		Name:          name,
+		Type:          t,
+		TypeID:        f.DataTypeOID,
+		Query:         q,
+	}
+
+	return p, nil
 }

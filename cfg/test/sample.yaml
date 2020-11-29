@@ -1,0 +1,40 @@
+formats:
+  go:
+    case: none
+    post:
+      - ["none"]
+    maps:
+      type:
+        bool: NOTBOOL
+  test:
+    case: pascal
+files:
+  api:
+    files:
+      - "TEST.yaml"
+processes:
+  embed:
+    format: test
+    files:
+      files:
+        - "TESTEMBED"
+    EmbedAll:
+      -: ignore
+  openAPIDocs:
+    format: go
+    resources: [ api ]
+    params:
+      IntegerTest: 123
+      FloatTest: 1.1
+      Complex:
+        foo: bar
+        bar: foo
+      Package: doc
+      RedocOptions: hide-download-button=true hide-loading=true
+  dbList:
+    DbAll:
+      stdout: foji/dbList.console.tpl
+  groupTest:
+    processes: [ embed, openAPIDocs ]
+  badGroupTest:
+    processes: [ embed, foo ]

@@ -3,11 +3,11 @@ package sql
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"regexp"
 	"strings"
 
 	"github.com/gofoji/foji/input"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -211,7 +211,7 @@ func parseFile(f input.File, logger logrus.FieldLogger, p Parser) (File, error) 
 
 		err := p.repo.DescribeQuery(context.Background(), &q)
 		if err != nil {
-			return resultFile, errors.Wrap(err, "DescribeQuery")
+			return resultFile, fmt.Errorf("DescribeQuery: %w", err)
 		}
 
 		resultFile.Queries = append(resultFile.Queries, q)
