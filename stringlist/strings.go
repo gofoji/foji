@@ -9,12 +9,13 @@ import (
 	"github.com/codemodus/kace"
 )
 
-type StringMap map[string]string
-type Strings []string
-type Strings2D []Strings
-type StringMapper = func(string) string
-type StringsMapper = func(Strings) Strings
-type FilterFunc = func(string) bool
+type (
+	Strings       []string
+	Strings2D     []Strings
+	StringMapper  = func(string) string
+	StringsMapper = func(Strings) Strings
+	FilterFunc    = func(string) bool
+)
 
 // Sprintf calls fmt.Sprintf(format, str) for every string in this value and
 // returns the results as a new Strings.
@@ -27,28 +28,7 @@ func (s Strings) Sprintf(format string) Strings {
 	return ret
 }
 
-func Mapper(f StringMapper) StringsMapper {
-	return func(ss Strings) Strings {
-		ret := make(Strings, len(ss))
-		for x := range ss {
-			ret[x] = f(ss[x])
-		}
-
-		return ret
-	}
-}
-
-func MatchFilters(filters Strings, s string) bool {
-	for _, f := range filters {
-		match, _ := regexp.MatchString(f, s)
-		if match {
-			return true
-		}
-	}
-
-	return false
-}
-
+// Filter applies the given filter function fn and returns a copy of the list for each string that returned true.
 func (s Strings) Filter(fn FilterFunc) Strings {
 	ret := make(Strings, 0, len(s))
 
@@ -61,6 +41,7 @@ func (s Strings) Filter(fn FilterFunc) Strings {
 	return ret
 }
 
+// Filters returns the list of strings that does not match any of the regex filters.
 func (s Strings) Filters(filters Strings) Strings {
 	ret := make(Strings, 0, len(s))
 
@@ -73,7 +54,7 @@ func (s Strings) Filters(filters Strings) Strings {
 	return ret
 }
 
-// AnyMatches treats each string as a regexp and returns true if any match the input string
+// AnyMatches treats each string as a regexp and returns true if any match the input string.
 func (s Strings) AnyMatches(in string) bool {
 	for _, f := range s {
 		match, _ := regexp.MatchString(f, in)
@@ -93,19 +74,19 @@ func (s Strings) Join(sep string) string {
 
 // Camel applies kace.Camel to each string.
 func (s Strings) Camel() Strings {
-	ret := make(Strings, 0, len(s))
-	for x := range s {
-		ret = append(ret, kace.Camel(s[x]))
-	}
-
-	return ret
+	return s.Map(kace.Camel)
 }
 
 // Pascal applies kace.Pascal to each string.
 func (s Strings) Pascal() Strings {
+	return s.Map(kace.Pascal)
+}
+
+// Map apples the transform function f to each element and returns the mapped list.
+func (s Strings) Map(f StringMapper) Strings {
 	ret := make(Strings, 0, len(s))
 	for x := range s {
-		ret = append(ret, kace.Pascal(s[x]))
+		ret = append(ret, f(s[x]))
 	}
 
 	return ret
@@ -137,19 +118,11 @@ func (s Strings) ContainsAll(v Strings) bool {
 
 	return true
 }
-func contains(list []string, s string) bool {
-	for x := range list {
-		if s == list[x] {
-			return true
-		}
-	}
 
-	return false
-}
-
-// Max returns the length of the longest string
+// Max returns the length of the longest string.
 func (s Strings) Max() int {
 	result := 0
+
 	for _, x := range s {
 		l := len(x)
 		if l > result {
@@ -160,24 +133,11 @@ func (s Strings) Max() int {
 	return result
 }
 
-// Sort returns a copy of the list sorted
+// Sort returns a copy of the list sorted.
 func (s Strings) Sort() Strings {
 	result := make(Strings, len(s))
-	for x := range s {
-		result[x] = s[x]
-	}
+	copy(result, s)
 	sort.Strings(result)
-	return result
-}
 
-func (t StringMap) IsEmpty() bool {
-	return len(t) == 0
-}
-
-func (t StringMap) Values() Strings {
-	result := Strings{}
-	for _, v := range t {
-		result = append(result, v)
-	}
 	return result
 }

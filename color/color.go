@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-// Parameter defines an SGR parameter
+// Parameter defines an SGR parameter.
 // See: https://en.wikipedia.org/wiki/ANSI_escape_code#SGR_parameters
 type Parameter uint8
 

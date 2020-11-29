@@ -15,6 +15,14 @@ import (
 	"github.com/jinzhu/inflection"
 )
 
+type Error string
+
+func (e Error) Error() string {
+	return string(e)
+}
+
+var ErrRuntime = Error("runtime")
+
 var Funcs = map[string]interface{}{
 	// Case
 	"camel":      kace.Camel,
@@ -72,11 +80,12 @@ var Funcs = map[string]interface{}{
 	"yellow":     color.Yellow,
 }
 
-// Token converts the in string into a valid Go Token by converting "/" an "."
+// Token converts the in string into a valid Go Token by converting "/" an ".".
 func GoToken(in string) string {
 	s := strings.ReplaceAll(in, "/", "_SLASH_")
 	s = strings.ReplaceAll(s, ".", "_DOT_")
 	s = strings.ReplaceAll(s, "$", "_DOLLAR_")
+
 	return s
 }
 
@@ -97,15 +106,15 @@ func Case(name string) interface{} {
 }
 
 func Cases(name string) interface{} {
-	f := Funcs[name]
-	switch m := f.(type) {
-	case stringlist.StringMapper:
+	m, ok := Funcs[name].(stringlist.StringMapper)
+	if ok {
 		return stringlist.Mapper(m)
 	}
+
 	return nil
 }
 
-const PluralSuffix = "Arr"
+const PluralSuffix = "List"
 
 // PluralUnique guarantees a unique name for a Plural of the input.
 func PluralUnique(s string) string {
@@ -113,10 +122,11 @@ func PluralUnique(s string) string {
 	if result == s {
 		return s + PluralSuffix
 	}
+
 	return result
 }
 
-// Unchanged is used as a Case function that does not alter the string
+// Unchanged is used as a Case function that does not alter the string.
 func Unchanged(s string) string {
 	return s
 }
@@ -130,6 +140,7 @@ func Pad(s string, size int) string {
 // []interface{}.
 func ToSlice(vv ...interface{}) interface{} {
 	ss := make(stringlist.Strings, len(vv))
+
 	for x := range vv {
 		if s, ok := vv[x].(string); ok {
 			ss[x] = s
@@ -138,24 +149,29 @@ func ToSlice(vv ...interface{}) interface{} {
 			return vv
 		}
 	}
+
 	return ss
 }
 
 // numbers returns a slice of strings of the numbers start to end (inclusive).
 func Numbers(start, end int) stringlist.Strings {
 	var ss stringlist.Strings
+
 	for x := start; x <= end; x++ {
 		ss = append(ss, strconv.Itoa(x))
 	}
+
 	return ss
 }
 
 // Sum returns the sum of its arguments.
 func Sum(vv ...int) int {
 	x := 0
+
 	for _, v := range vv {
 		x += v
 	}
+
 	return x
 }
 
@@ -168,6 +184,7 @@ func ReplaceEach(s, new string, olds ...string) string {
 	for _, old := range olds {
 		s = strings.ReplaceAll(s, old, new)
 	}
+
 	return s
 }
 
@@ -183,12 +200,12 @@ func NotEmpty(in string) bool {
 	return len(in) > 0
 }
 
-// IsNil returns true if the input or referenced object is nil
+// IsNil returns true if the input or referenced object is nil.
 func IsNil(i interface{}) bool {
 	return (*[2]uintptr)(unsafe.Pointer(&i))[1] == 0
 }
 
-// IsNotNil returns false if the input or referenced object is nil
+// IsNotNil returns false if the input or referenced object is nil.
 func IsNotNil(i interface{}) bool {
 	return !IsNil(i)
 }
@@ -201,8 +218,10 @@ func In(needle interface{}, haystack ...interface{}) (bool, error) {
 	tp := reflect.TypeOf(haystack).Kind()
 	switch tp {
 	case reflect.Slice, reflect.Array:
-		l2 := reflect.ValueOf(haystack)
 		var item interface{}
+
+		l2 := reflect.ValueOf(haystack)
+
 		l := l2.Len()
 		for i := 0; i < l; i++ {
 			item = l2.Index(i).Interface()
@@ -213,7 +232,7 @@ func In(needle interface{}, haystack ...interface{}) (bool, error) {
 
 		return false, nil
 	default:
-		return false, fmt.Errorf("Cannot find has on type %s", tp)
+		return false, fmt.Errorf("%w: must be iterable type, found type %s", ErrRuntime, tp)
 	}
 }
 
@@ -222,11 +241,12 @@ const (
 	MaxWidth      = 80
 )
 
-// GoDoc wraps the string to a MaxWidth and prepends with CommentPrefix
+// GoDoc wraps the string to a MaxWidth and prepends with CommentPrefix.
 func GoDoc(s string) string {
 	ss := strings.Split(s, "\n")
 	out := CommentPrefix
 	length := 0
+
 	for lineNumber, s := range ss {
 		ll := strings.Split(s, " ")
 		for _, l := range ll {
@@ -234,12 +254,15 @@ func GoDoc(s string) string {
 				out += "\n" + CommentPrefix
 				length = 0
 			}
+
 			length += len(l)
 			out += " " + l
 		}
-		if lineNumber > 0{
+
+		if lineNumber > 0 {
 			out += "\n" + CommentPrefix
 		}
 	}
+
 	return out
 }
