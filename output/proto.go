@@ -19,21 +19,25 @@ func HasProtoOutput(o cfg.Output) bool {
 	return hasAnyOutput(o, ProtoAll, ProtoFileGroup, ProtoFile)
 }
 
-func Proto(p cfg.Process, fn cfg.FileHandler, logger logrus.FieldLogger, groups proto.PBFileGroups, simulate bool) error {
+func Proto(p cfg.Process, fn cfg.FileHandler, l logrus.FieldLogger, groups proto.PBFileGroups, simulate bool) error {
 	base := ProtoContext{
-		Context:    Context{Process: p, Logger: logger},
+		Context:    Context{Process: p, Logger: l},
 		FileGroups: groups,
 	}
-	err := invokeProcess(p.Output[ProtoAll], p.RootDir, fn, logger, &base, simulate)
+	runner := NewProcessRunner(p.RootDir, fn, l, simulate)
+
+	err := runner.process(p.Output[ProtoAll], &base)
 	if err != nil {
 		return err
 	}
+
 	for _, ff := range groups {
 		ctx := ProtoFileGroupContext{
 			ProtoContext: base,
 			FileGroup:    ff,
 		}
-		err := invokeProcess(p.Output[ProtoFileGroup], p.RootDir, fn, logger, &ctx, simulate)
+
+		err := runner.process(p.Output[ProtoFileGroup], &ctx)
 		if err != nil {
 			return err
 		}
@@ -43,7 +47,8 @@ func Proto(p cfg.Process, fn cfg.FileHandler, logger logrus.FieldLogger, groups 
 				ProtoFileGroupContext: ctx,
 				PBFile:                f,
 			}
-			err := invokeProcess(p.Output[ProtoFile], p.RootDir, fn, logger, &ctx, simulate)
+
+			err := runner.process(p.Output[ProtoFile], &ctx)
 			if err != nil {
 				return err
 			}
@@ -105,10 +110,10 @@ func (q ProtoContext) HasMessage(msg *proto.Message) bool {
 }
 
 func (q ProtoContext) GetType(f proto.Field, pkg string) string {
-
 	pp := strings.Split(f.Path(), ".")
 	for i := range pp {
 		p := strings.Join(pp[i:], ".")
+
 		t, ok := q.Maps.Type["."+p]
 		if ok {
 			return stripPackage(t, pkg)

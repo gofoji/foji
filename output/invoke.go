@@ -1,15 +1,17 @@
 package output
 
 import (
+	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
-	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/gofoji/foji/cfg"
+	"github.com/gofoji/foji/embed"
 	"github.com/gofoji/foji/runtime"
 	"github.com/gofoji/foji/stringlist"
-	"github.com/gofoji/foji/tpl"
+	"github.com/gofoji/plates"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -27,103 +29,161 @@ const (
 )
 
 type FuncMapper interface {
-	Funcs() template.FuncMap
+	Funcs() plates.FuncMap
 }
 
 type Initializer interface {
 	Init() error
 }
 
-func fileExists(filename string) bool {
-	fileInfo, err := os.Stat(filename)
-	return err == nil && fileInfo.Mode().IsRegular()
-}
-
 const PermPrefix = "!"
 
-func invokeProcess(tm stringlist.StringMap, dir string, fn cfg.FileHandler, logger logrus.FieldLogger, data interface{}, simulate bool) error {
+func (p ProcessRunner) process(tm stringlist.StringMap, data interface{}) error {
+	err := doInit(data)
+	if err != nil {
+		return err
+	}
+
+	f, ok := data.(FuncMapper)
+	if ok {
+		p.AddFuncs(f.Funcs())
+	}
+
 	for targetFile, templateFile := range tm {
-		err := invokeTemplate(logger, dir, targetFile, templateFile, data, fn, simulate)
+		err := p.template(targetFile, templateFile, data)
 		if err != nil {
 			if !errors.Is(err, ErrPermExists) {
 				return err
 			}
-			logger.WithField("target", targetFile).WithField("template", templateFile).Warn("skipped, output file exists")
+
+			p.l.WithField("target", targetFile).WithField("template", templateFile).Warn("skipped, output file exists")
 		}
 	}
+
 	return nil
 }
 
-func invokeTemplate(logger logrus.FieldLogger, dir, targetFile, templateFile string, data interface{}, fn cfg.FileHandler, simulate bool) error {
-	logger.WithField("target", targetFile).WithField("template", templateFile).Info("executing template")
-
+func doInit(data interface{}) error {
 	init, ok := data.(Initializer)
 	if ok {
 		err := init.Init()
 		if err != nil {
-			return err
+			return fmt.Errorf("error initializing context: %w", err)
 		}
 	}
 
-	permFile := false
-	if strings.HasPrefix(targetFile, PermPrefix) {
-		targetFile = targetFile[1:]
-		permFile = true
+	return nil
+}
+
+func checkPermanentFlag(outputFile string) (bool, string) {
+	if strings.HasPrefix(outputFile, PermPrefix) {
+		return true, outputFile[1:]
 	}
 
+	return false, outputFile
+}
+
+func templateEngine() *plates.Wrapper {
+	return plates.New("foji").
+		AddFuncs(runtime.Funcs, sprig.GenericFuncMap()).
+		DefaultFunc(plates.TextParser)
+}
+
+type ProcessRunner struct {
+	l        logrus.FieldLogger
+	dir      string
+	fn       cfg.FileHandler
+	simulate bool
+	*plates.Wrapper
+}
+
+func NewProcessRunner(dir string, fn cfg.FileHandler, l logrus.FieldLogger, simulate bool) ProcessRunner {
 	if dir != "" {
 		if !strings.HasSuffix(dir, string(os.PathSeparator)) {
-			dir = dir + string(os.PathSeparator)
+			dir += string(os.PathSeparator)
 		}
-		targetFile = dir + targetFile
 	}
 
-	targetFile, err := tpl.New("outputMapper").Funcs(runtime.Funcs).Funcs(sprig.TxtFuncMap()).From(targetFile).To(data)
+	p := ProcessRunner{
+		Wrapper:  templateEngine(),
+		l:        l,
+		simulate: simulate,
+		fn:       fn,
+		dir:      dir,
+	}
+	p.FileReaderFunc(p.loadLocalOrEmbed)
+
+	return p
+}
+
+func (p ProcessRunner) template(outputFile, templateFile string, data interface{}) error {
+	p.l.WithField("target", outputFile).WithField("template", templateFile).Info("executing template")
+
+	permFile, outputFile := checkPermanentFlag(outputFile)
+
+	outputFile, err := p.From(outputFile).To(data)
 	if err != nil {
-		return errors.Wrap(err, "mapping output filename")
+		return fmt.Errorf("mapping output filename:%w", err)
 	}
 
-	if permFile && fileExists(targetFile) {
+	outputFile = p.dir + outputFile
+	if permFile && fileExists(outputFile) {
 		return ErrPermExists
 	}
 
-	if simulate {
-		logger.WithField("target", targetFile).WithField("template", templateFile).Info("simulated")
+	if p.simulate {
+		p.l.WithField("target", outputFile).WithField("template", templateFile).Info("simulated")
+
 		return nil
 	}
 
-	t := tpl.New(templateFile).Funcs(runtime.Funcs)
+	// Provides the current template file to the context
+	p.AddFuncs(map[string]interface{}{"templateFile": func() string { return templateFile }})
 
-	f, ok := data.(FuncMapper)
-	if ok {
-		t.Funcs(f.Funcs())
-	}
-	tFunc := map[string]interface{}{"templateFile": func() string { return templateFile }}
-	t.Funcs(tFunc)
-	t.Funcs(sprig.TxtFuncMap())
-	err = t.FromFile(templateFile).ToFile(targetFile, data)
+	err = p.FromFile(templateFile).ToFile(outputFile, data)
 	if err != nil {
 		if errors.Is(err, ErrNotNeeded) {
-			logger.WithField("target", targetFile).WithField("template", templateFile).Info("skipped, " + err.Error())
+			p.l.WithField("target", outputFile).WithField("template", templateFile).Info("skipped, " + err.Error())
+
 			return nil
 		}
 
 		if errors.Is(err, ErrMissingRequirement) {
-			return err
+			return err //nolint:wrapcheck
 		}
 
-		return errors.Wrap(err, "executing template")
+		return fmt.Errorf("executing template: %w", err)
 	}
 
-	logger.WithField("target", targetFile).WithField("template", templateFile).Debug("wrote output")
+	p.l.WithField("target", outputFile).WithField("template", templateFile).Debug("wrote output")
 
-	if fn != nil {
-		err = fn(targetFile)
+	return p.postProcess(outputFile)
+}
+
+func (p ProcessRunner) postProcess(outputFile string) error {
+	if p.fn != nil {
+		err := p.fn(outputFile)
 		if err != nil {
-			return errors.Wrap(err, "error processing file")
+			return fmt.Errorf("post processing file: %s: %w", outputFile, err)
 		}
 	}
+
 	return nil
+}
+
+func (p ProcessRunner) loadLocalOrEmbed(filename string) ([]byte, error) {
+	_, err := os.Stat(filename)
+	if err != nil {
+		if os.IsNotExist(err) {
+			p.l.WithField("filename", filename).Debug("loading from embed")
+
+			return embed.Get(filename)
+		}
+
+		return nil, fmt.Errorf("error accessing file: %s: %w", filename, err)
+	}
+
+	return ioutil.ReadFile(filename)
 }
 
 func hasAnyOutput(o cfg.Output, outputs ...string) bool {
@@ -132,5 +192,12 @@ func hasAnyOutput(o cfg.Output, outputs ...string) bool {
 			return true
 		}
 	}
+
 	return false
+}
+
+func fileExists(filename string) bool {
+	fileInfo, err := os.Stat(filename)
+
+	return err == nil && fileInfo.Mode().IsRegular()
 }

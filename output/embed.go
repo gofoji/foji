@@ -16,21 +16,26 @@ func HasEmbedOutput(o cfg.Output) bool {
 	return hasAnyOutput(o, EmbedAll, EmbedFileGroup, EmbedFile)
 }
 
-func Embed(p cfg.Process, fn cfg.FileHandler, logger logrus.FieldLogger, groups []input.FileGroup, simulate bool) error {
+func Embed(p cfg.Process, fn cfg.FileHandler, l logrus.FieldLogger, groups []input.FileGroup, simulate bool) error {
 	base := EmbedContext{
-		Context: Context{Process:p, Logger: logger},
-		FileGroups:     groups,
+		Context:    Context{Process: p, Logger: l},
+		FileGroups: groups,
 	}
-	err := invokeProcess(p.Output[EmbedAll], p.RootDir, fn, logger, &base, simulate)
+
+	runner := NewProcessRunner(p.RootDir, fn, l, simulate)
+
+	err := runner.process(p.Output[EmbedAll], &base)
 	if err != nil {
 		return err
 	}
+
 	for _, ff := range groups {
 		ctx := EmbedFileGroupContext{
 			EmbedContext: base,
 			FileGroup:    ff,
 		}
-		err := invokeProcess(p.Output[EmbedFileGroup], p.RootDir, fn, logger, &ctx, simulate)
+
+		err := runner.process(p.Output[EmbedFileGroup], &ctx)
 		if err != nil {
 			return err
 		}
@@ -40,7 +45,8 @@ func Embed(p cfg.Process, fn cfg.FileHandler, logger logrus.FieldLogger, groups 
 				EmbedFileGroupContext: ctx,
 				File:                  f,
 			}
-			err := invokeProcess(p.Output[EmbedFile], p.RootDir, fn, logger, &ctx, simulate)
+
+			err := runner.process(p.Output[EmbedFile], &ctx)
 			if err != nil {
 				return err
 			}

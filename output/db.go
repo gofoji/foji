@@ -12,15 +12,15 @@ import (
 )
 
 const (
-	DbAll    = "DbAll"
-	DbSchema = "DbSchema"
-	DbTable  = "DbTable"
-	DbEnums  = "DbEnums"
-	DbEnum   = "DbEnum"
+	DBAll    = "DbAll"
+	DBSchema = "DbSchema"
+	DBTable  = "DbTable"
+	DBEnums  = "DbEnums"
+	DBEnum   = "DbEnum"
 )
 
 func HasDBOutput(o cfg.Output) bool {
-	return hasAnyOutput(o, DbAll, DbSchema, DbTable, DbEnum, DbEnums)
+	return hasAnyOutput(o, DBAll, DBSchema, DBTable, DBEnum, DBEnums)
 }
 
 func DB(p cfg.Process, fn cfg.FileHandler, logger logrus.FieldLogger, schemas db.DB, simulate bool) error {
@@ -29,7 +29,9 @@ func DB(p cfg.Process, fn cfg.FileHandler, logger logrus.FieldLogger, schemas db
 		DB:      schemas,
 	}
 
-	err := invokeProcess(p.Output[DbAll], p.RootDir, fn, logger, &ctx, simulate)
+	runner := NewProcessRunner(p.RootDir, fn, logger, simulate)
+
+	err := runner.process(p.Output[DBAll], &ctx)
 	if err != nil {
 		return err
 	}
@@ -39,17 +41,19 @@ func DB(p cfg.Process, fn cfg.FileHandler, logger logrus.FieldLogger, schemas db
 			Schema:         *s,
 			SchemasContext: ctx,
 		}
-		err := invokeProcess(p.Output[DbSchema], p.RootDir, fn, logger, &schemaCtx, simulate)
+
+		err := runner.process(p.Output[DBSchema], &schemaCtx)
 		if err != nil {
 			return err
 		}
-		for _, t := range s.Tables {
 
+		for _, t := range s.Tables {
 			tableCtx := TableContext{
 				Table:          *t,
 				SchemasContext: ctx,
 			}
-			err := invokeProcess(p.Output[DbTable], p.RootDir, fn, logger, &tableCtx, simulate)
+
+			err := runner.process(p.Output[DBTable], &tableCtx)
 			if err != nil {
 				return err
 			}
@@ -59,7 +63,8 @@ func DB(p cfg.Process, fn cfg.FileHandler, logger logrus.FieldLogger, schemas db
 			Enums:          s.Enums,
 			SchemasContext: ctx,
 		}
-		err = invokeProcess(p.Output[DbEnums], p.RootDir, fn, logger, &enumsCtx, simulate)
+
+		err = runner.process(p.Output[DBEnums], &enumsCtx)
 		if err != nil {
 			return err
 		}
@@ -69,12 +74,12 @@ func DB(p cfg.Process, fn cfg.FileHandler, logger logrus.FieldLogger, schemas db
 				Enum:           *e,
 				SchemasContext: ctx,
 			}
-			err := invokeProcess(p.Output[DbEnum], p.RootDir, fn, logger, &enumCtx, simulate)
+
+			err := runner.process(p.Output[DBEnum], &enumCtx)
 			if err != nil {
 				return err
 			}
 		}
-
 	}
 
 	return nil
@@ -136,6 +141,7 @@ func stripPackage(typ, pkg string) string {
 	if pkg != "" && strings.HasPrefix(typ, pkg) {
 		return typ[len(pkg)+1:]
 	}
+
 	return typ
 }
 
@@ -143,6 +149,7 @@ func (s SchemasContext) GetType(c *db.Column, pkg string) string {
 	pp := strings.Split(c.Path(), ".")
 	for i := range pp {
 		p := strings.Join(pp[i:], ".")
+
 		t, ok := s.Maps.Type["."+p]
 		if ok {
 			return stripPackage(t, pkg)
@@ -155,6 +162,7 @@ func (s SchemasContext) GetType(c *db.Column, pkg string) string {
 			return stripPackage(t, pkg)
 		}
 	}
+
 	t, ok := s.Maps.Type[c.Type]
 	if ok {
 		return stripPackage(t, pkg)
@@ -163,16 +171,19 @@ func (s SchemasContext) GetType(c *db.Column, pkg string) string {
 	return fmt.Sprintf("UNKNOWN:path(%s):type(%s)", c.Path(), c.Type)
 }
 
+const ValidTypeElems = 2
+
 func (s SchemasContext) PropertyFromDB(c *db.Column) *Property {
 	if c == nil {
 		return nil
 	}
 
-	t := s.GetType(c, "")
 	format := ""
+
+	t := s.GetType(c, "")
 	if strings.Contains(t, ",") {
 		tt := strings.Split(t, ",")
-		if len(tt) == 2 {
+		if len(tt) == ValidTypeElems {
 			t = tt[0]
 			format = tt[1]
 		} else {
@@ -192,11 +203,13 @@ func (s SchemasContext) PropertiesFromDB(cc db.Columns) Properties {
 	for _, c := range cc {
 		result = append(result, s.PropertyFromDB(c))
 	}
+
 	return result
 }
 
 func (s SchemasContext) Resources() ResourceMap {
 	result := ResourceMap{}
+
 	for _, schema := range s.DB {
 		for _, table := range schema.Tables {
 			r := Resource{
@@ -208,5 +221,6 @@ func (s SchemasContext) Resources() ResourceMap {
 			result[table.Path()] = r
 		}
 	}
+
 	return result
 }

@@ -20,15 +20,17 @@ func HasOpenAPIOutput(o cfg.Output) bool {
 	return hasAnyOutput(o, OpenAPIFile, OpenAPITag)
 }
 
-func OpenAPI(p cfg.Process, fn cfg.FileHandler, logger logrus.FieldLogger, groups openapi.FileGroups, simulate bool) error {
+func OpenAPI(p cfg.Process, fn cfg.FileHandler, l logrus.FieldLogger, groups openapi.FileGroups, simulate bool) error {
+	runner := NewProcessRunner(p.RootDir, fn, l, simulate)
+
 	for _, ff := range groups {
 		for _, f := range ff {
 			ctx := OpenAPIFileContext{
-				Context: Context{Process: p, Logger: logger},
+				Context: Context{Process: p, Logger: l},
 				File:    f,
 			}
 
-			err := invokeProcess(p.Output[OpenAPIFile], p.RootDir, fn, logger, &ctx, simulate)
+			err := runner.process(p.Output[OpenAPIFile], &ctx)
 			if err != nil {
 				return err
 			}
@@ -49,20 +51,21 @@ func (o *OpenAPIFileContext) WithParams(values ...interface{}) (*OpenAPIFileCont
 	if err != nil {
 		return nil, err
 	}
-	out := *o
 
+	out := *o
 	out.Context = *ctx
+
 	return &out, nil
 }
 
 func (o *OpenAPIFileContext) RefToName(ref string) string {
 	modelPackage := o.PackageName()
 	parts := strings.Split(ref, "/")
+
 	return modelPackage + "." + o.ToCase(parts[len(parts)-1])
 }
 
 func (o *OpenAPIFileContext) GetTypeName(pkg string, s *openapi3.SchemaRef) string {
-	// TODO should we do some form of lookup?
 	return o.CheckPackage(o.RefToName(s.Ref), pkg)
 }
 
@@ -73,10 +76,12 @@ func getExtAsString(in interface{}) string {
 	}
 
 	var s string
+
 	err := json.Unmarshal(bb, &s)
 	if err != nil {
 		return ""
 	}
+
 	return s
 }
 
@@ -101,10 +106,10 @@ func (o *OpenAPIFileContext) GetType(pkg, name string, s *openapi3.SchemaRef) st
 	}
 
 	if s.Value.Type == "object" {
+		// TODO: Nested anonymous structs
 		if s.Ref != "" {
 			return o.GetTypeName(pkg, s)
 		}
-		// TODO: Nested anonymous structs
 	}
 
 	t, ok := o.Maps.Type[name]
@@ -119,10 +124,11 @@ func (o *OpenAPIFileContext) GetType(pkg, name string, s *openapi3.SchemaRef) st
 		}
 	}
 
-	if s.Value.Type == "" { // TODO: Should this be handled with mapping?
+	if s.Value.Type == "" {
 		if s.Ref != "" {
 			return o.CheckPackage(o.RefToName(s.Ref), pkg)
 		}
+
 		return "interface{}"
 	}
 
@@ -163,18 +169,15 @@ func (o *OpenAPIFileContext) HasValidation(s *openapi3.SchemaRef) bool {
 	return false
 }
 
-// IsDefaultEnum helper that checks if an enumerated type is overridden (specified externally)
+// IsDefaultEnum helper that checks if an enumerated type is overridden (specified externally).
 func (o *OpenAPIFileContext) IsDefaultEnum(name string, s *openapi3.SchemaRef) bool {
 	if len(s.Value.Enum) == 0 {
 		return false
 	}
 
 	_, ok := o.Maps.Type[name]
-	if ok {
-		return false
-	}
 
-	return true
+	return !ok
 }
 
 func (o *OpenAPIFileContext) GetOpHappyResponseType(pkg string, op *openapi3.Operation) string {
@@ -223,6 +226,7 @@ func hasAuthorization(security openapi3.SecurityRequirements) bool {
 			}
 		}
 	}
+
 	return false
 }
 
@@ -238,6 +242,7 @@ func (o *OpenAPIFileContext) HasAuthorization() bool {
 			}
 		}
 	}
+
 	return false
 }
 
@@ -246,9 +251,11 @@ func (o *OpenAPIFileContext) IsSimpleAuth(op *openapi3.Operation) bool {
 	if len(s) == 0 {
 		return true
 	}
+
 	authName := ""
+
 	for _, group := range s {
-		for key, _ := range group {
+		for key := range group {
 			if authName == "" {
 				authName = key
 			} else if authName != key {
@@ -299,7 +306,7 @@ func (o *OpenAPIFileContext) HasAnyAuth(op *openapi3.Operation) bool {
 	}
 
 	for _, group := range s {
-		for key, _ := range group {
+		for key := range group {
 			if key != "" {
 				return true
 			}

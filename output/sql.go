@@ -23,23 +23,26 @@ func HasSQLOutput(o cfg.Output) bool {
 	return hasAnyOutput(o, SQLAll, SQLFiles, SQLFile, SQLQuery)
 }
 
-func SQL(p cfg.Process, fn cfg.FileHandler, logger logrus.FieldLogger, fileGroups sql.FileGroups, simulate bool) error {
+func SQL(p cfg.Process, fn cfg.FileHandler, l logrus.FieldLogger, fileGroups sql.FileGroups, simulate bool) error {
 	base := SQLContext{
-		Context:    Context{Process: p, Logger: logger},
+		Context:    Context{Process: p, Logger: l},
 		FileGroups: fileGroups,
 	}
 
-	err := invokeProcess(p.Output[SQLAll], p.RootDir, fn, logger, &base, simulate)
+	runner := NewProcessRunner(p.RootDir, fn, l, simulate)
+
+	err := runner.process(p.Output[SQLAll], &base)
 	if err != nil {
 		return err
 	}
+
 	for _, ff := range fileGroups {
 		ctx := SQLFileGroupContext{
 			SQLContext: base,
 			Files:      ff,
 		}
 
-		err := invokeProcess(p.Output[SQLFiles], p.RootDir, fn, logger, &ctx, simulate)
+		err := runner.process(p.Output[SQLFiles], &ctx)
 		if err != nil {
 			return err
 		}
@@ -49,7 +52,8 @@ func SQL(p cfg.Process, fn cfg.FileHandler, logger logrus.FieldLogger, fileGroup
 				SQLContext: base,
 				File:       f,
 			}
-			err := invokeProcess(p.Output[SQLFile], p.RootDir, fn, logger, &ctx, simulate)
+
+			err := runner.process(p.Output[SQLFile], &ctx)
 			if err != nil {
 				return err
 			}
@@ -59,12 +63,12 @@ func SQL(p cfg.Process, fn cfg.FileHandler, logger logrus.FieldLogger, fileGroup
 					SQLContext: base,
 					Query:      q,
 				}
-				err := invokeProcess(p.Output[SQLQuery], p.RootDir, fn, logger, &ctx, simulate)
+
+				err := runner.process(p.Output[SQLQuery], &ctx)
 				if err != nil {
 					return err
 				}
 			}
-
 		}
 	}
 
@@ -110,6 +114,7 @@ func (q SQLContext) GetType(c *sql.Param, pkg string) string {
 	pp := strings.Split(c.Path(), ".")
 	for i := range pp {
 		p := strings.Join(pp[i:], ".")
+
 		t, ok := q.Maps.Type["."+p]
 		if ok {
 			return stripPackage(t, pkg)
@@ -146,6 +151,7 @@ func (q *SQLContext) Init() error {
 		for _, ff := range set {
 			for _, qry := range ff.Queries {
 				q.CheckPackage(qry.Result.Type, name)
+
 				for _, p := range qry.Params {
 					q.CheckPackage(p.Type, name)
 				}
@@ -171,6 +177,7 @@ func (q *SQLFileGroupContext) Init() error {
 			}
 		}
 	}
+
 	return nil
 }
 

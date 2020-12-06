@@ -11,3 +11,12 @@ linters:
   disable:
     - exhaustivestruct
     - gochecknoglobals
+    - nlreturn
+linters-settings:
+  godox:
+    keywords:
+      - NOTE
+      - HACK
+      - TEMP
+      - FIX
+      - FIXME
