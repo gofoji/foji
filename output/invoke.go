@@ -12,6 +12,7 @@ import (
 	"github.com/gofoji/foji/runtime"
 	"github.com/gofoji/foji/stringlist"
 	"github.com/gofoji/plates"
+	"github.com/gofoji/plates/plush"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -85,6 +86,7 @@ func checkPermanentFlag(outputFile string) (bool, string) {
 
 func templateEngine() *plates.Wrapper {
 	return plates.New("foji").
+		AddMatcherFunc(plates.MatchText, plates.MatchHTML, plush.Match).
 		AddFuncs(runtime.Funcs, sprig.GenericFuncMap()).
 		DefaultFunc(plates.TextParser)
 }

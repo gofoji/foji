@@ -7,7 +7,8 @@ require (
 	github.com/Masterminds/sprig/v3 v3.1.0
 	github.com/codemodus/kace v0.5.1
 	github.com/getkin/kin-openapi v0.32.0
-	github.com/gofoji/plates v0.1.0
+	github.com/gofoji/plates v0.1.1
+	github.com/gofoji/plates/plush v0.0.0-20201206034451-b2bd18b8d451
 	github.com/gofrs/uuid v3.3.0+incompatible // indirect
 	github.com/google/uuid v1.1.2 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
