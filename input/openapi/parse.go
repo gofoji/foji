@@ -14,7 +14,7 @@ type FileGroup []File
 
 type File struct {
 	Input input.File
-	API   *openapi3.Swagger
+	API   *openapi3.T
 }
 
 func Parse(ctx context.Context, logger logrus.FieldLogger, inGroups []input.FileGroup) (FileGroups, error) {
@@ -24,7 +24,7 @@ func Parse(ctx context.Context, logger logrus.FieldLogger, inGroups []input.File
 		var group FileGroup
 		for _, f := range ff.Files {
 			logger.Infof("Parsing swagger from: %s", f.Source)
-			swagger, err := openapi3.NewSwaggerLoader().LoadSwaggerFromData([]byte(f.Content))
+			swagger, err := openapi3.NewLoader().LoadFromData([]byte(f.Content))
 			if err != nil {
 				panic(err)
 			}
