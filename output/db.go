@@ -111,15 +111,6 @@ type EnumContext struct {
 	SchemasContext
 }
 
-func (s *SchemasContext) Parameterize(cc db.Columns, format, pkg string) string {
-	ss := make(stringlist.Strings, len(cc))
-	for x := range cc {
-		ss[x] = fmt.Sprintf(format, kace.Camel(cc[x].Name), s.GetType(cc[x], pkg))
-	}
-
-	return strings.Join(ss, ", ")
-}
-
 type ResourceMap map[string]Resource
 
 type Resource struct {
@@ -137,12 +128,13 @@ type Property struct {
 	Format string
 }
 
-func stripPackage(typ, pkg string) string {
-	if pkg != "" && strings.HasPrefix(typ, pkg) {
-		return typ[len(pkg)+1:]
+func (s *SchemasContext) Parameterize(cc db.Columns, format, pkg string) string {
+	ss := make(stringlist.Strings, len(cc))
+	for x := range cc {
+		ss[x] = fmt.Sprintf(format, kace.Camel(cc[x].Name), s.GetType(cc[x], pkg))
 	}
 
-	return typ
+	return strings.Join(ss, ", ")
 }
 
 func (s SchemasContext) GetType(c *db.Column, pkg string) string {
@@ -152,26 +144,29 @@ func (s SchemasContext) GetType(c *db.Column, pkg string) string {
 
 		t, ok := s.Maps.Type["."+p]
 		if ok {
-			return stripPackage(t, pkg)
+			return s.CheckPackage(t, pkg)
 		}
 	}
 
 	if c.Nullable {
 		t, ok := s.Maps.Nullable[c.Type]
 		if ok {
-			return stripPackage(t, pkg)
+			return s.CheckPackage(t, pkg)
 		}
 	}
 
 	t, ok := s.Maps.Type[c.Type]
 	if ok {
-		return stripPackage(t, pkg)
+		return s.CheckPackage(t, pkg)
 	}
 
 	return fmt.Sprintf("UNKNOWN:path(%s):type(%s)", c.Path(), c.Type)
 }
 
 const ValidTypeElems = 2
+
+// Example type declaration:
+// string,date-time
 
 func (s SchemasContext) PropertyFromDB(c *db.Column) *Property {
 	if c == nil {

@@ -60,6 +60,7 @@ func Proto(p cfg.Process, fn cfg.FileHandler, l logrus.FieldLogger, groups proto
 
 type ProtoContext struct {
 	Context
+	Imports
 	FileGroups proto.PBFileGroups
 }
 
@@ -116,13 +117,13 @@ func (q ProtoContext) GetType(f proto.Field, pkg string) string {
 
 		t, ok := q.Maps.Type["."+p]
 		if ok {
-			return stripPackage(t, pkg)
+			return q.CheckPackage(t, pkg)
 		}
 	}
 
 	t, ok := q.Maps.Type[f.Type]
 	if ok {
-		return stripPackage(t, pkg)
+		return q.CheckPackage(t, pkg)
 	}
 
 	// TODO Valid assumption for type reference?

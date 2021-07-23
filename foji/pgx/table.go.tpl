@@ -56,7 +56,7 @@ func scanOne{{$goName}}(rr pgx.Row) (*{{$.PackageName}}.{{$goName}}, error) {
 func (r Repo) All{{$goName}}(ctx context.Context) ([]*{{$.PackageName}}.{{$goName}}, error) {
 	query :=  querySelect{{$goName }}
 {{- if $hasSoftDeletes -}}
-	+ ` WHERE deleted_at is NULL `
+	+ `WHERE deleted_at is NULL `
 {{- end}}
 	q, err := r.db.Query(ctx,query)
 	if err != nil {
@@ -165,7 +165,7 @@ func (r Repo) Set{{$goName}}(ctx context.Context, set {{$.PackageName}}.Where, w
 	idx := 2
 	query := `UPDATE {{$schema}}.{{$table}} SET ` +
 		set.Field + " = $1 " +
-		` WHERE ` +
+		`WHERE ` +
 		where.String(&idx)
 
 	res, err := r.db.Exec(ctx, query, append([]interface{}{ set.Value }, where.Values()...)...)
@@ -176,7 +176,7 @@ func (r Repo) Set{{$goName}}(ctx context.Context, set {{$.PackageName}}.Where, w
 }
 {{- if .Table.HasPrimaryKey }}
 {{- if $hasSoftDeletes}}
-// Delete{{$goName}} soft deletes the Row from the database. Returns the number of items soft deleted.
+// Delete{{$goName}} soft deletes the row from the database. Returns the number of items soft deleted.
 {{else}}
 // Delete{{$goName}} deletes the Row from the database. Returns the number of items deleted.
 {{end}}

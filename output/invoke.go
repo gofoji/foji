@@ -119,14 +119,14 @@ func NewProcessRunner(dir string, fn cfg.FileHandler, l logrus.FieldLogger, simu
 }
 
 func (p ProcessRunner) template(outputFile, templateFile string, data interface{}) error {
-	p.l.WithField("target", outputFile).WithField("template", templateFile).Info("executing template")
-
 	permFile, outputFile := checkPermanentFlag(outputFile)
 
 	outputFile, err := p.From(outputFile).To(data)
 	if err != nil {
 		return fmt.Errorf("mapping output filename:%w", err)
 	}
+
+	p.l.WithField("target", outputFile).WithField("template", templateFile).Info("executing template")
 
 	outputFile = p.dir + outputFile
 	if permFile && fileExists(outputFile) {
@@ -185,7 +185,7 @@ func (p ProcessRunner) loadLocalOrEmbed(filename string) ([]byte, error) {
 		return nil, fmt.Errorf("error accessing file: %s: %w", filename, err)
 	}
 
-	return ioutil.ReadFile(filename)
+	return ioutil.ReadFile(filename) //nolint
 }
 
 func hasAnyOutput(o cfg.Output, outputs ...string) bool {

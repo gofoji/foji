@@ -34,10 +34,12 @@ type Table struct {
 	PrimaryKeys Columns // list of columns that are flagged as Primary Keys
 }
 
-type Indexes []*Index
-type ForeignKeys []*ForeignKey
-type Enums []*Enum
-type Columns []*Column
+type (
+	Indexes     []*Index
+	ForeignKeys []*ForeignKey
+	Enums       []*Enum
+	Columns     []*Column
+)
 
 // Index contains the definition of an index.
 type Index struct {
@@ -63,7 +65,7 @@ type Column struct {
 	Nullable     bool        // true if the column is not NON NULL
 	HasDefault   bool        // true if the column has a default
 	IsPrimaryKey bool        // true if the column is a primary key
-	Ordinal      int32       // the column's ordinal position
+	Ordinal      int16       // the column's ordinal position
 	Comment      string      // the comment attached to the column
 	Table        *Table      `json:"-"`
 	ForeignKey   *ForeignKey // foreign key database definition
@@ -93,10 +95,12 @@ func (ss DB) GetTable(schema, table string) (*Table, bool) {
 	if !ok {
 		return nil, false
 	}
+
 	t, ok := s.GetTable(table)
 	if !ok {
 		return nil, false
 	}
+
 	return t, true
 }
 
@@ -111,13 +115,15 @@ func (s Schema) GetTable(name string) (*Table, bool) {
 }
 
 func (t Table) GetColumnsByName(names []string) ([]*Column, error) {
-	var result []*Column
-	for _, name := range names {
+	result := make([]*Column, len(names))
+
+	for i, name := range names {
 		c := t.GetColumnByName(name)
 		if c == nil {
 			return nil, errors.New(name)
 		}
-		result = append(result, c)
+
+		result[i] = c
 	}
 
 	return result, nil
@@ -139,6 +145,7 @@ func (t Table) GetPK() *Column {
 			return c
 		}
 	}
+
 	return nil
 }
 
@@ -150,6 +157,7 @@ func (t Table) Path() string {
 	if t.Schema != nil {
 		return t.Schema.Name + "." + t.Name
 	}
+
 	return t.Name
 }
 
@@ -197,6 +205,7 @@ func (cc Columns) copy() Columns {
 	for i, p := range cc {
 		r[i] = p
 	}
+
 	return r
 }
 
@@ -213,6 +222,7 @@ func (c Column) Path() string {
 	if c.Table != nil {
 		return c.Table.Path() + "." + c.Name
 	}
+
 	return c.Name
 }
 
@@ -242,12 +252,15 @@ func (f ForeignKey) Path() string {
 	if f.Table() != nil {
 		return f.Table().Path() + "." + f.Name
 	}
+
 	return f.Name
 }
+
 func (e Enum) Path() string {
 	if e.Schema != nil {
 		return e.Schema.Name + "." + e.Name
 	}
+
 	return e.Name
 }
 
@@ -255,5 +268,6 @@ func (i Index) Path() string {
 	if i.Table() != nil {
 		return i.Table().Path() + "." + i.Name
 	}
+
 	return i.Name
 }

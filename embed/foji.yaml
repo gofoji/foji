@@ -1,8 +1,8 @@
 formats:
   go:
     case: pascal
-    post:
-      - [ "goimports", "-w", "$FILE" ]
+#    post:
+#      - [ "goimports", "-w", "$FILE" ]
     maps:
       type:
         "_name": "[]string"
@@ -31,7 +31,10 @@ formats:
         string,ipv6: net.IP
         string,uri: net/url.URL
         string,uuid: github.com/google/uuid.UUID
-        text: "*string"
+        uuid: github.com/google/uuid.UUID
+        text: string
+        char: string
+        bpchar: string
         timestamptz: time.Time
         varchar: string
   openapi:
@@ -90,7 +93,7 @@ processes:
       'pg/{{lower .Table.Name}}_gen.go': foji/pgx/table.go.tpl
       '{{lower .Table.Name}}_gen.go': foji/pgx/model.go.tpl
     DbEnum:
-      '{{lower .Schema.Name}}/enum/{{lower .Enum.Name}}.go': foji/pgx/enum.go.tpl
+      '{{lower .Enum.Name}}_gen.go': foji/enum.go.tpl
   openAPIStub:
     format: openapi
     DbAll:

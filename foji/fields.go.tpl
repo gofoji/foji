@@ -7,15 +7,17 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/pkg/errors"
 )
 
+var errByteArrayCast = errors.New("type assertion .([]byte) failed")
+var errJsonbCast = errors.New("reading from DB into Jsonb, failed to convert to map[string]interface{}")
 
 // Bytea is a wrapper around byte arrays specifically for bytea column types in postgres.
 type Bytea []byte
@@ -32,23 +34,15 @@ func (j Jsonb) Value() (driver.Value, error) {
 func (j *Jsonb) Scan(src interface{}) error {
 	source, ok := src.([]byte)
 	if !ok {
-		return errors.New("Type assertion .([]byte) failed")
+		return errByteArrayCast
 	}
 
-	var i interface{}
+	var i map[string]interface{}
 	err := json.Unmarshal(source, &i)
 	if err != nil {
 		return err
 	}
-
-	if i == nil {
-		return nil
-	}
-
-	*j, ok = i.(map[string]interface{})
-	if !ok {
-		return errors.New("reading from DB into Jsonb, failed to convert to map[string]interface{}")
-	}
+	*j = i
 
 	return nil
 }

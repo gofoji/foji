@@ -40,13 +40,13 @@ func Execute() {
 	rootCmd.AddCommand(listCmd)
 
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
+		fmt.Println(err) // nolint
 		os.Exit(1)
 	}
 }
 
 func registerFlags() {
-	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "foji.yaml", "config file (default is foji.yaml)")
+	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "foji.yaml", "config file")
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "include verbose logging")
 	rootCmd.PersistentFlags().BoolVarP(&trace, "trace", "t", false, "include trace logging")
 	rootCmd.PersistentFlags().BoolVarP(&quiet, "quiet", "q", false, "mutes all logging (overrides verbose)")

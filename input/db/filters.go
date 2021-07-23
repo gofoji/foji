@@ -4,20 +4,23 @@ import (
 	"github.com/gofoji/foji/stringlist"
 )
 
-// Filter applies the regexes specified and filter out all matching schema objects
+// Filter applies the regexes specified and filter out all matching schema objects.
 func (ss DB) Filter(filters stringlist.Strings) DB {
 	if len(filters) == 0 {
 		return ss
 	}
+
 	result := DB{}
 
 	for key, s := range ss {
 		if filters.AnyMatches(s.Name) {
 			continue
 		}
+
 		filtered := s.Filter(filters)
 		result[key] = &filtered
 	}
+
 	return result
 }
 
@@ -29,11 +32,12 @@ func (s Schema) Filter(filters stringlist.Strings) Schema {
 	}
 }
 
-// Filter applies the regexes specified and filter out all matching schema objects
+// Filter applies the regexes specified and filter out all matching schema objects.
 func (tt Tables) Filter(filters stringlist.Strings) Tables {
 	if len(filters) == 0 {
 		return tt
 	}
+
 	result := Tables{}
 
 	for _, t := range tt {
@@ -42,6 +46,7 @@ func (tt Tables) Filter(filters stringlist.Strings) Tables {
 			result = append(result, &filtered)
 		}
 	}
+
 	return result
 }
 
@@ -61,11 +66,12 @@ func (t Table) Filter(filters stringlist.Strings) Table {
 	}
 }
 
-// Filter applies the regexes specified and filter out all matching schema objects
+// Filter applies the regexes specified and filter out all matching schema objects.
 func (ee Enums) Filter(filters stringlist.Strings) Enums {
 	if len(filters) == 0 {
 		return ee
 	}
+
 	result := Enums{}
 
 	for _, e := range ee {
@@ -74,14 +80,16 @@ func (ee Enums) Filter(filters stringlist.Strings) Enums {
 			result = append(result, &filtered)
 		}
 	}
+
 	return result
 }
 
-// Filter applies the regexes specified and filter out all matching schema objects
+// Filter applies the regexes specified and filter out all matching schema objects.
 func (cc Columns) Filter(filters stringlist.Strings) Columns {
 	if len(filters) == 0 {
 		return cc
 	}
+
 	result := Columns{}
 
 	for _, c := range cc {
@@ -89,14 +97,16 @@ func (cc Columns) Filter(filters stringlist.Strings) Columns {
 			result = append(result, c)
 		}
 	}
+
 	return result
 }
 
-// Filter applies the regexes specified and filter out all matching schema objects
+// Filter applies the regexes specified and filter out all matching schema objects.
 func (ii Indexes) Filter(filters stringlist.Strings) Indexes {
 	if len(filters) == 0 {
 		return ii
 	}
+
 	result := Indexes{}
 
 	for _, i := range ii {
@@ -104,14 +114,16 @@ func (ii Indexes) Filter(filters stringlist.Strings) Indexes {
 			result = append(result, i)
 		}
 	}
+
 	return result
 }
 
-// Filter applies the regexes specified and filter out all matching schema objects
+// Filter applies the regexes specified and filter out all matching schema objects.
 func (ff ForeignKeys) Filter(filters stringlist.Strings) ForeignKeys {
 	if len(filters) == 0 {
 		return ff
 	}
+
 	result := ForeignKeys{}
 
 	for _, f := range ff {
@@ -119,6 +131,7 @@ func (ff ForeignKeys) Filter(filters stringlist.Strings) ForeignKeys {
 			result = append(result, f)
 		}
 	}
+
 	return result
 }
 

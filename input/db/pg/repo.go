@@ -155,7 +155,11 @@ func (r Repo) processIndexes(ctx context.Context, ss db.DB) error {
 
 		cols, err := table.GetColumnsByName(i.Columns)
 		if err != nil {
-			r.logger.Warnf("Column (%s) not found for Index (%s), skipping", err, i.Name)
+			if err.Error() == "expr" {
+				r.logger.Warnf("Unsupported expression Index (%s), skipping", i.Name)
+			} else {
+				r.logger.Warnf("Column (%s) not found for Index (%s), skipping", err, i.Name)
+			}
 
 			continue
 		}
@@ -223,21 +227,13 @@ func (r Repo) processForeignKeys(ctx context.Context, ss db.DB) error {
 	return nil
 }
 
-func stringDefault(s *string) string {
-	if s == nil {
-		return ""
-	}
-
-	return *s
-}
-
 func (t Table) toDB(schema *db.Schema) db.Table {
 	return db.Table{
 		ID:       t.ID,
 		Schema:   schema,
 		Name:     t.Name,
-		Type:     stringDefault(t.Type),
-		Comment:  stringDefault(t.Comment),
+		Type:     t.Type,
+		Comment:  t.Comment,
 		Columns:  nil,
 		Indexes:  nil,
 		ReadOnly: !(t.CanInsert && t.CanUpdate && t.CanDelete),
@@ -250,7 +246,7 @@ func (i Index) toDB(cols []*db.Column) db.Index {
 		IsUnique:  i.IsUnique,
 		IsPrimary: i.IsPrimary,
 		Columns:   cols,
-		Comment:   stringDefault(i.Comment),
+		Comment:   i.Comment,
 	}
 }
 
@@ -259,7 +255,7 @@ func (f ForeignKey) toDB(cols, fCols []*db.Column) db.ForeignKey {
 		Name:           f.Name,
 		Columns:        cols,
 		ForeignColumns: fCols,
-		Comment:        stringDefault(f.Comment),
+		Comment:        f.Comment,
 	}
 }
 
@@ -270,7 +266,7 @@ func (c Column) toDB(table *db.Table) db.Column {
 		Type:       c.Type,
 		Nullable:   c.Nullable,
 		HasDefault: c.HasDefault,
-		Comment:    stringDefault(c.Comment),
+		Comment:    c.Comment,
 		Ordinal:    c.Ordinal,
 	}
 }
@@ -280,7 +276,7 @@ func (e Enum) toDB(schema *db.Schema) db.Enum {
 		ID:      e.ID,
 		Name:    e.Name,
 		Values:  e.Values,
-		Comment: stringDefault(e.Comment),
+		Comment: e.Comment,
 		Schema:  schema,
 	}
 }

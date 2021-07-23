@@ -223,3 +223,7 @@ Example log:
 INFO[0000] skipped, not needed: no security schemes      target=test/http/auth_gen.go template=foji/openapi/auth.go.tpl
 ```
 
+# Known Issues
+
+## DB/Schema Parsing
+Expression based indexes (like on jsonb fields) are not extracted

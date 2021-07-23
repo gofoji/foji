@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"regexp"
 
 	"github.com/gofoji/foji/cfg"
+	"github.com/gofoji/foji/files"
 	"github.com/gofoji/foji/stringlist"
 	"github.com/sirupsen/logrus"
 )
@@ -43,12 +43,12 @@ func Parse(_ context.Context, logger logrus.FieldLogger, input cfg.FileInput) (F
 	for _, glob := range input.Files {
 		logger.WithField("source", glob).Debug("Searching Glob")
 
-		files, err := filepath.Glob(glob)
+		matches, err := files.Glob(glob)
 		if err != nil {
 			return result, fmt.Errorf("error processing glob: %s: %w", glob, err)
 		}
 
-		for _, filename := range files {
+		for _, filename := range matches {
 			// Guard redundant glob patterns
 			if loadedFiles.Contains(filename) {
 				continue

@@ -19,6 +19,12 @@ files:
   api:
     files:
       - "testdata/swagger.yaml"
+  sql:
+    files:
+      - '**/*.sql'
+    filter:
+      - ^db*
+      - ^test*
 processes:
   embed:
     resources: [ "templates","configs" ]
@@ -26,9 +32,9 @@ processes:
     params:
       Package: github.com/gofoji/foji/test
       Auth: github.com/gofoji/foji/test.User
-  sqlRepo:
-    files:
-      files:
-        - test/pg/queries.sql
-    params:
-      Package: github.com/bir/test/todo
+#  sqlRepo:
+#    files:
+#      files:
+#        - test/pg/queries.sql
+#    params:
+#      Package: github.com/bir/test/todo

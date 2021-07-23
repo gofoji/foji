@@ -117,20 +117,20 @@ func (q SQLContext) GetType(c *sql.Param, pkg string) string {
 
 		t, ok := q.Maps.Type["."+p]
 		if ok {
-			return stripPackage(t, pkg)
+			return q.CheckPackage(t, pkg)
 		}
 	}
 
 	if c.Nullable {
 		t, ok := q.Maps.Nullable[c.Type]
 		if ok {
-			return stripPackage(t, pkg)
+			return q.CheckPackage(t, pkg)
 		}
 	}
 
 	t, ok := q.Maps.Type[c.Type]
 	if ok {
-		return stripPackage(t, pkg)
+		return q.CheckPackage(t, pkg)
 	}
 
 	if strings.ContainsAny(c.Type, "./") {
@@ -141,10 +141,12 @@ func (q SQLContext) GetType(c *sql.Param, pkg string) string {
 	return fmt.Sprintf("UNKNOWN:path(%s):type(%s)", c.Path(), c.Type)
 }
 
+var errMissingParam = errors.New("missing Param.Package")
+
 func (q *SQLContext) Init() error {
 	name, ok := q.Params.HasString("Package")
 	if !ok {
-		return errors.New("missing Param.Package")
+		return errMissingParam
 	}
 
 	for _, set := range q.FileGroups {
@@ -165,7 +167,7 @@ func (q *SQLContext) Init() error {
 func (q *SQLFileGroupContext) Init() error {
 	name, ok := q.Params.HasString("Package")
 	if !ok {
-		return errors.New("missing Param.Package")
+		return errMissingParam
 	}
 
 	for _, ff := range q.Files {
@@ -184,7 +186,7 @@ func (q *SQLFileGroupContext) Init() error {
 func (q *SQLFileContext) Init() error {
 	name, ok := q.Params.HasString("Package")
 	if !ok {
-		return errors.New("missing Param.Package")
+		return errMissingParam
 	}
 
 	for _, qry := range q.File.Queries {
@@ -201,7 +203,7 @@ func (q *SQLFileContext) Init() error {
 func (q *SQLQueryContext) Init() error {
 	name, ok := q.Process.Params.HasString("Package")
 	if !ok {
-		return errors.New("missing Param.Package")
+		return errMissingParam
 	}
 
 	for _, p := range q.Query.Params {

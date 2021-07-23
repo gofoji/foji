@@ -18,13 +18,15 @@ type File struct {
 }
 
 func Parse(ctx context.Context, logger logrus.FieldLogger, inGroups []input.FileGroup) (FileGroups, error) {
-	var result FileGroups
+	result := make(FileGroups, len(inGroups))
 
-	for _, ff := range inGroups {
+	for i, ff := range inGroups {
 		var group FileGroup
+
 		for _, f := range ff.Files {
 			logger.Infof("Parsing swagger from: %s", f.Source)
-			swagger, err := openapi3.NewLoader().LoadFromData([]byte(f.Content))
+
+			swagger, err := openapi3.NewLoader().LoadFromData(f.Content)
 			if err != nil {
 				panic(err)
 			}
@@ -33,7 +35,8 @@ func Parse(ctx context.Context, logger logrus.FieldLogger, inGroups []input.File
 
 			group = append(group, d)
 		}
-		result = append(result, group)
+
+		result[i] = group
 	}
 
 	return result, nil

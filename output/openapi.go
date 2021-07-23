@@ -76,9 +76,7 @@ func getExtAsString(in interface{}) string {
 	}
 
 	var s string
-
-	err := json.Unmarshal(bb, &s)
-	if err != nil {
+	if err := json.Unmarshal(bb, &s); err != nil {
 		return ""
 	}
 
@@ -141,16 +139,20 @@ func (o *OpenAPIFileContext) GetType(pkg, name string, s *openapi3.SchemaRef) st
 }
 
 func (o *OpenAPIFileContext) Init() error {
-	pkg, _ := o.Params.HasString("PackageName")
 	o.AbortError = nil
+	o.CheckAllTypes()
+
+	return nil
+}
+
+func (o *OpenAPIFileContext) CheckAllTypes() {
+	pkg, _ := o.Params.HasString("PackageName")
 
 	for _, s := range o.API.Components.Schemas {
 		for key, schema := range s.Value.Properties {
 			o.GetType(pkg, key, schema)
 		}
 	}
-
-	return nil
 }
 
 func hasValidation(s *openapi3.Schema) bool {

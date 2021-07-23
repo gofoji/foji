@@ -1,14 +1,14 @@
 openapi: "3.0.0"
 info:
-  title: test
+  title: SimpleTodo
   version: 0.1.0
 paths:
-  /bar:
+  /category:
     get:
-      operationId: listBar
-      summary: List Bar
+      operationId: listCategory
+      summary: List Category
       tags:
-        - bar
+        - Category
       parameters:
         - $ref: '#/components/parameters/offset'
         - $ref: '#/components/parameters/limit'
@@ -19,7 +19,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/bars'
+                $ref: '#/components/schemas/Categories'
         default:
           description: unexpected error
           content:
@@ -27,10 +27,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
     post:
-      operationId: createBar
-      summary: Create Bar
+      operationId: createCategory
+      summary: Create Category
       tags:
-        - bar
+        - Category
       responses:
         '201':
           description: |-
@@ -38,29 +38,31 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Bar'
+                $ref: '#/components/schemas/Category'
 
-  /bar/{id}:
+  /category/{id}:
     parameters:
       - name: id
         in: path
-        description: id of Bar
+        description: id of Category
         required: true
         schema:
-          type: UNKNOWN:path(public.bar.id):type(int4)
+          type: integer
+          format: int64
+
     get:
-      description: Get Bar
-      operationId: getBar
-      summary: Get Bar
+      description: Get Category
+      operationId: getCategory
+      summary: Get Category
       tags:
-        - bar
+        - Category
       responses:
         '200':
           description: successful response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Bar'
+                $ref: '#/components/schemas/Category'
         default:
           description: unexpected error
           content:
@@ -68,14 +70,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
     post:
-      description: updates a Bar
-      operationId: updateBar
-      summary: Update Bar
+      description: updates a Category
+      operationId: updateCategory
+      summary: Update Category
       tags:
-        - bar
+        - Category
       responses:
         '200':
-          description: Bar updated
+          description: Category updated
         default:
           description: unexpected error
           content:
@@ -83,14 +85,111 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
     delete:
-      description: deletes a Bar
-      operationId: deleteBar
-      summary: Delete Bar
+      description: deletes a Category
+      operationId: deleteCategory
+      summary: Delete Category
       tags:
-        - bar
+        - Category
       responses:
         '204':
-          description: Bar deleted
+          description: Category deleted
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /todo:
+    get:
+      operationId: listTodo
+      summary: List Todo
+      tags:
+        - Todo
+      parameters:
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/limit'
+      responses:
+        '200':
+          description: |-
+            200 response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Todos'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      operationId: createTodo
+      summary: Create Todo
+      tags:
+        - Todo
+      responses:
+        '201':
+          description: |-
+            200 response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Todo'
+
+  /todo/{id}:
+    parameters:
+      - name: id
+        in: path
+        description: id of Todo
+        required: true
+        schema:
+          type: integer
+          format: int64
+
+    get:
+      description: Get Todo
+      operationId: getTodo
+      summary: Get Todo
+      tags:
+        - Todo
+      responses:
+        '200':
+          description: successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Todo'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      description: updates a Todo
+      operationId: updateTodo
+      summary: Update Todo
+      tags:
+        - Todo
+      responses:
+        '200':
+          description: Todo updated
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      description: deletes a Todo
+      operationId: deleteTodo
+      summary: Delete Todo
+      tags:
+        - Todo
+      responses:
+        '204':
+          description: Todo deleted
         default:
           description: unexpected error
           content:
@@ -140,18 +239,15 @@ components:
         default: 0
         minimum: 0
   schemas:
-    Bar:
+    Category:
       type: object
       properties:
         id:
-          type: UNKNOWN:path(public.bar.id):type(int4)
-        barCreatedOn:
-          type: UNKNOWN:path(public.bar.bar_created_on):type(timestamptz)
-        fooID:
-          type: UNKNOWN:path(public.bar.foo_id):type(int4)
-        fooCreatedOn:
-          type: UNKNOWN:path(public.bar.foo_created_on):type(timestamptz)
-    bars:
+          type: integer
+          format: int64
+        label:
+          type: string
+    Categories:
       type: object
       properties:
         page:
@@ -161,9 +257,61 @@ components:
         totalRecordCount:
           type: integer
         list:
-            type: array
-            items:
-              $ref: '#/components/schemas/Bar'
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+    Todo:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        position:
+          type: integer
+          format: int64
+        label:
+          type: string
+        labelNullable:
+          type: string
+        minutes:
+          type: integer
+          format: int64
+        minutesNullable:
+          type: integer
+          format: int64
+        parameters:
+          type: UNKNOWN:path(public.todo.parameters):type(jsonb)
+        categoryID:
+          type: integer
+          format: int64
+        expiresAt:
+          type: string
+          format: date-time
+        dueAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+    Todos:
+      type: object
+      properties:
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        totalRecordCount:
+          type: integer
+        list:
+          type: array
+          items:
+            $ref: '#/components/schemas/Todo'
     Error:
       type: object
       required:

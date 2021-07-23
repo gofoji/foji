@@ -5,7 +5,7 @@ package color
 
 import "fmt"
 
-// String implmenents the fmt.Stringer interface.
+// String implements the fmt.Stringer interface.
 func (c Parameter) String() string {
 	switch c {
 	case Reset:

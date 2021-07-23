@@ -15,5 +15,5 @@ var versionCmd = &cobra.Command{
 }
 
 func version(_ *cobra.Command, _ []string) {
-	fmt.Println(cfg.Version())
+	fmt.Println(cfg.Version()) // nolint
 }

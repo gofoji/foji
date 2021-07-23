@@ -12,6 +12,10 @@ linters:
     - exhaustivestruct
     - gochecknoglobals
     - nlreturn
+    - scopelint
+    - maligned
+    - interfacer
+    - wrapcheck
 linters-settings:
   godox:
     keywords:
@@ -20,3 +24,5 @@ linters-settings:
       - TEMP
       - FIX
       - FIXME
+  cyclop:
+    max-complexity: 15

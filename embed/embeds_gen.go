@@ -207,6 +207,10 @@ import (
 	"fmt"
 
 	"{{.Params.Package}}"
+{{- range .Imports }}
+	"{{ . }}"
+{{- end }}
+
 )
 
 {{- $type := case .Enum.Name }}
@@ -359,15 +363,17 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/pkg/errors"
 )
 
+var errByteArrayCast = errors.New("type assertion .([]byte) failed")
+var errJsonbCast = errors.New("reading from DB into Jsonb, failed to convert to map[string]interface{}")
 
 // Bytea is a wrapper around byte arrays specifically for bytea column types in postgres.
 type Bytea []byte
@@ -384,23 +390,15 @@ func (j Jsonb) Value() (driver.Value, error) {
 func (j *Jsonb) Scan(src interface{}) error {
 	source, ok := src.([]byte)
 	if !ok {
-		return errors.New("Type assertion .([]byte) failed")
+		return errByteArrayCast
 	}
 
-	var i interface{}
+	var i map[string]interface{}
 	err := json.Unmarshal(source, &i)
 	if err != nil {
 		return err
 	}
-
-	if i == nil {
-		return nil
-	}
-
-	*j, ok = i.(map[string]interface{})
-	if !ok {
-		return errors.New("reading from DB into Jsonb, failed to convert to map[string]interface{}")
-	}
+	*j = i
 
 	return nil
 }
@@ -2035,7 +2033,7 @@ import (
 {{- end }}
 )
 
-// {{$goName}} represents a record from '{{$table}}'.
+// {{$goName}} represents a record from '{{.Schema.Name}}.{{$table}}'.
 type {{$goName}} struct {
 {{- range .Table.Columns.ByOrdinal }}
 	{{ case .Name }} {{ $.GetType . $.PackageName }}  ` + "`" + `json:"{{ .Name }},omitempty"` + "`" + ` // {{ .Type }} {{ if .Nullable }}NULL{{end}}
@@ -2117,7 +2115,7 @@ func scanOne{{$goName}}(rr pgx.Row) (*{{$.PackageName}}.{{$goName}}, error) {
 func (r Repo) All{{$goName}}(ctx context.Context) ([]*{{$.PackageName}}.{{$goName}}, error) {
 	query :=  querySelect{{$goName }}
 {{- if $hasSoftDeletes -}}
-	+ ` + "`" + ` WHERE deleted_at is NULL ` + "`" + `
+	+ ` + "`" + `WHERE deleted_at is NULL ` + "`" + `
 {{- end}}
 	q, err := r.db.Query(ctx,query)
 	if err != nil {
@@ -2226,7 +2224,7 @@ func (r Repo) Set{{$goName}}(ctx context.Context, set {{$.PackageName}}.Where, w
 	idx := 2
 	query := ` + "`" + `UPDATE {{$schema}}.{{$table}} SET ` + "`" + ` +
 		set.Field + " = $1 " +
-		` + "`" + ` WHERE ` + "`" + ` +
+		` + "`" + `WHERE ` + "`" + ` +
 		where.String(&idx)
 
 	res, err := r.db.Exec(ctx, query, append([]interface{}{ set.Value }, where.Values()...)...)
@@ -2237,7 +2235,7 @@ func (r Repo) Set{{$goName}}(ctx context.Context, set {{$.PackageName}}.Where, w
 }
 {{- if .Table.HasPrimaryKey }}
 {{- if $hasSoftDeletes}}
-// Delete{{$goName}} soft deletes the Row from the database. Returns the number of items soft deleted.
+// Delete{{$goName}} soft deletes the row from the database. Returns the number of items soft deleted.
 {{else}}
 // Delete{{$goName}} deletes the Row from the database. Returns the number of items deleted.
 {{end}}
@@ -2380,8 +2378,8 @@ var FojiDotYamlBytes = []byte(FojiDotYaml)
 const FojiDotYaml = `formats:
   go:
     case: pascal
-    post:
-      - [ "goimports", "-w", "$FILE" ]
+#    post:
+#      - [ "goimports", "-w", "$FILE" ]
     maps:
       type:
         "_name": "[]string"
@@ -2410,7 +2408,10 @@ const FojiDotYaml = `formats:
         string,ipv6: net.IP
         string,uri: net/url.URL
         string,uuid: github.com/google/uuid.UUID
-        text: "*string"
+        uuid: github.com/google/uuid.UUID
+        text: string
+        char: string
+        bpchar: string
         timestamptz: time.Time
         varchar: string
   openapi:
@@ -2469,7 +2470,7 @@ processes:
       'pg/{{lower .Table.Name}}_gen.go': foji/pgx/table.go.tpl
       '{{lower .Table.Name}}_gen.go': foji/pgx/model.go.tpl
     DbEnum:
-      '{{lower .Schema.Name}}/enum/{{lower .Enum.Name}}.go': foji/pgx/enum.go.tpl
+      '{{lower .Enum.Name}}_gen.go': foji/enum.go.tpl
   openAPIStub:
     format: openapi
     DbAll:
