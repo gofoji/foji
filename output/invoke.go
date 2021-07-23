@@ -84,7 +84,7 @@ func checkPermanentFlag(outputFile string) (bool, string) {
 	return false, outputFile
 }
 
-func templateEngine() *plates.Wrapper {
+func templateEngine() *plates.Factory {
 	return plates.New("foji").
 		AddMatcherFunc(plates.MatchText, plates.MatchHTML, plush.Match).
 		AddFuncs(runtime.Funcs, sprig.GenericFuncMap()).
@@ -96,7 +96,7 @@ type ProcessRunner struct {
 	dir      string
 	fn       cfg.FileHandler
 	simulate bool
-	*plates.Wrapper
+	*plates.Factory
 }
 
 func NewProcessRunner(dir string, fn cfg.FileHandler, l logrus.FieldLogger, simulate bool) ProcessRunner {
@@ -107,7 +107,7 @@ func NewProcessRunner(dir string, fn cfg.FileHandler, l logrus.FieldLogger, simu
 	}
 
 	p := ProcessRunner{
-		Wrapper:  templateEngine(),
+		Factory:  templateEngine(),
 		l:        l,
 		simulate: simulate,
 		fn:       fn,
