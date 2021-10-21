@@ -131,7 +131,7 @@ func (pp Processes) Target(targets []string) ([]Process, error) {
 	return result, nil
 }
 
-// HasString returns a string param identified by `name`, otherwise the second value is false.
+// HasString returns a string param identified by `name`, otherwise the second value (ok) is false.
 func (pp ParamMap) HasString(name string) (string, bool) {
 	p, ok := pp[name]
 	if !ok {

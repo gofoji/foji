@@ -8,7 +8,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gofoji/foji/cfg"
 	"github.com/gofoji/foji/input/openapi"
-	"github.com/sirupsen/logrus"
+	"github.com/rs/zerolog"
 )
 
 const (
@@ -20,7 +20,7 @@ func HasOpenAPIOutput(o cfg.Output) bool {
 	return hasAnyOutput(o, OpenAPIFile, OpenAPITag)
 }
 
-func OpenAPI(p cfg.Process, fn cfg.FileHandler, l logrus.FieldLogger, groups openapi.FileGroups, simulate bool) error {
+func OpenAPI(p cfg.Process, fn cfg.FileHandler, l zerolog.Logger, groups openapi.FileGroups, simulate bool) error {
 	runner := NewProcessRunner(p.RootDir, fn, l, simulate)
 
 	for _, ff := range groups {

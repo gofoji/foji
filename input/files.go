@@ -10,7 +10,7 @@ import (
 	"github.com/gofoji/foji/cfg"
 	"github.com/gofoji/foji/files"
 	"github.com/gofoji/foji/stringlist"
-	"github.com/sirupsen/logrus"
+	"github.com/rs/zerolog"
 )
 
 type FileGroup struct {
@@ -35,13 +35,13 @@ func rewrite(rules stringlist.StringMap, name string) string {
 	return name
 }
 
-func Parse(_ context.Context, logger logrus.FieldLogger, input cfg.FileInput) (FileGroup, error) {
+func Parse(_ context.Context, logger zerolog.Logger, input cfg.FileInput) (FileGroup, error) {
 	result := FileGroup{FileInput: input}
 
 	loadedFiles := stringlist.Strings{}
 
 	for _, glob := range input.Files {
-		logger.WithField("source", glob).Debug("Searching Glob")
+		logger.Debug().Str("source", glob).Msg("Searching Glob")
 
 		matches, err := files.Glob(glob)
 		if err != nil {
@@ -55,7 +55,7 @@ func Parse(_ context.Context, logger logrus.FieldLogger, input cfg.FileInput) (F
 			}
 
 			if input.Filter.AnyMatches(filename) {
-				logger.WithField("file", filename).Debug("Filtering File")
+				logger.Debug().Str("file", filename).Msg("Filtering File")
 
 				continue
 			}
@@ -69,7 +69,7 @@ func Parse(_ context.Context, logger logrus.FieldLogger, input cfg.FileInput) (F
 				continue
 			}
 
-			logger.WithField("source", filename).Debug("Reading File")
+			logger.Debug().Str("source", filename).Msg("Reading File")
 
 			b, err := ioutil.ReadFile(filename)
 			if err != nil {
@@ -81,7 +81,7 @@ func Parse(_ context.Context, logger logrus.FieldLogger, input cfg.FileInput) (F
 				Name:    rewrite(input.Rewrite, filename),
 				Content: b,
 			}
-			logger.WithField("name", file.Name).Debug("File Loaded")
+			logger.Debug().Str("name", file.Name).Msg("File Loaded")
 			result.Files = append(result.Files, file)
 			loadedFiles = append(loadedFiles, filename)
 		}

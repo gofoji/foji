@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/gofoji/foji/embed"
-	"github.com/sirupsen/logrus"
+	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 )
 
@@ -24,11 +24,11 @@ func copyTemplate(_ *cobra.Command, args []string) {
 
 	err := writeTemplate(l, dir, args[0], stdout, overwrite)
 	if err != nil {
-		l.WithError(err).Fatal("Failed to Write Template")
+		l.Fatal().Err(err).Msg("Failed to Write Template")
 	}
 }
 
-func writeTemplate(l logrus.FieldLogger, dir, filename string, useStdout, overwrite bool) error {
+func writeTemplate(l zerolog.Logger, dir, filename string, useStdout, overwrite bool) error {
 	c, err := embed.Get(filename)
 	if err != nil {
 		return fmt.Errorf("failed to read template:%w", err)
@@ -44,15 +44,17 @@ func writeTemplate(l logrus.FieldLogger, dir, filename string, useStdout, overwr
 		filename = changeDirectory(dir, "foji", filename)
 	}
 
+	l = l.With().Str("template", filename).Logger()
+
 	if useStdout || overwrite || !fileExists(filename) {
-		l.WithField("template", filename).Debug("Writing")
+		l.Debug().Msg("Writing")
 
 		err = WriteToFile(c, filename)
 		if err != nil {
 			return fmt.Errorf("failed to write template:%w", err)
 		}
 	} else {
-		l.WithField("template", filename).Warn("Skipping, specify `overwrite` to replace")
+		l.Warn().Msg("Skipping, specify `overwrite` to replace")
 	}
 
 	return nil

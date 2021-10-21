@@ -23,7 +23,7 @@ func copyTemplates(_ *cobra.Command, args []string) {
 
 	c, err := cfg.Load(cfgFile, true)
 	if err != nil {
-		l.WithError(err).Fatal("Failed to load config")
+		l.Fatal().Err(err).Msg("Failed to load config")
 	}
 
 	var templates stringlist.Strings
@@ -34,11 +34,11 @@ func copyTemplates(_ *cobra.Command, args []string) {
 	} else {
 		targets, err := c.Processes.Target(args)
 		if err != nil {
-			l.WithError(err).Fatal("Failed to process targets")
+			l.Fatal().Err(err).Msg("Failed to process targets")
 		}
 
 		if len(targets) == 0 {
-			l.WithField("processes", c.Processes.String()).WithField("targets", args).Fatal("No valid targets defined.")
+			l.Fatal().Str("processes", c.Processes.String()).Strs("targets", args).Msg("No valid targets defined.")
 		}
 
 		templateMaps := stringlist.StringMap{}
@@ -53,7 +53,7 @@ func copyTemplates(_ *cobra.Command, args []string) {
 	for _, v := range templates {
 		err = writeTemplate(l, dir, v, stdout, overwrite)
 		if err != nil {
-			l.WithField("template", v).WithError(err).Fatal("Failed to Write")
+			l.Fatal().Str("template", v).Err(err).Msg("Failed to Write")
 		}
 	}
 }

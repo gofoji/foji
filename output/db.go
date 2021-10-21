@@ -8,7 +8,7 @@ import (
 	"github.com/gofoji/foji/cfg"
 	"github.com/gofoji/foji/input/db"
 	"github.com/gofoji/foji/stringlist"
-	"github.com/sirupsen/logrus"
+	"github.com/rs/zerolog"
 )
 
 const (
@@ -23,7 +23,7 @@ func HasDBOutput(o cfg.Output) bool {
 	return hasAnyOutput(o, DBAll, DBSchema, DBTable, DBEnum, DBEnums)
 }
 
-func DB(p cfg.Process, fn cfg.FileHandler, logger logrus.FieldLogger, schemas db.DB, simulate bool) error {
+func DB(p cfg.Process, fn cfg.FileHandler, logger zerolog.Logger, schemas db.DB, simulate bool) error {
 	ctx := SchemasContext{
 		Context: Context{Process: p, Logger: logger},
 		DB:      schemas,
@@ -182,7 +182,7 @@ func (s SchemasContext) PropertyFromDB(c *db.Column) *Property {
 			t = tt[0]
 			format = tt[1]
 		} else {
-			s.Logger.Errorf("Schema Column: %s, Invalid Type declaration:%s", c.Path(), t)
+			s.Logger.Error().Msgf("Schema Column: %s, Invalid Type declaration:%s", c.Path(), t)
 		}
 	}
 

@@ -15,12 +15,12 @@ var listCmd = &cobra.Command{
 	Run:     list,
 }
 
-func list(_ *cobra.Command, args []string) {
+func list(_ *cobra.Command, _ []string) {
 	l := getLogger(quiet, trace, verbose)
 
 	c, err := cfg.Load(cfgFile, true)
 	if err != nil {
-		l.WithError(err).Fatal("Failed to load config")
+		l.Fatal().Err(err).Msg("Failed to load config")
 	}
 
 	fmt.Printf("Available Processes: %v\n", c.Processes.Keys()) // nolint

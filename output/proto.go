@@ -6,7 +6,7 @@ import (
 
 	"github.com/gofoji/foji/cfg"
 	"github.com/gofoji/foji/input/proto"
-	"github.com/sirupsen/logrus"
+	"github.com/rs/zerolog"
 )
 
 const (
@@ -19,7 +19,7 @@ func HasProtoOutput(o cfg.Output) bool {
 	return hasAnyOutput(o, ProtoAll, ProtoFileGroup, ProtoFile)
 }
 
-func Proto(p cfg.Process, fn cfg.FileHandler, l logrus.FieldLogger, groups proto.PBFileGroups, simulate bool) error {
+func Proto(p cfg.Process, fn cfg.FileHandler, l zerolog.Logger, groups proto.PBFileGroups, simulate bool) error {
 	base := ProtoContext{
 		Context:    Context{Process: p, Logger: l},
 		FileGroups: groups,

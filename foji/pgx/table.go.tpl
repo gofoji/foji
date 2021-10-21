@@ -16,9 +16,9 @@ package {{ $pkgName }}
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jackc/pgx/v4"
-	"github.com/pkg/errors"
 
 	"{{.Params.Package}}"
 {{- range .Imports }}
@@ -36,7 +36,7 @@ func scan{{$goName}}(rr pgx.Rows) ([]*{{$.PackageName}}.{{$goName}}, error) {
 		row := {{$.PackageName}}.{{$goName}}{}
 		err := rr.Scan({{ csv $scanFields }})
 		if err != nil {
-			return nil, errors.Wrap(err, "{{$goName}}.scan") // notest
+			return nil, fmt.Errorf("scan{{$goName}}:%w", err)
 		}
 		result = append(result, &row)
 	}
@@ -47,7 +47,7 @@ func scanOne{{$goName}}(rr pgx.Row) (*{{$.PackageName}}.{{$goName}}, error) {
 	row := {{$.PackageName}}.{{$goName}}{}
 	err := rr.Scan({{ csv $scanFields }})
 	if err != nil {
-		return nil, errors.Wrap(err, "{{$goName}}.scanOne")
+		return nil, fmt.Errorf("{{$goName}}:%w", err)
 	}
 	return &row, nil
 }
@@ -60,7 +60,7 @@ func (r Repo) All{{$goName}}(ctx context.Context) ([]*{{$.PackageName}}.{{$goNam
 {{- end}}
 	q, err := r.db.Query(ctx,query)
 	if err != nil {
-		return nil, errors.Wrap(err, "{{$goName}}.All")
+		return nil, fmt.Errorf("{{$goName}}:%w", err)
 	}
 	return scan{{$goName}}(q)
 }
@@ -87,7 +87,7 @@ func (r Repo) Select{{$goName}}(ctx context.Context, where {{$.PackageName}}.Whe
 
 	q, err := r.db.Query(ctx, query, where.Values()...)
 	if err != nil {
-		return nil, errors.Wrap(err, "{{$goName}}.Select")
+		return nil, fmt.Errorf("{{$goName}}:%w", err)
 	}
 	return scan{{$goName}}(q)
 }
@@ -102,7 +102,7 @@ func (r Repo) SelectOrder{{$goName}}(ctx context.Context, where {{$.PackageName}
 
 	q, err := r.db.Query(ctx, query, where.Values()...)
 	if err != nil {
-		return nil, errors.Wrap(err, "{{$goName}}.SelectOrder")
+		return nil, fmt.Errorf("{{$goName}}:%w", err)
 	}
 	return scan{{$goName}}(q)
 }
@@ -157,7 +157,7 @@ func (r Repo) Update{{$goName}}(ctx context.Context, row *{{$.PackageName}}.{{$g
 	{{- end}}`
 
 	_, err := r.db.Exec(ctx, query, {{csv $mutableFields }}, {{$PKFields}})
-	return errors.Wrap(err, "{{$goName}}.update")
+	return fmt.Errorf("{{$goName}}:%w", err)
 	}
 {{end}}
 // Set sets a single column on an existing row in the database.
@@ -170,7 +170,7 @@ func (r Repo) Set{{$goName}}(ctx context.Context, set {{$.PackageName}}.Where, w
 
 	res, err := r.db.Exec(ctx, query, append([]interface{}{ set.Value }, where.Values()...)...)
 	if err != nil {
-		return 0, errors.Wrap(err, "{{$goName}}.set")
+		return 0, fmt.Errorf("{{$goName}}:%w", err)
 	}
 	return res.RowsAffected(), nil
 }
@@ -198,7 +198,7 @@ func (r Repo) Delete{{$goName}}( ctx context.Context, {{ $.Parameterize .Table.P
 	{{- csv .Table.PrimaryKeys.Names.Sort.Camel  -}}
 	)
 	if err != nil {
-		return 0, errors.Wrap(err, "{{$goName}}.Delete")
+		return 0, fmt.Errorf("{{$goName}}:%w", err)
 	}
 	return res.RowsAffected(), nil
 }
@@ -214,7 +214,7 @@ func (r Repo) DeletePermanent{{$goName}}( ctx context.Context, {{ $.Parameterize
 	{{- csv .Table.PrimaryKeys.Names.Sort.Camel  -}}
 	)
 	if err != nil {
-		return 0, errors.Wrap(err, "{{$goName}}.DeletePermanent")
+		return 0, fmt.Errorf("{{$goName}}:%w", err)
 	}
 	return res.RowsAffected(), nil
 }
@@ -233,7 +233,7 @@ func (r Repo) DeleteWhere{{$goName}}(ctx context.Context, where {{$.PackageName}
 {{ end }}
 	res, err := r.db.Exec(ctx, query, where.Values()...)
 	if err != nil {
-		return 0, errors.Wrap(err, "{{$goName}}.DeleteWhere")
+		return 0, fmt.Errorf("{{$goName}}:%w", err)
 	}
 	return res.RowsAffected(), nil
 }
@@ -249,7 +249,7 @@ func (r Repo) Undelete{{$goName}}(ctx context.Context, {{ $.Parameterize .Table.
 
 	res, err := r.db.Exec(ctx, query, {{ csv .Table.PrimaryKeys.Names.Sort.Camel  -}})
 	if err != nil {
-		return 0, errors.Wrap(err, "{{$goName}}.Undelete")
+		return 0, fmt.Errorf("{{$goName}}:%w", err)
 	}
 	return res.RowsAffected(), nil
 }
@@ -263,7 +263,7 @@ func (r Repo) DeleteWherePermanent{{$goName}}(ctx context.Context, where {{$.Pac
 
 	res, err := r.db.Exec(ctx, query,  where.Values()...)
 	if err != nil {
-		return 0, errors.Wrap(err, "{{$goName}}.DeleteWherePermanent")
+		return 0, fmt.Errorf("{{$goName}}:%w", err)
 	}
 	return res.RowsAffected(), nil
 }
@@ -277,7 +277,7 @@ func (r Repo) UndeleteWhere{{$goName}}(ctx context.Context, where {{$.PackageNam
 
 	res, err := r.db.Exec(ctx, query, where.Values()...)
 	if err != nil {
-		return 0, errors.Wrap(err, "{{$goName}}.UndeleteWhere")
+		return 0, fmt.Errorf("{{$goName}}:%w", err)
 	}
 	return res.RowsAffected(), nil
 }
@@ -301,7 +301,7 @@ func (r Repo) {{ $FuncName }}(ctx context.Context, {{ $.Parameterize .Columns "%
 {{- else }}
 	q, err := r.db.Query(ctx, query, {{ csv (.Columns.Names.Sort.Camel) }})
 	if err != nil {
-		return nil, errors.Wrap(err, "{{$goName}}.{{ $FuncName }}")
+		return nil, fmt.Errorf("{{$goName}}.{{ $FuncName }}:%w", err)
 	}
 {{- end }}
 

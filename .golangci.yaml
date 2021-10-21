@@ -16,6 +16,8 @@ linters:
     - maligned
     - interfacer
     - wrapcheck
+    - golint
+    - exhaustive
 linters-settings:
   godox:
     keywords:

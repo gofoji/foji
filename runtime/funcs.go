@@ -180,9 +180,9 @@ func Inc(x int) int {
 	return x + 1
 }
 
-func ReplaceEach(s, new string, olds ...string) string {
+func ReplaceEach(s, newString string, olds ...string) string {
 	for _, old := range olds {
-		s = strings.ReplaceAll(s, old, new)
+		s = strings.ReplaceAll(s, old, newString)
 	}
 
 	return s

@@ -4,19 +4,20 @@ go 1.17
 
 require (
 	github.com/Masterminds/sprig/v3 v3.2.2
+	github.com/bir/iken v0.0.6
 	github.com/codemodus/kace v0.5.1
-	github.com/getkin/kin-openapi v0.79.0
+	github.com/getkin/kin-openapi v0.80.0
 	github.com/gofoji/plates v0.3.1
-	github.com/gofoji/plates/plush v0.0.0-20210323213728-cc4af18f0bf6
+	github.com/gofoji/plates/plush v0.3.1
 	github.com/jackc/pgconn v1.10.0
 	github.com/jackc/pgproto3/v2 v2.1.1
 	github.com/jackc/pgtype v1.8.1
 	github.com/jackc/pgx/v4 v4.13.0
 	github.com/jinzhu/inflection v1.0.0
 	github.com/pkg/errors v0.9.1
-	github.com/sirupsen/logrus v1.8.1
+	github.com/rs/zerolog v1.25.0
 	github.com/spf13/cobra v1.2.1
-	github.com/yoheimuta/go-protoparser v3.4.0+incompatible
+	github.com/yoheimuta/go-protoparser/v4 v4.4.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 )
 
@@ -57,7 +58,6 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
 	golang.org/x/net v0.0.0-20211020060615-d418f374d309 // indirect
-	golang.org/x/sys v0.0.0-20211020174200-9d6173849985 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

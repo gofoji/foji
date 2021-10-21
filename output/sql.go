@@ -1,6 +1,7 @@
 package output
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -8,8 +9,7 @@ import (
 	"github.com/gofoji/foji/cfg"
 	"github.com/gofoji/foji/input/sql"
 	"github.com/gofoji/foji/stringlist"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
+	"github.com/rs/zerolog"
 )
 
 const (
@@ -23,7 +23,7 @@ func HasSQLOutput(o cfg.Output) bool {
 	return hasAnyOutput(o, SQLAll, SQLFiles, SQLFile, SQLQuery)
 }
 
-func SQL(p cfg.Process, fn cfg.FileHandler, l logrus.FieldLogger, fileGroups sql.FileGroups, simulate bool) error {
+func SQL(p cfg.Process, fn cfg.FileHandler, l zerolog.Logger, fileGroups sql.FileGroups, simulate bool) error {
 	base := SQLContext{
 		Context:    Context{Process: p, Logger: l},
 		FileGroups: fileGroups,

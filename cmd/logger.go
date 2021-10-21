@@ -1,20 +1,26 @@
 package cmd
 
-import "github.com/sirupsen/logrus"
+import (
+	"os"
+	"time"
 
-func getLogger(quiet, trace, verbose bool) logrus.FieldLogger {
-	l := logrus.New()
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
+)
+
+func getLogger(quiet, trace, verbose bool) zerolog.Logger {
+	zerolog.DurationFieldInteger = true
+	zerolog.DurationFieldUnit = time.Millisecond
+	l := log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 
 	switch {
 	case quiet:
-		l.SetLevel(logrus.FatalLevel)
+		return l.Level(zerolog.FatalLevel)
 	case trace:
-		l.SetLevel(logrus.TraceLevel)
+		return l.Level(zerolog.TraceLevel)
 	case verbose:
-		l.SetLevel(logrus.DebugLevel)
-	default:
-		l.SetLevel(logrus.InfoLevel)
+		return l.Level(zerolog.DebugLevel)
 	}
 
-	return l
+	return l.Level(zerolog.InfoLevel)
 }

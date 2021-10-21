@@ -60,10 +60,7 @@ func (cc byOrdinal) Swap(i, j int) {
 
 func (pp Params) copy() Params {
 	r := make(Params, len(pp))
-
-	for i, p := range pp {
-		r[i] = p
-	}
+	copy(r, pp)
 
 	return r
 }

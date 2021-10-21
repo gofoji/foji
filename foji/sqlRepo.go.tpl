@@ -4,8 +4,8 @@ package pg
 
 import (
     "context"
+    "fmt"
 
-    "github.com/pkg/errors"
     "{{.Params.Package}}"
 {{- range .Imports }}
     "{{ . }}"
@@ -32,14 +32,14 @@ func (r Repo) {{ .Name }}(ctx context.Context{{if gt (len .Params) 0}},{{end}} {
     {{- if .IsType "query" }}
     q, err := r.db.Query(ctx, query{{if gt (len .Params) 0}},{{end}} {{ csv (.Params.ByQuery.Names.Camel)}})
     if err != nil {
-        return nil, errors.Wrap(err, "{{.Name}}.Query")
+        return nil, fmt.Errorf(("{{.Name}}.Query:%w", err)
     }
     var result []*{{ $resultType }}
     for q.Next() {
         row := {{ $resultType }}{}
         err := q.Scan({{ csv (.Result.Params.ByQuery.Names.Pascal.Sprintf "&row.%s")}})
         if err != nil {
-            return nil, errors.Wrap(err, "{{ .Name }}.scan") // notest
+            return nil, fmt.Errorf(("{{.Name}}.Scan:%w", err)
         }
         result = append(result, &row)
     }

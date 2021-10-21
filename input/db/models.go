@@ -1,10 +1,11 @@
 package db
 
 import (
+	"errors"
+	"fmt"
 	"sort"
 
 	"github.com/gofoji/foji/stringlist"
-	"github.com/pkg/errors"
 )
 
 type DB map[string]*Schema
@@ -62,7 +63,7 @@ type ForeignKey struct {
 type Column struct {
 	Name         string      // the original name of the column in the DB
 	Type         string      // the original type of the column in the DB
-	Nullable     bool        // true if the column is not NON NULL
+	Nullable     bool        // true if the column is not NON-NULL
 	HasDefault   bool        // true if the column has a default
 	IsPrimaryKey bool        // true if the column is a primary key
 	Ordinal      int16       // the column's ordinal position
@@ -114,13 +115,15 @@ func (s Schema) GetTable(name string) (*Table, bool) {
 	return nil, false
 }
 
+var ErrMissingColumn = errors.New("")
+
 func (t Table) GetColumnsByName(names []string) ([]*Column, error) {
 	result := make([]*Column, len(names))
 
 	for i, name := range names {
 		c := t.GetColumnByName(name)
 		if c == nil {
-			return nil, errors.New(name)
+			return nil, fmt.Errorf("%w%s", ErrMissingColumn, name)
 		}
 
 		result[i] = c
@@ -202,9 +205,7 @@ func (cc byOrdinal) Swap(i, j int) {
 
 func (cc Columns) copy() Columns {
 	r := make(Columns, len(cc))
-	for i, p := range cc {
-		r[i] = p
-	}
+	copy(r, cc)
 
 	return r
 }

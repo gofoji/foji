@@ -7,9 +7,9 @@ import (
 	"strconv"
 
 	"github.com/gofoji/foji/input"
-	"github.com/sirupsen/logrus"
-	"github.com/yoheimuta/go-protoparser"
-	"github.com/yoheimuta/go-protoparser/parser"
+	"github.com/rs/zerolog"
+	"github.com/yoheimuta/go-protoparser/v4"
+	"github.com/yoheimuta/go-protoparser/v4/parser"
 )
 
 type (
@@ -90,14 +90,14 @@ func (f *Field) Path() string {
 	return f.FieldName
 }
 
-func Parse(_ context.Context, logger logrus.FieldLogger, inGroups []input.FileGroup) (PBFileGroups, error) {
+func Parse(_ context.Context, logger zerolog.Logger, inGroups []input.FileGroup) (PBFileGroups, error) {
 	result := make(PBFileGroups, len(inGroups))
 
 	for i, ff := range inGroups {
 		group := make(PBFileGroup, len(ff.Files))
 
 		for i, f := range ff.Files {
-			logger.WithField("filename", f.Source).Debug("Parsing Proto")
+			logger.Debug().Str("filename", f.Source).Msg("Parsing Proto")
 
 			r, err := protoparser.Parse(bytes.NewReader(f.Content))
 			if err != nil {
@@ -147,60 +147,60 @@ func (d *PBFile) VisitMessage(n *parser.Message) (next bool) {
 }
 
 // The rest of these are required by the visitor interface.
-func (d *PBFile) VisitExtend(n *parser.Extend) (next bool) {
+func (d *PBFile) VisitExtend(_ *parser.Extend) (next bool) {
 	return true
 }
 
-func (d *PBFile) VisitExtensions(n *parser.Extensions) (next bool) {
+func (d *PBFile) VisitExtensions(_ *parser.Extensions) (next bool) {
 	return true
 }
 
-func (d *PBFile) VisitGroupField(n *parser.GroupField) (next bool) {
+func (d *PBFile) VisitGroupField(_ *parser.GroupField) (next bool) {
 	return true
 }
 
-func (d *PBFile) VisitImport(n *parser.Import) (next bool) {
+func (d *PBFile) VisitImport(_ *parser.Import) (next bool) {
 	return true
 }
 
-func (d *PBFile) VisitMapField(n *parser.MapField) (next bool) {
+func (d *PBFile) VisitMapField(_ *parser.MapField) (next bool) {
 	return true
 }
 
-func (d *PBFile) VisitComment(n *parser.Comment) {}
+func (d *PBFile) VisitComment(_ *parser.Comment) {}
 
-func (d *PBFile) VisitEmptyStatement(n *parser.EmptyStatement) (next bool) {
+func (d *PBFile) VisitEmptyStatement(_ *parser.EmptyStatement) (next bool) {
 	return true
 }
 
-func (d *PBFile) VisitOneof(n *parser.Oneof) (next bool) {
+func (d *PBFile) VisitOneof(_ *parser.Oneof) (next bool) {
 	return true
 }
 
-func (d *PBFile) VisitOneofField(n *parser.OneofField) (next bool) {
+func (d *PBFile) VisitOneofField(_ *parser.OneofField) (next bool) {
 	return true
 }
 
-func (d *PBFile) VisitOption(n *parser.Option) (next bool) {
+func (d *PBFile) VisitOption(_ *parser.Option) (next bool) {
 	return true
 }
 
-func (d *PBFile) VisitPackage(n *parser.Package) (next bool) {
+func (d *PBFile) VisitPackage(_ *parser.Package) (next bool) {
 	return true
 }
 
-func (d *PBFile) VisitReserved(n *parser.Reserved) (next bool) {
+func (d *PBFile) VisitReserved(_ *parser.Reserved) (next bool) {
 	return true
 }
 
-func (d *PBFile) VisitRPC(n *parser.RPC) (next bool) {
+func (d *PBFile) VisitRPC(_ *parser.RPC) (next bool) {
 	return true
 }
 
-func (d *PBFile) VisitService(n *parser.Service) (next bool) {
+func (d *PBFile) VisitService(_ *parser.Service) (next bool) {
 	return true
 }
 
-func (d *PBFile) VisitSyntax(n *parser.Syntax) (next bool) {
+func (d *PBFile) VisitSyntax(_ *parser.Syntax) (next bool) {
 	return true
 }

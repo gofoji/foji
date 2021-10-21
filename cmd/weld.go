@@ -20,16 +20,16 @@ func weld(_ *cobra.Command, args []string) {
 
 	c, err := cfg.Load(cfgFile, true)
 	if err != nil {
-		l.WithError(err).Fatal("loading config")
+		l.Fatal().Err(err).Msg("Unable to load config")
 	}
 
 	targets, err := c.Processes.Target(args)
 	if err != nil {
-		l.WithError(err).Fatal("getting targets")
+		l.Fatal().Err(err).Msg("Getting targets")
 	}
 
 	err = welder.New(l, c, targets).Run(simulate)
 	if err != nil {
-		l.WithError(err).Fatal("welding")
+		l.Fatal().Err(err).Msg("Welding")
 	}
 }

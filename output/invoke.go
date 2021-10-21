@@ -1,6 +1,7 @@
 package output
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -13,8 +14,7 @@ import (
 	"github.com/gofoji/foji/stringlist"
 	"github.com/gofoji/plates"
 	"github.com/gofoji/plates/plush"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
+	"github.com/rs/zerolog"
 )
 
 type Error string
@@ -57,7 +57,7 @@ func (p ProcessRunner) process(tm stringlist.StringMap, data interface{}) error 
 				return err
 			}
 
-			p.l.WithField("target", targetFile).WithField("template", templateFile).Warn("skipped, output file exists")
+			p.l.Warn().Str("target", targetFile).Str("template", templateFile).Msg("skipped, output file exists")
 		}
 	}
 
@@ -92,14 +92,14 @@ func templateEngine() *plates.Factory {
 }
 
 type ProcessRunner struct {
-	l        logrus.FieldLogger
+	l        zerolog.Logger
 	dir      string
 	fn       cfg.FileHandler
 	simulate bool
 	*plates.Factory
 }
 
-func NewProcessRunner(dir string, fn cfg.FileHandler, l logrus.FieldLogger, simulate bool) ProcessRunner {
+func NewProcessRunner(dir string, fn cfg.FileHandler, l zerolog.Logger, simulate bool) ProcessRunner {
 	if dir != "" {
 		if !strings.HasSuffix(dir, string(os.PathSeparator)) {
 			dir += string(os.PathSeparator)
@@ -126,7 +126,8 @@ func (p ProcessRunner) template(outputFile, templateFile string, data interface{
 		return fmt.Errorf("mapping output filename:%w", err)
 	}
 
-	p.l.WithField("target", outputFile).WithField("template", templateFile).Info("executing template")
+	l := p.l.With().Str("target", outputFile).Str("template", templateFile).Logger()
+	l.Info().Msg("executing template")
 
 	outputFile = p.dir + outputFile
 	if permFile && fileExists(outputFile) {
@@ -134,7 +135,7 @@ func (p ProcessRunner) template(outputFile, templateFile string, data interface{
 	}
 
 	if p.simulate {
-		p.l.WithField("target", outputFile).WithField("template", templateFile).Info("simulated")
+		l.Info().Msg("simulated")
 
 		return nil
 	}
@@ -145,7 +146,7 @@ func (p ProcessRunner) template(outputFile, templateFile string, data interface{
 	err = p.FromFile(templateFile).ToFile(outputFile, data)
 	if err != nil {
 		if errors.Is(err, ErrNotNeeded) {
-			p.l.WithField("target", outputFile).WithField("template", templateFile).Info("skipped, " + err.Error())
+			l.Info().Err(err).Msg("skipped")
 
 			return nil
 		}
@@ -157,7 +158,7 @@ func (p ProcessRunner) template(outputFile, templateFile string, data interface{
 		return fmt.Errorf("executing template: %w", err)
 	}
 
-	p.l.WithField("target", outputFile).WithField("template", templateFile).Debug("wrote output")
+	l.Debug().Msg("wrote output")
 
 	return p.postProcess(outputFile)
 }
@@ -177,7 +178,7 @@ func (p ProcessRunner) loadLocalOrEmbed(filename string) ([]byte, error) {
 	_, err := os.Stat(filename)
 	if err != nil {
 		if os.IsNotExist(err) {
-			p.l.WithField("filename", filename).Debug("loading from embed")
+			p.l.Debug().Str("filename", filename).Msg("loading from embed")
 
 			return embed.Get(filename)
 		}
@@ -185,7 +186,7 @@ func (p ProcessRunner) loadLocalOrEmbed(filename string) ([]byte, error) {
 		return nil, fmt.Errorf("error accessing file: %s: %w", filename, err)
 	}
 
-	return ioutil.ReadFile(filename) //nolint
+	return ioutil.ReadFile(filename)
 }
 
 func hasAnyOutput(o cfg.Output, outputs ...string) bool {

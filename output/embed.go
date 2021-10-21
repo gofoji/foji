@@ -3,7 +3,7 @@ package output
 import (
 	"github.com/gofoji/foji/cfg"
 	"github.com/gofoji/foji/input"
-	"github.com/sirupsen/logrus"
+	"github.com/rs/zerolog"
 )
 
 const (
@@ -16,7 +16,7 @@ func HasEmbedOutput(o cfg.Output) bool {
 	return hasAnyOutput(o, EmbedAll, EmbedFileGroup, EmbedFile)
 }
 
-func Embed(p cfg.Process, fn cfg.FileHandler, l logrus.FieldLogger, groups []input.FileGroup, simulate bool) error {
+func Embed(p cfg.Process, fn cfg.FileHandler, l zerolog.Logger, groups []input.FileGroup, simulate bool) error {
 	base := EmbedContext{
 		Context:    Context{Process: p, Logger: l},
 		FileGroups: groups,

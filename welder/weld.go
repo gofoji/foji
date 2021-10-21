@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/bir/iken/pgxzero"
 	"github.com/gofoji/foji/cfg"
 	"github.com/gofoji/foji/input"
 	"github.com/gofoji/foji/input/db"
@@ -13,12 +14,11 @@ import (
 	"github.com/gofoji/foji/input/proto"
 	"github.com/gofoji/foji/input/sql"
 	sqlDB "github.com/gofoji/foji/input/sql/pg"
-	"github.com/gofoji/foji/log"
 	"github.com/gofoji/foji/output"
 	"github.com/gofoji/foji/runtime"
 	"github.com/jackc/pgtype/pgxtype"
 	"github.com/jackc/pgx/v4"
-	"github.com/sirupsen/logrus"
+	"github.com/rs/zerolog"
 )
 
 type InputFiles struct {
@@ -27,7 +27,7 @@ type InputFiles struct {
 }
 
 type Welder struct {
-	logger  logrus.FieldLogger
+	logger  zerolog.Logger
 	config  cfg.Config
 	targets []cfg.Process
 
@@ -50,7 +50,7 @@ func (e Error) Error() string {
 const ErrWeld = Error("welding error")
 
 // New creates a new welder.
-func New(logger logrus.FieldLogger, config cfg.Config, targets []cfg.Process) *Welder {
+func New(logger zerolog.Logger, config cfg.Config, targets []cfg.Process) *Welder {
 	w := Welder{
 		ctx:       context.Background(),
 		logger:    logger,
@@ -73,14 +73,14 @@ func (w *Welder) Run(simulate bool) error {
 	}
 
 	for _, p := range w.targets {
-		w.logger.WithField("Process", p.ID).Info("Welding")
+		w.logger.Info().Str("Process", p.ID).Msg("Welding")
 
 		ff, err := w.getProcessFiles(p)
 		if err != nil {
 			return err
 		}
 
-		w.logger.WithField("Process", ff).Trace("Files")
+		w.logger.Trace().Interface("Files", ff).Msg("Files")
 
 		for _, processor := range pp {
 			if !processor.guard(p.Output) {
@@ -94,7 +94,7 @@ func (w *Welder) Run(simulate bool) error {
 				return err
 			}
 
-			w.logger.WithField("Process", p.ID).WithField("duration", time.Since(start)).Trace("Welding")
+			w.logger.Trace().Str("Process", p.ID).Dur("duration", time.Since(start)).Msg("Welding")
 		}
 	}
 
@@ -102,13 +102,13 @@ func (w *Welder) Run(simulate bool) error {
 }
 
 func (w *Welder) embedProcess(simulate bool, p cfg.Process, ff []input.FileGroup) error {
-	w.logger.Info("Embed")
+	w.logger.Info().Msg("Embed")
 
 	return output.Embed(p, w.postProcessor(p), w.logger, ff, simulate)
 }
 
 func (w *Welder) apiProcess(simulate bool, p cfg.Process, ff []input.FileGroup) error {
-	w.logger.Info("OpenAPI")
+	w.logger.Info().Msg("OpenAPI")
 
 	pp, err := openapi.Parse(w.ctx, w.logger, ff)
 	if err != nil {
@@ -119,7 +119,7 @@ func (w *Welder) apiProcess(simulate bool, p cfg.Process, ff []input.FileGroup) 
 }
 
 func (w *Welder) protoProcess(simulate bool, p cfg.Process, ff []input.FileGroup) error {
-	w.logger.Info("Proto")
+	w.logger.Info().Msg("Proto")
 
 	pp, err := proto.Parse(w.ctx, w.logger, ff)
 	if err != nil {
@@ -130,10 +130,9 @@ func (w *Welder) protoProcess(simulate bool, p cfg.Process, ff []input.FileGroup
 }
 
 func (w *Welder) sqlProcess(simulate bool, p cfg.Process, ff []input.FileGroup) error {
-	w.logger.Info("SQL")
+	w.logger.Info().Msg("SQL")
 
-	err := w.initDBConnection()
-	if err != nil {
+	if err := w.initDBConnection(); err != nil {
 		return err
 	}
 
@@ -146,10 +145,9 @@ func (w *Welder) sqlProcess(simulate bool, p cfg.Process, ff []input.FileGroup) 
 }
 
 func (w *Welder) dbProcess(simulate bool, p cfg.Process, _ []input.FileGroup) error {
-	w.logger.Info("DB")
+	w.logger.Info().Msg("DB")
 
-	err := w.initDBConnection()
-	if err != nil {
+	if err := w.initDBConnection(); err != nil {
 		return err
 	}
 
@@ -164,7 +162,7 @@ func (w *Welder) dbProcess(simulate bool, p cfg.Process, _ []input.FileGroup) er
 func (w *Welder) getResource(resource string) (input.FileGroup, error) {
 	r, ok := w.resources[resource]
 	if !ok {
-		w.logger.WithField("resource", resource).Trace("getResource")
+		w.logger.Trace().Str("resource", resource).Msg("getResource")
 
 		in, ok := w.config.Files[resource]
 		if !ok {
@@ -205,7 +203,7 @@ func (w *Welder) getProcessFiles(p cfg.Process) ([]input.FileGroup, error) {
 			return nil, fmt.Errorf("input.Parse:%w", err)
 		}
 
-		result = append(result, f)
+		result = append(result, f) // nozero
 	}
 
 	return result, nil
@@ -235,23 +233,23 @@ func (w *Welder) initDBConnection() error {
 		return fmt.Errorf("%w: missing db.connection", ErrWeld)
 	}
 
-	w.logger.WithField("Connection", w.config.DB.Connection).Debug("Loading Database")
+	w.logger.Debug().Str("Connection", w.config.DB.Connection).Msg("Loading Database")
 
 	config, err := pgx.ParseConfig(w.config.DB.Connection)
 	if err != nil {
-		w.logger.WithError(err).Fatal("pgx.ParseConfig")
+		w.logger.Fatal().Err(err).Msg("pgx.ParseConfig")
 	}
 
-	config.Logger = log.NewLogger(w.logger)
+	config.Logger = pgxzero.New(w.logger)
 
 	conn, err := pgx.ConnectConfig(context.Background(), config)
 	if err != nil {
-		w.logger.WithError(err).Fatal("Unable to connect to database")
+		w.logger.Fatal().Err(err).Msg("Unable to connect to database")
 	}
 
 	dt, err := pgxtype.LoadDataType(context.Background(), conn, conn.ConnInfo(), "_name")
 	if err != nil {
-		w.logger.WithError(err).Fatal("Unable to Load Data Types")
+		w.logger.Fatal().Err(err).Msg("Unable to Load Data Types")
 	}
 
 	conn.ConnInfo().RegisterDataType(dt)
@@ -268,7 +266,7 @@ func (w Welder) postProcessor(p cfg.Process) cfg.FileHandler {
 
 	return func(filename string) error {
 		for _, post := range p.Post {
-			w.logger.WithField("cmd", post.Join(" ")).Debug("post processor")
+			w.logger.Debug().Str("cmd", post.Join(" ")).Msg("post processor")
 
 			start := time.Now()
 
@@ -277,7 +275,7 @@ func (w Welder) postProcessor(p cfg.Process) cfg.FileHandler {
 				return fmt.Errorf("runtime.Invoke:%w", err)
 			}
 
-			w.logger.WithField("duration", time.Since(start)).Trace("post processor")
+			w.logger.Trace().Dur("duration", time.Since(start)).Msg("post processor")
 		}
 
 		return nil
@@ -288,7 +286,7 @@ func (w *Welder) Close() {
 	if w.conn != nil {
 		err := w.conn.Close(w.ctx)
 		if err != nil {
-			w.logger.WithError(err).Error("DB Connection Close")
+			w.logger.Err(err).Msg("DB Connection Close")
 		}
 	}
 }

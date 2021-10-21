@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/gofoji/foji/input"
-	"github.com/sirupsen/logrus"
+	"github.com/rs/zerolog"
 )
 
 var (
@@ -23,7 +23,7 @@ type Repo interface {
 
 type Parser struct {
 	repo   Repo
-	logger logrus.FieldLogger
+	logger zerolog.Logger
 	ctx    context.Context
 }
 
@@ -118,7 +118,7 @@ func (p Parser) parseDescriptorHeader(l string, q *Query) {
 		q.Type = ll[positionType]
 	}
 
-	p.logger.WithField("name", q.Name).Debug("Query Info")
+	p.logger.Debug().Str("name", q.Name).Msg("Query Info")
 }
 
 func (p Parser) parseDescriptorParam(l string, f *Query) {
@@ -131,7 +131,7 @@ func (p Parser) parseDescriptorParam(l string, f *Query) {
 		}
 		f.Params = append(f.Params, &param)
 
-		p.logger.WithField("param", p).Debug("Query Param")
+		p.logger.Debug().Interface("param", p).Msg("Query Param")
 	} else {
 		param := Param{
 			Ordinal: len(f.Params),
@@ -141,11 +141,11 @@ func (p Parser) parseDescriptorParam(l string, f *Query) {
 		}
 		f.Params = append(f.Params, &param)
 
-		p.logger.WithField("param", p).Debug("Query Param with Type")
+		p.logger.Debug().Interface("param", p).Msg("Query Param with Type")
 	}
 }
 
-func Parse(ctx context.Context, logger logrus.FieldLogger, repo Repo, inGroups []input.FileGroup) (FileGroups, error) {
+func Parse(ctx context.Context, logger zerolog.Logger, repo Repo, inGroups []input.FileGroup) (FileGroups, error) {
 	result := make(FileGroups, len(inGroups))
 
 	p := Parser{
@@ -158,7 +158,7 @@ func Parse(ctx context.Context, logger logrus.FieldLogger, repo Repo, inGroups [
 		fileSet := make(FileGroup, len(source.Files))
 
 		for j, f := range source.Files {
-			logger.WithField("filename", f.Name).Debug("SQL Parsing")
+			logger.Debug().Str("filename", f.Name).Msg("SQL Parsing")
 
 			resultFile, err := parseFile(f, logger, p)
 			if err != nil {
@@ -174,7 +174,7 @@ func Parse(ctx context.Context, logger logrus.FieldLogger, repo Repo, inGroups [
 	return result, nil
 }
 
-func parseFile(f input.File, logger logrus.FieldLogger, p Parser) (File, error) {
+func parseFile(f input.File, logger zerolog.Logger, p Parser) (File, error) {
 	resultFile := File{File: f}
 
 	statements := bytes.Split(f.Content, []byte(";"))
@@ -184,7 +184,7 @@ func parseFile(f input.File, logger logrus.FieldLogger, p Parser) (File, error) 
 			continue
 		}
 
-		logger.WithField("sql", s).Trace("Parsing")
+		logger.Trace().Str("sql", s).Msg("Parsing")
 
 		q := p.readDescriptor(s)
 		q.Filename = f.Name

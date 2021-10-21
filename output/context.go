@@ -8,7 +8,7 @@ import (
 	"github.com/gofoji/foji/runtime"
 	"github.com/gofoji/foji/stringlist"
 	"github.com/gofoji/plates"
-	"github.com/sirupsen/logrus"
+	"github.com/rs/zerolog"
 )
 
 type RuntimeParams map[string]interface{}
@@ -19,7 +19,7 @@ type Context struct {
 	// Process provides the details of the currently executing Process
 	cfg.Process
 	// Logger provides logging features to the context helpers and templates
-	Logger logrus.FieldLogger
+	Logger zerolog.Logger
 	// AbortError allows cancelling saving of a file.  See NotNeededIf.
 	AbortError error
 }

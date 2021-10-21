@@ -2,12 +2,12 @@ package pg
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/gofoji/foji/input/db"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
+	"github.com/rs/zerolog"
 )
 
 // DB is the common interface for database operations.
@@ -20,10 +20,10 @@ type DB interface {
 type Repo struct {
 	db        DB
 	typeCache map[int64]string
-	logger    logrus.FieldLogger
+	logger    zerolog.Logger
 }
 
-func New(db DB, logger logrus.FieldLogger) Repo {
+func New(db DB, logger zerolog.Logger) Repo {
 	return Repo{db: db, typeCache: map[int64]string{}, logger: logger}
 }
 
@@ -67,11 +67,11 @@ func (r Repo) Get(ctx context.Context) (db.DB, error) {
 }
 
 func (r Repo) processTables(ctx context.Context, ss db.DB) error {
-	r.logger.Debug("Loading Tables")
+	r.logger.Debug().Msg("Loading Tables")
 
 	tt, err := r.GetTables(ctx)
 	if err != nil {
-		return errors.Wrap(err, "GetTables")
+		return fmt.Errorf("GetTables:%w", err)
 	}
 
 	for _, t := range tt {
@@ -91,11 +91,11 @@ func (r Repo) processTables(ctx context.Context, ss db.DB) error {
 }
 
 func (r Repo) processEnums(ctx context.Context, ss db.DB) error {
-	r.logger.Debug("Loading Enums")
+	r.logger.Debug().Msg("Loading Enums")
 
 	ee, err := r.GetEnums(ctx)
 	if err != nil {
-		return errors.Wrap(err, "GetEnums")
+		return fmt.Errorf("GetEnums:%w", err)
 	}
 
 	for _, e := range ee {
@@ -115,17 +115,17 @@ func (r Repo) processEnums(ctx context.Context, ss db.DB) error {
 }
 
 func (r Repo) processColumns(ctx context.Context, ss db.DB) error {
-	r.logger.Debug("Loading Columns")
+	r.logger.Debug().Msg("Loading Columns")
 
 	cc, err := r.GetColumns(ctx)
 	if err != nil {
-		return errors.Wrap(err, "GetColumns")
+		return fmt.Errorf("GetColumns:%w", err)
 	}
 
 	for _, c := range cc {
 		table, ok := ss.GetTable(c.Schema, c.Table)
 		if !ok {
-			r.logger.Debugf("Table (%s.%s) not found for Column (%s), skipping", c.Schema, c.Table, c.Name)
+			r.logger.Debug().Msgf("Table (%s.%s) not found for Column (%s), skipping", c.Schema, c.Table, c.Name)
 
 			continue
 		}
@@ -138,17 +138,17 @@ func (r Repo) processColumns(ctx context.Context, ss db.DB) error {
 }
 
 func (r Repo) processIndexes(ctx context.Context, ss db.DB) error {
-	r.logger.Debug("Loading Indexes")
+	r.logger.Debug().Msg("Loading Indexes")
 
 	ii, err := r.GetIndexes(ctx)
 	if err != nil {
-		return errors.Wrap(err, "GetIndexes")
+		return fmt.Errorf("GetIndexes:%w", err)
 	}
 
 	for _, i := range ii {
 		table, ok := ss.GetTable(i.Schema, i.Table)
 		if !ok {
-			r.logger.Warnf("Table (%s.%s) not found for Index (%s), skipping", i.Schema, i.Table, i.Name)
+			r.logger.Warn().Msgf("Table (%s.%s) not found for Index (%s), skipping", i.Schema, i.Table, i.Name)
 
 			continue
 		}
@@ -156,9 +156,9 @@ func (r Repo) processIndexes(ctx context.Context, ss db.DB) error {
 		cols, err := table.GetColumnsByName(i.Columns)
 		if err != nil {
 			if err.Error() == "expr" {
-				r.logger.Warnf("Unsupported expression Index (%s), skipping", i.Name)
+				r.logger.Warn().Msgf("Unsupported expression Index (%s), skipping", i.Name)
 			} else {
-				r.logger.Warnf("Column (%s) not found for Index (%s), skipping", err, i.Name)
+				r.logger.Warn().Msgf("Column (%s) not found for Index (%s), skipping", err, i.Name)
 			}
 
 			continue
@@ -179,45 +179,47 @@ func (r Repo) processIndexes(ctx context.Context, ss db.DB) error {
 }
 
 func (r Repo) processForeignKeys(ctx context.Context, ss db.DB) error {
-	r.logger.Debug("Loading Foreign Keys")
+	r.logger.Debug().Msg("Loading Foreign Keys")
 
 	ff, err := r.GetForeignKeys(ctx)
 	if err != nil {
-		return errors.Wrap(err, "GetForeignKeys")
+		return fmt.Errorf("GetForeignKeys:%w", err)
 	}
 
 	for _, f := range ff {
+		l := r.logger.With().Str("ForeignKey", f.Name).Logger()
+
 		table, ok := ss.GetTable(f.Schema, f.Table)
 		if !ok {
-			r.logger.Debugf("Table (%s.%s) not found for ForeignKey (%s), skipping", f.Schema, f.Table, f.Name)
+			l.Debug().Msgf("Table (%s.%s) not found, skipping", f.Schema, f.Table)
 
 			continue
 		}
 
 		cols, err := table.GetColumnsByName(f.Columns)
 		if err != nil {
-			r.logger.Debugf("Column (%s) not found for ForeignKey (%s), skipping", err, f.Name)
+			l.Debug().Msgf("Column (%s) not found, skipping", err)
 
 			continue
 		}
 
-		ftable, ok := ss.GetTable(f.ForeignSchema, f.ForeignTable)
+		fTable, ok := ss.GetTable(f.ForeignSchema, f.ForeignTable)
 		if !ok {
-			r.logger.Debugf("Table (%s.%s) not found for ForeignKey (%s), skipping", f.ForeignSchema, f.ForeignTable, f.Name)
+			l.Debug().Msgf("Table (%s.%s) not found, skipping", f.ForeignSchema, f.ForeignTable)
 
 			continue
 		}
 
-		fcols, err := ftable.GetColumnsByName(f.ForeignColumns)
+		fCols, err := fTable.GetColumnsByName(f.ForeignColumns)
 		if err != nil {
-			r.logger.Debugf("Column (%s) not found for ForeignKey (%s), skipping", err, f.Name)
+			l.Debug().Msgf("Column (%s) not found, skipping", err)
 
 			continue
 		}
 
-		fk := f.toDB(cols, fcols)
+		fk := f.toDB(cols, fCols)
 		table.ForeignKeys = append(table.ForeignKeys, &fk)
-		ftable.References = append(ftable.References, &fk)
+		fTable.References = append(fTable.References, &fk)
 
 		for _, c := range cols {
 			c.ForeignKey = &fk

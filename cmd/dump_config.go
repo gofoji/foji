@@ -4,7 +4,6 @@ import (
 	"os"
 
 	"github.com/gofoji/foji/cfg"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
@@ -18,13 +17,15 @@ var dumpConfigCmd = &cobra.Command{
 }
 
 func dumpConfig(_ *cobra.Command, _ []string) {
+	l := getLogger(quiet, trace, verbose)
+
 	c, err := cfg.Load(cfgFile, includeDefaults)
 	if err != nil {
-		logrus.WithError(err).Fatal("Loading Config")
+		l.Fatal().Err(err).Msg("Loading Config")
 	}
 
 	err = yaml.NewEncoder(os.Stdout).Encode(c)
 	if err != nil {
-		logrus.WithError(err).Fatal("Getting Database Schema")
+		l.Fatal().Err(err).Msg("Writing Yaml")
 	}
 }

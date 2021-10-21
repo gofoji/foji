@@ -5,7 +5,7 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gofoji/foji/input"
-	"github.com/sirupsen/logrus"
+	"github.com/rs/zerolog"
 )
 
 type FileGroups []FileGroup
@@ -17,14 +17,14 @@ type File struct {
 	API   *openapi3.T
 }
 
-func Parse(ctx context.Context, logger logrus.FieldLogger, inGroups []input.FileGroup) (FileGroups, error) {
+func Parse(_ context.Context, logger zerolog.Logger, inGroups []input.FileGroup) (FileGroups, error) {
 	result := make(FileGroups, len(inGroups))
 
 	for i, ff := range inGroups {
 		var group FileGroup
 
 		for _, f := range ff.Files {
-			logger.Infof("Parsing swagger from: %s", f.Source)
+			logger.Info().Msgf("Parsing swagger from: %s", f.Source)
 
 			swagger, err := openapi3.NewLoader().LoadFromData(f.Content)
 			if err != nil {
