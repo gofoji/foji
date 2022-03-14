@@ -19,12 +19,26 @@ var dumpConfigCmd = &cobra.Command{
 func dumpConfig(_ *cobra.Command, _ []string) {
 	l := getLogger(quiet, trace, verbose)
 
-	c, err := cfg.Load(cfgFile, includeDefaults)
+	c, err := cfg.Load(cfgFile, includeDefaults || dumpWeld != "")
 	if err != nil {
 		l.Fatal().Err(err).Msg("Loading Config")
 	}
 
-	err = yaml.NewEncoder(os.Stdout).Encode(c)
+	var v interface{}
+	v = c
+	if dumpWeld != "" {
+		targets, err := c.Processes.Target([]string{dumpWeld})
+		if err != nil {
+			l.Fatal().Err(err).Msg("Getting welds")
+		}
+		if len(targets) != 1 {
+			l.Fatal().Int("Found Welds", len(targets)).Msg("Invalid weld count")
+		}
+
+		v = targets[0]
+	}
+
+	err = yaml.NewEncoder(os.Stdout).Encode(v)
 	if err != nil {
 		l.Fatal().Err(err).Msg("Writing Yaml")
 	}

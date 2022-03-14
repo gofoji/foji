@@ -18,6 +18,7 @@ var (
 	stdout          bool
 	simulate        bool
 	dir             string
+	dumpWeld        string
 )
 
 var rootCmd = &cobra.Command{
@@ -56,7 +57,8 @@ func registerFlags() {
 
 	dumpConfigCmd.PersistentFlags().BoolVarP(&includeDefaults, "includeDefaults", "d", false,
 		"Include evaluated Fōji defaults in the dump")
-	dumpConfigCmd.PersistentFlags().BoolVarP(&stdout, "stdout", "o", false, "write to stdout")
+	dumpConfigCmd.PersistentFlags().StringVarP(&dumpWeld, "weld", "w", "",
+		"limits output to only the specified weld config (includes defaults")
 
 	copyTemplateCmd.PersistentFlags().BoolVarP(&stdout, "stdout", "o", false, "write to stdout")
 	copyTemplateCmd.PersistentFlags().BoolVarP(&overwrite, "overwrite", "y", false,

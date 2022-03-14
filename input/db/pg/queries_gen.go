@@ -4,26 +4,24 @@ package pg
 
 import (
 	"context"
-
-	"github.com/pkg/errors"
+	"fmt"
 )
 
 // Table represents a result from 'GetTables'.
 type Table struct {
-	ID        int64  `json:"id,omitempty"`         // oid
-	Schema    string `json:"schema,omitempty"`     // name
-	Name      string `json:"name,omitempty"`       // name
-	Type      string `json:"type,omitempty"`       // text
-	CanUpdate bool   `json:"can_update,omitempty"` // bool
-	CanInsert bool   `json:"can_insert,omitempty"` // bool
-	CanDelete bool   `json:"can_delete,omitempty"` // bool
-	Comment   string `json:"comment,omitempty"`    // text
+	ID        int64  `json:"id,omitempty"`         // postgres type: oid
+	Schema    string `json:"schema,omitempty"`     // postgres type: name
+	Name      string `json:"name,omitempty"`       // postgres type: name
+	Type      string `json:"type,omitempty"`       // postgres type: text
+	CanUpdate bool   `json:"can_update,omitempty"` // postgres type: bool
+	CanInsert bool   `json:"can_insert,omitempty"` // postgres type: bool
+	CanDelete bool   `json:"can_delete,omitempty"` // postgres type: bool
+	Comment   string `json:"comment,omitempty"`    // postgres type: text
 }
 
 // GetTables returns Table
-//
 func (r Repo) GetTables(ctx context.Context) ([]*Table, error) {
-	query := `--# GetTables Table
+	const query = `--# GetTables Table
 SELECT c.oid                                                                                                         AS id,
        n.nspname                                                                                                     AS schema,
        c.relname                                                                                                     AS name,
@@ -46,37 +44,39 @@ WHERE c.relkind IN ('r', 'p', 'v', 'f')
 ORDER BY schema, name`
 	q, err := r.db.Query(ctx, query)
 	if err != nil {
-		return nil, errors.Wrap(err, "GetTables.Query")
+		return nil, fmt.Errorf("GetTables.Query:%w", err)
 	}
-	var result []*Table
+
+	var out []*Table
+
 	for q.Next() {
 		row := Table{}
 		err := q.Scan(&row.ID, &row.Schema, &row.Name, &row.Type, &row.CanUpdate, &row.CanInsert, &row.CanDelete, &row.Comment)
 		if err != nil {
-			return nil, errors.Wrap(err, "GetTables.scan") // notest
+			return nil, fmt.Errorf("GetTables.Scan:%w", err)
 		}
-		result = append(result, &row)
+
+		out = append(out, &row)
 	}
 
-	return result, nil
+	return out, nil
 }
 
 // Index represents a result from 'GetIndexes'.
 type Index struct {
-	ID        int64    `json:"id,omitempty"`         // oid
-	Schema    string   `json:"schema,omitempty"`     // name
-	Name      string   `json:"name,omitempty"`       // name
-	Table     string   `json:"table,omitempty"`      // name
-	IsUnique  bool     `json:"is_unique,omitempty"`  // bool
-	IsPrimary bool     `json:"is_primary,omitempty"` // bool
-	Columns   []string `json:"columns,omitempty"`    // _name
-	Comment   string   `json:"comment,omitempty"`    // text
+	ID        int64    `json:"id,omitempty"`         // postgres type: oid
+	Schema    string   `json:"schema,omitempty"`     // postgres type: name
+	Name      string   `json:"name,omitempty"`       // postgres type: name
+	Table     string   `json:"table,omitempty"`      // postgres type: name
+	IsUnique  bool     `json:"is_unique,omitempty"`  // postgres type: bool
+	IsPrimary bool     `json:"is_primary,omitempty"` // postgres type: bool
+	Columns   []string `json:"columns,omitempty"`    // postgres type: _name
+	Comment   string   `json:"comment,omitempty"`    // postgres type: text
 }
 
 // GetIndexes returns Index
-//
 func (r Repo) GetIndexes(ctx context.Context) ([]*Index, error) {
-	query := `--# GetIndexes Index
+	const query = `--# GetIndexes Index
 SELECT ix.indexrelid                                                                              AS id,
        n.nspname                                                                                  AS schema,
        c.relname                                                                                  AS name,
@@ -93,34 +93,36 @@ WHERE n.nspname NOT IN ('pg_toast', 'pg_temp_1', 'pg_toast_temp_1', 'pg_catalog'
 ORDER BY t.relname, c.relname`
 	q, err := r.db.Query(ctx, query)
 	if err != nil {
-		return nil, errors.Wrap(err, "GetIndexes.Query")
+		return nil, fmt.Errorf("GetIndexes.Query:%w", err)
 	}
-	var result []*Index
+
+	var out []*Index
+
 	for q.Next() {
 		row := Index{}
 		err := q.Scan(&row.ID, &row.Schema, &row.Name, &row.Table, &row.IsUnique, &row.IsPrimary, &row.Columns, &row.Comment)
 		if err != nil {
-			return nil, errors.Wrap(err, "GetIndexes.scan") // notest
+			return nil, fmt.Errorf("GetIndexes.Scan:%w", err)
 		}
-		result = append(result, &row)
+
+		out = append(out, &row)
 	}
 
-	return result, nil
+	return out, nil
 }
 
 // Enum represents a result from 'GetEnums'.
 type Enum struct {
-	ID      int64    `json:"id,omitempty"`      // oid
-	Name    string   `json:"name,omitempty"`    // name
-	Schema  string   `json:"schema,omitempty"`  // name
-	Values  []string `json:"values,omitempty"`  // _name
-	Comment string   `json:"comment,omitempty"` // text
+	ID      int64    `json:"id,omitempty"`      // postgres type: oid
+	Name    string   `json:"name,omitempty"`    // postgres type: name
+	Schema  string   `json:"schema,omitempty"`  // postgres type: name
+	Values  []string `json:"values,omitempty"`  // postgres type: _name
+	Comment string   `json:"comment,omitempty"` // postgres type: text
 }
 
 // GetEnums returns Enum
-//
 func (r Repo) GetEnums(ctx context.Context) ([]*Enum, error) {
-	query := `--# GetEnums Enum
+	const query = `--# GetEnums Enum
 SELECT t.oid                                                                               AS id,
        t.typname                                                                           AS name,
        n.nspname                                                                           AS schema,
@@ -131,38 +133,40 @@ FROM pg_type t
 WHERE t.typtype = 'e'`
 	q, err := r.db.Query(ctx, query)
 	if err != nil {
-		return nil, errors.Wrap(err, "GetEnums.Query")
+		return nil, fmt.Errorf("GetEnums.Query:%w", err)
 	}
-	var result []*Enum
+
+	var out []*Enum
+
 	for q.Next() {
 		row := Enum{}
 		err := q.Scan(&row.ID, &row.Name, &row.Schema, &row.Values, &row.Comment)
 		if err != nil {
-			return nil, errors.Wrap(err, "GetEnums.scan") // notest
+			return nil, fmt.Errorf("GetEnums.Scan:%w", err)
 		}
-		result = append(result, &row)
+
+		out = append(out, &row)
 	}
 
-	return result, nil
+	return out, nil
 }
 
 // ForeignKey represents a result from 'GetForeignKeys'.
 type ForeignKey struct {
-	ID             int64    `json:"id,omitempty"`              // oid
-	Schema         string   `json:"schema,omitempty"`          // name
-	Name           string   `json:"name,omitempty"`            // name
-	Table          string   `json:"table,omitempty"`           // name
-	Columns        []string `json:"columns,omitempty"`         // _name
-	ForeignSchema  string   `json:"foreign_schema,omitempty"`  // name
-	ForeignTable   string   `json:"foreign_table,omitempty"`   // name
-	ForeignColumns []string `json:"foreign_columns,omitempty"` // _name
-	Comment        string   `json:"comment,omitempty"`         // text
+	ID             int64    `json:"id,omitempty"`              // postgres type: oid
+	Schema         string   `json:"schema,omitempty"`          // postgres type: name
+	Name           string   `json:"name,omitempty"`            // postgres type: name
+	Table          string   `json:"table,omitempty"`           // postgres type: name
+	Columns        []string `json:"columns,omitempty"`         // postgres type: _name
+	ForeignSchema  string   `json:"foreign_schema,omitempty"`  // postgres type: name
+	ForeignTable   string   `json:"foreign_table,omitempty"`   // postgres type: name
+	ForeignColumns []string `json:"foreign_columns,omitempty"` // postgres type: _name
+	Comment        string   `json:"comment,omitempty"`         // postgres type: text
 }
 
 // GetForeignKeys returns ForeignKey
-//
 func (r Repo) GetForeignKeys(ctx context.Context) ([]*ForeignKey, error) {
-	query := `--# GetForeignKeys ForeignKey
+	const query = `--# GetForeignKeys ForeignKey
 SELECT con.oid                                                                             AS id,
        (
            SELECT nspname
@@ -187,37 +191,39 @@ FROM pg_class cl
          JOIN pg_class foreign_class ON foreign_class.oid = con.confrelid`
 	q, err := r.db.Query(ctx, query)
 	if err != nil {
-		return nil, errors.Wrap(err, "GetForeignKeys.Query")
+		return nil, fmt.Errorf("GetForeignKeys.Query:%w", err)
 	}
-	var result []*ForeignKey
+
+	var out []*ForeignKey
+
 	for q.Next() {
 		row := ForeignKey{}
 		err := q.Scan(&row.ID, &row.Schema, &row.Name, &row.Table, &row.Columns, &row.ForeignSchema, &row.ForeignTable, &row.ForeignColumns, &row.Comment)
 		if err != nil {
-			return nil, errors.Wrap(err, "GetForeignKeys.scan") // notest
+			return nil, fmt.Errorf("GetForeignKeys.Scan:%w", err)
 		}
-		result = append(result, &row)
+
+		out = append(out, &row)
 	}
 
-	return result, nil
+	return out, nil
 }
 
 // Column represents a result from 'GetColumns'.
 type Column struct {
-	Schema     string `json:"schema,omitempty"`      // name
-	Table      string `json:"table,omitempty"`       // name
-	Name       string `json:"name,omitempty"`        // name
-	Ordinal    int16  `json:"ordinal,omitempty"`     // int2
-	Nullable   bool   `json:"nullable,omitempty"`    // bool
-	HasDefault bool   `json:"has_default,omitempty"` // bool
-	Type       string `json:"type,omitempty"`        // name
-	Comment    string `json:"comment,omitempty"`     // text
+	Schema     string `json:"schema,omitempty"`      // postgres type: name
+	Table      string `json:"table,omitempty"`       // postgres type: name
+	Name       string `json:"name,omitempty"`        // postgres type: name
+	Ordinal    int16  `json:"ordinal,omitempty"`     // postgres type: int2
+	Nullable   bool   `json:"nullable,omitempty"`    // postgres type: bool
+	HasDefault bool   `json:"has_default,omitempty"` // postgres type: bool
+	Type       string `json:"type,omitempty"`        // postgres type: name
+	Comment    string `json:"comment,omitempty"`     // postgres type: text
 }
 
 // GetColumns returns Column
-//
 func (r Repo) GetColumns(ctx context.Context) ([]*Column, error) {
-	query := `--# GetColumns Column
+	const query = `--# GetColumns Column
 SELECT n.nspname                                           AS schema,
        c.relname                                           AS table,
        a.attname                                           AS name,
@@ -238,17 +244,20 @@ WHERE a.attnum > 0 and atttypid > 0
 ORDER BY schema, "table", ordinal`
 	q, err := r.db.Query(ctx, query)
 	if err != nil {
-		return nil, errors.Wrap(err, "GetColumns.Query")
+		return nil, fmt.Errorf("GetColumns.Query:%w", err)
 	}
-	var result []*Column
+
+	var out []*Column
+
 	for q.Next() {
 		row := Column{}
 		err := q.Scan(&row.Schema, &row.Table, &row.Name, &row.Ordinal, &row.Nullable, &row.HasDefault, &row.Type, &row.Comment)
 		if err != nil {
-			return nil, errors.Wrap(err, "GetColumns.scan") // notest
+			return nil, fmt.Errorf("GetColumns.Scan:%w", err)
 		}
-		result = append(result, &row)
+
+		out = append(out, &row)
 	}
 
-	return result, nil
+	return out, nil
 }

@@ -143,7 +143,6 @@ func TestOutput_All(t *testing.T) {
 }
 
 func TestFileInput_IsEmpty(t *testing.T) {
-
 	c, err := cfg.Load("test/sample.yaml", true)
 	if err != nil {
 		t.Errorf("Load() Err = %v", err)

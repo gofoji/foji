@@ -1,5 +1,5 @@
-genPGQueries:
-	go run main.go gq --config pgqueries.yaml
+sqlRepo:
+	go run main.go weld sqlRepo
 
 testSchemaList:
 	go run main.go schemaList --config testlist.yaml

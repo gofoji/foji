@@ -25,7 +25,7 @@ func Invoke(file string, commandLine []string) error {
 				return file
 			}
 
-			return ""
+			return os.Getenv(s)
 		})
 	}
 

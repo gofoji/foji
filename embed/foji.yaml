@@ -1,8 +1,8 @@
 formats:
   go:
     case: pascal
-#    post:
-#      - [ "goimports", "-w", "$FILE" ]
+    post:
+      - [ "goimports", "-w", "$FILE" ]
     maps:
       type:
         "_name": "[]string"
@@ -51,9 +51,9 @@ formats:
 files:
   sql:
     files:
-      - "*/*/*.sql"
+      - "**/*.sql"
     filter:
-      - "^db*"
+      - "db/migrations/.*" # dbMate migrations
   embed:
     files:
       - "embed/*"
@@ -61,7 +61,7 @@ files:
       - ".*\\.go"
   api:
     files:
-      - "swagger.yaml"
+      - "openapi.yaml"
 processes:
   repo:
     processes: [ sqlRepo, dbRepo ]

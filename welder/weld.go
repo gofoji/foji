@@ -102,14 +102,10 @@ func (w *Welder) Run(simulate bool) error {
 }
 
 func (w *Welder) embedProcess(simulate bool, p cfg.Process, ff []input.FileGroup) error {
-	w.logger.Info().Msg("Embed")
-
 	return output.Embed(p, w.postProcessor(p), w.logger, ff, simulate)
 }
 
 func (w *Welder) apiProcess(simulate bool, p cfg.Process, ff []input.FileGroup) error {
-	w.logger.Info().Msg("OpenAPI")
-
 	pp, err := openapi.Parse(w.ctx, w.logger, ff)
 	if err != nil {
 		return fmt.Errorf("openapi.Parse:%w", err)
@@ -119,8 +115,6 @@ func (w *Welder) apiProcess(simulate bool, p cfg.Process, ff []input.FileGroup) 
 }
 
 func (w *Welder) protoProcess(simulate bool, p cfg.Process, ff []input.FileGroup) error {
-	w.logger.Info().Msg("Proto")
-
 	pp, err := proto.Parse(w.ctx, w.logger, ff)
 	if err != nil {
 		return fmt.Errorf("proto.Parse:%w", err)
@@ -130,8 +124,6 @@ func (w *Welder) protoProcess(simulate bool, p cfg.Process, ff []input.FileGroup
 }
 
 func (w *Welder) sqlProcess(simulate bool, p cfg.Process, ff []input.FileGroup) error {
-	w.logger.Info().Msg("SQL")
-
 	if err := w.initDBConnection(); err != nil {
 		return err
 	}
@@ -145,8 +137,6 @@ func (w *Welder) sqlProcess(simulate bool, p cfg.Process, ff []input.FileGroup) 
 }
 
 func (w *Welder) dbProcess(simulate bool, p cfg.Process, _ []input.FileGroup) error {
-	w.logger.Info().Msg("DB")
-
 	if err := w.initDBConnection(); err != nil {
 		return err
 	}
@@ -224,6 +214,30 @@ func (w *Welder) parseDB() (db.DB, error) {
 	return s.Filter(w.config.DB.Filter), nil
 }
 
+func pgxzeroMapper(level pgx.LogLevel, msg string) zerolog.Level {
+	switch level {
+	case pgx.LogLevelNone:
+		return zerolog.NoLevel
+	case pgx.LogLevelError:
+		return zerolog.ErrorLevel
+	case pgx.LogLevelWarn:
+		return zerolog.WarnLevel
+	case pgx.LogLevelInfo:
+		switch msg {
+		case "Query":
+			fallthrough
+		case "Dialing PostgreSQL server":
+			return zerolog.DebugLevel
+		}
+
+		return zerolog.InfoLevel
+	case pgx.LogLevelDebug:
+		return zerolog.DebugLevel
+	}
+
+	return zerolog.DebugLevel
+}
+
 func (w *Welder) initDBConnection() error {
 	if w.conn != nil {
 		return nil
@@ -240,7 +254,7 @@ func (w *Welder) initDBConnection() error {
 		w.logger.Fatal().Err(err).Msg("pgx.ParseConfig")
 	}
 
-	config.Logger = pgxzero.New(w.logger)
+	config.Logger = pgxzero.New(w.logger).WithMapper(pgxzeroMapper)
 
 	conn, err := pgx.ConnectConfig(context.Background(), config)
 	if err != nil {
@@ -260,6 +274,8 @@ func (w *Welder) initDBConnection() error {
 }
 
 func (w Welder) postProcessor(p cfg.Process) cfg.FileHandler {
+	w.logger.Debug().Interface("postProcessor", p.Post).Msg("post processor")
+
 	if len(p.Post) == 0 || len(p.Post[0]) == 0 {
 		return nil
 	}

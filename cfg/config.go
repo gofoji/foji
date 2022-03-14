@@ -54,7 +54,7 @@ type (
 		Case string `yaml:",omitempty"`
 		// Used for mapping data from Input to Output
 		Maps Maps `yaml:",omitempty"`
-		// List of post processing commands for each file generated (commonly used to invoke formatters like goimports)
+		// List of post-processing commands for each file generated (commonly used to invoke formatters like goimports)
 		Post stringlist.Strings2D `yaml:",omitempty,flow"`
 		// Custom parameters that can be passed into each template
 		Params ParamMap `yaml:",omitempty"`
