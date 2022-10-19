@@ -183,7 +183,7 @@ func (o *OpenAPIFileContext) IsDefaultEnum(name string, s *openapi3.SchemaRef) b
 }
 
 func (o *OpenAPIFileContext) GetOpHappyResponseType(pkg string, op *openapi3.Operation) string {
-	key, content := o.GetOpHappyResponse(op)
+	key, _, content := o.GetOpHappyResponse(op)
 	if content == nil {
 		return ""
 	}
@@ -196,20 +196,35 @@ func (o *OpenAPIFileContext) GetOpHappyResponseType(pkg string, op *openapi3.Ope
 	return "*" + t
 }
 
-func (o *OpenAPIFileContext) GetOpHappyResponse(op *openapi3.Operation) (string, *openapi3.MediaType) {
-	// TODO: Support response types besides JSON
+func (o *OpenAPIFileContext) GetOpHappyResponse(op *openapi3.Operation) (string, string, *openapi3.MediaType) {
+	// TODO: Figure out if the mime type can be extracted from the openapi3.MediaType type
+	supportedResponseContentTypes := [3]string{"application/json", "application/jsonl", ""}
+
 	for key, r := range op.Responses {
 		if len(key) == 3 && key[0] == '2' {
-			return key, r.Value.Content.Get("application/json")
+			for _, mimeType := range supportedResponseContentTypes {
+				if mimeType == "" {
+					return key, "", nil
+				}
+				mediaType := r.Value.Content.Get(mimeType)
+				if mediaType != nil {
+					return key, mimeType, mediaType
+				}
+			}
 		}
 	}
 
-	return "", nil
+	return "", "", nil
 }
 
 func (o *OpenAPIFileContext) GetOpHappyResponseKey(op *openapi3.Operation) string {
-	key, _ := o.GetOpHappyResponse(op)
+	key, _, _ := o.GetOpHappyResponse(op)
 	return key
+}
+
+func (o *OpenAPIFileContext) GetOpHappyResponseMimeType(op *openapi3.Operation) string {
+	_, mimeType, _ := o.GetOpHappyResponse(op)
+	return mimeType
 }
 
 func (o *OpenAPIFileContext) OpSecurity(op *openapi3.Operation) openapi3.SecurityRequirements {
