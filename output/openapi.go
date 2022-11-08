@@ -182,21 +182,7 @@ func (o *OpenAPIFileContext) IsDefaultEnum(name string, s *openapi3.SchemaRef) b
 	return !ok
 }
 
-func (o *OpenAPIFileContext) GetOpHappyResponseType(pkg string, op *openapi3.Operation) string {
-	key, _, content := o.GetOpHappyResponse(op)
-	if content == nil {
-		return ""
-	}
-
-	t := o.GetType(pkg, op.OperationID+"."+key, content.Schema)
-	if strings.HasPrefix(t, "[]") {
-		return t
-	}
-
-	return "*" + t
-}
-
-func (o *OpenAPIFileContext) GetOpHappyResponse(op *openapi3.Operation) (string, string, *openapi3.MediaType) {
+func (o *OpenAPIFileContext) GetOpHappyResponse(pkg string, op *openapi3.Operation) OpResponse {
 	// TODO: Figure out if the mime type can be extracted from the openapi3.MediaType type
 	supportedResponseContentTypes := [3]string{"application/json", "application/jsonl", ""}
 
@@ -204,27 +190,41 @@ func (o *OpenAPIFileContext) GetOpHappyResponse(op *openapi3.Operation) (string,
 		if len(key) == 3 && key[0] == '2' {
 			for _, mimeType := range supportedResponseContentTypes {
 				if mimeType == "" {
-					return key, "", nil
+					return OpResponse{Key: key, MimeType: "", MediaType: nil, GoType: ""}
 				}
 				mediaType := r.Value.Content.Get(mimeType)
 				if mediaType != nil {
-					return key, mimeType, mediaType
+					t := o.GetType(pkg, op.OperationID+"."+key, mediaType.Schema)
+					var goType string
+					if strings.HasPrefix(t, "[]") {
+						goType = t
+					} else {
+						goType = "*" + t
+					}
+					return OpResponse{Key: key, MimeType: mimeType, MediaType: mediaType, GoType: goType}
 				}
 			}
 		}
 	}
 
-	return "", "", nil
+	return OpResponse{Key: "", MimeType: "", MediaType: nil, GoType: ""}
 }
 
 func (o *OpenAPIFileContext) GetOpHappyResponseKey(op *openapi3.Operation) string {
-	key, _, _ := o.GetOpHappyResponse(op)
-	return key
+	// passing "" as pkg because here we only need the Key part for which pkg is not needed
+	opResponse := o.GetOpHappyResponse("", op)
+	return opResponse.Key
 }
 
 func (o *OpenAPIFileContext) GetOpHappyResponseMimeType(op *openapi3.Operation) string {
-	_, mimeType, _ := o.GetOpHappyResponse(op)
-	return mimeType
+	// passing "" as pkg because here we only need the MimeType part for which pkg is not needed
+	opResponse := o.GetOpHappyResponse("", op)
+	return opResponse.MimeType
+}
+
+func (o *OpenAPIFileContext) GetOpHappyResponseType(pkg string, op *openapi3.Operation) string {
+	opResponse := o.GetOpHappyResponse(pkg, op)
+	return opResponse.GoType
 }
 
 func (o *OpenAPIFileContext) OpSecurity(op *openapi3.Operation) openapi3.SecurityRequirements {
