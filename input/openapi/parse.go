@@ -26,7 +26,10 @@ func Parse(_ context.Context, logger zerolog.Logger, inGroups []input.FileGroup)
 		for _, f := range ff.Files {
 			logger.Info().Msgf("Parsing swagger from: %s", f.Source)
 
-			swagger, err := openapi3.NewLoader().LoadFromData(f.Content)
+			loader := openapi3.NewLoader()
+			loader.IsExternalRefsAllowed = true
+
+			swagger, err := loader.LoadFromData(f.Content)
 			if err != nil {
 				panic(err)
 			}

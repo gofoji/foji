@@ -18,7 +18,7 @@ files:
       'embed/(.*)': '$1'
   api:
     files:
-      - "testdata/swagger.yaml"
+      - "testdata/lavasdk.yaml"
   sql:
     files:
       - '**/*.sql'
@@ -32,9 +32,3 @@ processes:
     params:
       Package: github.com/gofoji/foji/test
       Auth: github.com/gofoji/foji/test.User
-#  sqlRepo:
-#    files:
-#      files:
-#        - test/pg/queries.sql
-#    params:
-#      Package: github.com/bir/test/todo

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/bir/iken/pgxzero"
 	"github.com/gofoji/foji/cfg"
 	"github.com/gofoji/foji/input"
 	"github.com/gofoji/foji/input/db"
@@ -16,8 +15,7 @@ import (
 	sqlDB "github.com/gofoji/foji/input/sql/pg"
 	"github.com/gofoji/foji/output"
 	"github.com/gofoji/foji/runtime"
-	"github.com/jackc/pgtype/pgxtype"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 	"github.com/rs/zerolog"
 )
 
@@ -214,29 +212,30 @@ func (w *Welder) parseDB() (db.DB, error) {
 	return s.Filter(w.config.DB.Filter), nil
 }
 
-func pgxzeroMapper(level pgx.LogLevel, msg string) zerolog.Level {
-	switch level {
-	case pgx.LogLevelNone:
-		return zerolog.NoLevel
-	case pgx.LogLevelError:
-		return zerolog.ErrorLevel
-	case pgx.LogLevelWarn:
-		return zerolog.WarnLevel
-	case pgx.LogLevelInfo:
-		switch msg {
-		case "Query":
-			fallthrough
-		case "Dialing PostgreSQL server":
-			return zerolog.DebugLevel
-		}
-
-		return zerolog.InfoLevel
-	case pgx.LogLevelDebug:
-		return zerolog.DebugLevel
-	}
-
-	return zerolog.DebugLevel
-}
+// TODO - Fix pgx v5 logger
+//func pgxzeroMapper(level pgx.LogLevel, msg string) zerolog.Level {
+//	switch level {
+//	case pgx.LogLevelNone:
+//		return zerolog.NoLevel
+//	case pgx.LogLevelError:
+//		return zerolog.ErrorLevel
+//	case pgx.LogLevelWarn:
+//		return zerolog.WarnLevel
+//	case pgx.LogLevelInfo:
+//		switch msg {
+//		case "Query":
+//			fallthrough
+//		case "Dialing PostgreSQL server":
+//			return zerolog.DebugLevel
+//		}
+//
+//		return zerolog.InfoLevel
+//	case pgx.LogLevelDebug:
+//		return zerolog.DebugLevel
+//	}
+//
+//	return zerolog.DebugLevel
+//}
 
 func (w *Welder) initDBConnection() error {
 	if w.conn != nil {
@@ -254,19 +253,20 @@ func (w *Welder) initDBConnection() error {
 		w.logger.Fatal().Err(err).Msg("pgx.ParseConfig")
 	}
 
-	config.Logger = pgxzero.New(w.logger).WithMapper(pgxzeroMapper)
+	// TODO: Enable tracer on PGX V5
+	//config.Tracer = pgxzero.New(w.logger).WithMapper(pgxzeroMapper)
 
 	conn, err := pgx.ConnectConfig(context.Background(), config)
 	if err != nil {
 		w.logger.Fatal().Err(err).Msg("Unable to connect to database")
 	}
 
-	dt, err := pgxtype.LoadDataType(context.Background(), conn, conn.ConnInfo(), "_name")
+	dt, err := conn.LoadType(context.Background(), "_name")
 	if err != nil {
 		w.logger.Fatal().Err(err).Msg("Unable to Load Data Types")
 	}
 
-	conn.ConnInfo().RegisterDataType(dt)
+	conn.TypeMap().RegisterType(dt)
 
 	w.conn = conn
 
