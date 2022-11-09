@@ -84,6 +84,16 @@ func getExtAsString(in interface{}) string {
 }
 
 func (o *OpenAPIFileContext) GetType(pkg, name string, s *openapi3.SchemaRef) string {
+	xPkg, ok := s.Value.Extensions["x-package"]
+	if ok {
+		customPkg := getExtAsString(xPkg)
+		if customPkg == "" {
+			return fmt.Sprint("INVALID x-pacakge: ", xPkg.(string))
+		}
+
+		pkg = customPkg
+	}
+
 	override, ok := s.Value.Extensions["x-go-type"]
 	if ok {
 		typeName := getExtAsString(override)
