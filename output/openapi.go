@@ -88,7 +88,7 @@ func (o *OpenAPIFileContext) GetType(pkg, name string, s *openapi3.SchemaRef) st
 	if ok {
 		customPkg := getExtAsString(xPkg)
 		if customPkg == "" {
-			return fmt.Sprint("INVALID x-pacakge: ", xPkg.(string))
+			return fmt.Sprint("INVALID x-package: ", xPkg.(string))
 		}
 
 		pkg = customPkg
