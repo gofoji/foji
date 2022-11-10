@@ -66,7 +66,13 @@ func (o *OpenAPIFileContext) RefToName(ref string) string {
 }
 
 func (o *OpenAPIFileContext) GetTypeName(pkg string, s *openapi3.SchemaRef) string {
-	return o.CheckPackage(o.RefToName(s.Ref), pkg)
+	ref := o.RefToName(s.Ref)
+
+	if t, ok := o.Maps.Type[ref]; ok {
+		return o.CheckPackage(t, pkg)
+	}
+
+	return o.CheckPackage(ref, pkg)
 }
 
 func getExtAsString(in interface{}) string {
@@ -105,10 +111,10 @@ func (o *OpenAPIFileContext) GetType(pkg, name string, s *openapi3.SchemaRef) st
 	}
 
 	if s.Value.Type == "array" {
-		r := s.Value.Items.Ref
-		if r != "" {
-			return "[]" + o.CheckPackage(o.RefToName(r), pkg)
-		}
+		//r := s.Value.Items.Ref
+		//if r != "" {
+		//	return "[]" + o.CheckPackage(o.RefToName(r), pkg)
+		//}
 
 		return "[]" + o.GetType(pkg, name, s.Value.Items)
 	}
