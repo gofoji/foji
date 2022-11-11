@@ -48,6 +48,10 @@ func Parse(_ context.Context, logger zerolog.Logger, input cfg.FileInput) (FileG
 			return result, fmt.Errorf("error processing glob: %s: %w", glob, err)
 		}
 
+		if len(matches) == 0 {
+			logger.Warn().Str("glob", glob).Msg("No matches found")
+		}
+
 		for _, filename := range matches {
 			// Guard redundant glob patterns
 			if loadedFiles.Contains(filename) {
