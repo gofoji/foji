@@ -9,7 +9,7 @@ import (
 
 // Table represents a result from 'GetTables'.
 type Table struct {
-	ID        int64  `json:"id,omitempty"`         // postgres type: oid
+	ID        uint32 `json:"id,omitempty"`         // postgres type: oid
 	Schema    string `json:"schema,omitempty"`     // postgres type: name
 	Name      string `json:"name,omitempty"`       // postgres type: name
 	Type      string `json:"type,omitempty"`       // postgres type: text
@@ -64,7 +64,7 @@ ORDER BY schema, name`
 
 // Index represents a result from 'GetIndexes'.
 type Index struct {
-	ID        int64    `json:"id,omitempty"`         // postgres type: oid
+	ID        uint32   `json:"id,omitempty"`         // postgres type: oid
 	Schema    string   `json:"schema,omitempty"`     // postgres type: name
 	Name      string   `json:"name,omitempty"`       // postgres type: name
 	Table     string   `json:"table,omitempty"`      // postgres type: name
@@ -113,7 +113,7 @@ ORDER BY t.relname, c.relname`
 
 // Enum represents a result from 'GetEnums'.
 type Enum struct {
-	ID      int64    `json:"id,omitempty"`      // postgres type: oid
+	ID      uint32   `json:"id,omitempty"`      // postgres type: oid
 	Name    string   `json:"name,omitempty"`    // postgres type: name
 	Schema  string   `json:"schema,omitempty"`  // postgres type: name
 	Values  []string `json:"values,omitempty"`  // postgres type: _name
@@ -153,7 +153,7 @@ WHERE t.typtype = 'e'`
 
 // ForeignKey represents a result from 'GetForeignKeys'.
 type ForeignKey struct {
-	ID             int64    `json:"id,omitempty"`              // postgres type: oid
+	ID             uint32   `json:"id,omitempty"`              // postgres type: oid
 	Schema         string   `json:"schema,omitempty"`          // postgres type: name
 	Name           string   `json:"name,omitempty"`            // postgres type: name
 	Table          string   `json:"table,omitempty"`           // postgres type: name

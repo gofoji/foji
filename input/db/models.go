@@ -21,7 +21,7 @@ type Tables []*Table
 
 // Table contains the definition of a table.
 type Table struct {
-	ID          int64
+	ID          uint32
 	Name        string      // the original name of the table in the DB
 	Type        string      // the table type (e.g. VIEW or BASE TABLE)
 	Comment     string      // the comment attached to the table
@@ -74,7 +74,7 @@ type Column struct {
 
 // Enum represents a type that has a set of allowed values.
 type Enum struct {
-	ID      int64
+	ID      uint32
 	Name    string             // the original name of the enum in the DB
 	Values  stringlist.Strings // the list of possible values for this enum
 	Comment string
