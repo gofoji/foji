@@ -18,7 +18,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 
 	"{{.Params.Package}}"
 {{- range .Imports }}

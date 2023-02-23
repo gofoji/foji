@@ -1995,8 +1995,8 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5"
 )
 
 // DB is the common interface for database operations.
@@ -2080,7 +2080,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 
 	"{{.Params.Package}}"
 {{- range .Imports }}
