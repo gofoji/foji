@@ -7,8 +7,8 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 // DB is the common interface for database operations.
