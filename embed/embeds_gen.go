@@ -2039,7 +2039,7 @@ import (
 // {{$goName}} represents a record from '{{.Schema.Name}}.{{$table}}'.
 type {{$goName}} struct {
 {{- range .Table.Columns.ByOrdinal }}
-	{{ case .Name }} {{ if .Nullable }}*{{end}} {{ $.GetType . $.PackageName }}  ` + "`" + `json:"{{ .Name }},omitempty"` + "`" + `
+	{{ case .Name }} {{ $.GetType . $.PackageName }}  ` + "`" + `json:"{{ .Name }},omitempty"` + "`" + `
 {{- end }}
 }
 
@@ -2431,9 +2431,9 @@ const FojiDotYaml = `formats:
 files:
   sql:
     files:
-      - "*/*/*.sql"
+      - "**/*.sql"
     filter:
-      - "^db*"
+      - "db/migrations/.*" # dbMate migrations
   embed:
     files:
       - "embed/*"
@@ -2441,7 +2441,7 @@ files:
       - ".*\\.go"
   api:
     files:
-      - "swagger.yaml"
+      - "openapi.yaml"
 processes:
   repo:
     processes: [ sqlRepo, dbRepo ]
@@ -2514,18 +2514,15 @@ var InitDotYamlBytes = []byte(InitDotYaml)
 const InitDotYaml = `db:
   connection: "host=localhost dbname=my_project sslmode=disable"
   filter:
-    - "*.schema_migrations"
+    - "*.schema_migrations" # dbMate migrations
 sql:
   files:
-    - "*/*.sql"
-    - "*/*/*.sql"
-    - "*/*/*/*.sql"
+    - "**/*.sql"
   filter:
-    - "db/migrations/.*"
+    - "db/migrations/.*" # dbMate migrations
 embed:
   files:
-    - "embed/*"
-    - "embed/*/*"
+    - "embed/**"
   filter:
     - "*.go"
 `

@@ -17,7 +17,7 @@ import (
 // {{$goName}} represents a record from '{{.Schema.Name}}.{{$table}}'.
 type {{$goName}} struct {
 {{- range .Table.Columns.ByOrdinal }}
-	{{ case .Name }} {{ if .Nullable }}*{{end}} {{ $.GetType . $.PackageName }}  `json:"{{ .Name }},omitempty"`
+	{{ case .Name }} {{ $.GetType . $.PackageName }}  `json:"{{ .Name }},omitempty"`
 {{- end }}
 }
 
