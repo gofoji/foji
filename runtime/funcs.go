@@ -67,6 +67,7 @@ var Funcs = map[string]interface{}{
 	"csv":       Csv,
 	"goToken":   GoToken,
 	"goDoc":     GoDoc,
+	"goComment": GoComment,
 
 	// Console
 	"blue":       color.Blue,
@@ -265,4 +266,21 @@ func GoDoc(s string) string {
 	}
 
 	return out
+}
+
+// GoComment appends CommentPrefix to each newline and trims trailing empty lines
+func GoComment(s string) string {
+	ss := strings.Split(s, "\n")
+	if len(ss) == 0 {
+		return CommentPrefix
+	}
+
+	for {
+		if ss[len(ss)-1] != "" {
+			break
+		}
+		ss = ss[:len(ss)-1]
+	}
+
+	return CommentPrefix + strings.Join(ss, "\n"+CommentPrefix+" ")
 }
