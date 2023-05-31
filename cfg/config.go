@@ -18,10 +18,10 @@ type (
 	DBInput struct {
 		// DB Connection string.
 		// e.g. `host=localhost dbname=MyProject sslmode=disable`
-		Connection string `yaml:",omitempty"`
+		Connection string `yaml:"connection,omitempty"`
 		// Regex for filtering the properties.
 		// e.g. ".*\\.schema_migrations"
-		Filter stringlist.Strings `yaml:",omitempty"`
+		Filter stringlist.Strings `yaml:"filter,omitempty"`
 	}
 
 	FileInput struct {
@@ -29,53 +29,53 @@ type (
 		Files stringlist.Strings
 		// Optional regex for filtering the files.  The filename must not match any of the filter
 		// expressions to be considered valid.
-		Filter  stringlist.Strings   `yaml:",omitempty"`
-		Rewrite stringlist.StringMap `yaml:",omitempty"` // Optional rules for rewriting file names
+		Filter  stringlist.Strings   `yaml:"filter,omitempty"`
+		Rewrite stringlist.StringMap `yaml:"rewrite,omitempty"` // Optional rules for rewriting file names
 	}
 
 	// Maps are a set of lookups for mapping various attributes (type, name, case) for welds.
 	Maps struct {
-		Type     stringlist.StringMap `yaml:",omitempty"` // Type maps (varchar -> string)
-		Nullable stringlist.StringMap `yaml:",omitempty"` // Type maps for nullable types (varchar -> sql.NullString)
-		Name     stringlist.StringMap `yaml:",omitempty"` // Name maps (addr_l1 -> address_line_1)
+		Type     stringlist.StringMap `yaml:"type,omitempty"`     // Type maps (varchar -> string)
+		Nullable stringlist.StringMap `yaml:"nullable,omitempty"` // Type maps for nullable types (varchar -> sql.NullString)
+		Name     stringlist.StringMap `yaml:"name,omitempty"`     // Name maps (addr_l1 -> address_line_1)
 		// special purpose case settings. Can be used in templates with "caseType" command.
-		Case stringlist.StringMap `yaml:",omitempty"`
+		Case stringlist.StringMap `yaml:"case,omitempty"`
 	}
 
 	// Process encapsulates all data for executing a weld.
 	Process struct {
 		// Used to make a bundle of processes, if populated all other attributes are ignored
-		Processes stringlist.Strings `yaml:",omitempty,flow"`
+		Processes stringlist.Strings `yaml:"processes,omitempty,flow"`
 		// ID of the process (used for bundle processes), populated by Processes.Merge
 		ID string `yaml:"-"`
 		// Output format, used to get defaults for naming, mapping, post processor
-		Format string `yaml:",omitempty"`
+		Format string `yaml:"format,omitempty"`
 		// Default case function (e.g snake, pascal, camel, kebab)
-		Case string `yaml:",omitempty"`
+		Case string `yaml:"case,omitempty"`
 		// Used for mapping data from Input to Output
-		Maps Maps `yaml:",omitempty"`
+		Maps Maps `yaml:"maps,omitempty"`
 		// List of post-processing commands for each file generated (commonly used to invoke formatters like goimports)
-		Post stringlist.Strings2D `yaml:",omitempty,flow"`
+		Post stringlist.Strings2D `yaml:"post,omitempty,flow"`
 		// Custom parameters that can be passed into each template
-		Params ParamMap `yaml:",omitempty"`
+		Params ParamMap `yaml:"params,omitempty"`
 		// List of files to use as input
-		Files FileInput `yaml:",omitempty"`
+		Files FileInput `yaml:"files,omitempty"`
 		// Root directory for outputs
-		RootDir string `yaml:",omitempty"`
+		RootDir string `yaml:"rootDir,omitempty"`
 		// ID of shared resources used for file input
-		Resources stringlist.Strings `yaml:",omitempty,flow"`
+		Resources stringlist.Strings `yaml:"resources,omitempty,flow"`
 		Output    `yaml:",inline"`
 	}
 
 	Config struct {
 		// Database connection
-		DB DBInput `yaml:",omitempty"`
+		DB DBInput `yaml:"db,omitempty"`
 		// List of file sets
-		Files FileInputMap `yaml:",omitempty"`
+		Files FileInputMap `yaml:"files,omitempty"`
 		// Format Defaults (e.g. go, openapi, swift).
-		Formats Processes `yaml:",omitempty"`
+		Formats Processes `yaml:"formats,omitempty"`
 		// Map of all processes
-		Processes Processes `yaml:",omitempty"`
+		Processes Processes `yaml:"processes,omitempty"`
 	}
 )
 

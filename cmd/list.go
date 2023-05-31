@@ -3,8 +3,9 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/gofoji/foji/cfg"
 	"github.com/spf13/cobra"
+
+	"github.com/gofoji/foji/cfg"
 )
 
 var listCmd = &cobra.Command{
@@ -18,10 +19,10 @@ var listCmd = &cobra.Command{
 func list(_ *cobra.Command, _ []string) {
 	l := getLogger(quiet, trace, verbose)
 
-	c, err := cfg.Load(cfgFile, true)
+	config, err := cfg.Load(cfgFile, true)
 	if err != nil {
 		l.Fatal().Err(err).Msg("Failed to load config")
 	}
 
-	fmt.Printf("Available Processes: %v\n", c.Processes.Keys()) // nolint
+	fmt.Printf("Available Processes: %v\n", config.Processes.Keys()) //nolint
 }

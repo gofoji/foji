@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/gofoji/foji/cfg"
 	"github.com/spf13/cobra"
+
+	"github.com/gofoji/foji/cfg"
 )
 
 var (
@@ -41,7 +42,7 @@ func Execute() {
 	rootCmd.AddCommand(listCmd)
 
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err) // nolint
+		fmt.Println(err) //nolint
 		os.Exit(1)
 	}
 }

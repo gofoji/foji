@@ -3,9 +3,10 @@ package cmd
 import (
 	"os"
 
-	"github.com/gofoji/foji/cfg"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
+
+	"github.com/gofoji/foji/cfg"
 )
 
 var dumpConfigCmd = &cobra.Command{
@@ -19,26 +20,27 @@ var dumpConfigCmd = &cobra.Command{
 func dumpConfig(_ *cobra.Command, _ []string) {
 	l := getLogger(quiet, trace, verbose)
 
-	c, err := cfg.Load(cfgFile, includeDefaults || dumpWeld != "")
+	config, err := cfg.Load(cfgFile, includeDefaults || dumpWeld != "")
 	if err != nil {
 		l.Fatal().Err(err).Msg("Loading Config")
 	}
 
-	var v interface{}
-	v = c
+	var out interface{} = config
+
 	if dumpWeld != "" {
-		targets, err := c.Processes.Target([]string{dumpWeld})
+		targets, err := config.Processes.Target([]string{dumpWeld})
 		if err != nil {
 			l.Fatal().Err(err).Msg("Getting welds")
 		}
+
 		if len(targets) != 1 {
 			l.Fatal().Int("Found Welds", len(targets)).Msg("Invalid weld count")
 		}
 
-		v = targets[0]
+		out = targets[0]
 	}
 
-	err = yaml.NewEncoder(os.Stdout).Encode(v)
+	err = yaml.NewEncoder(os.Stdout).Encode(out)
 	if err != nil {
 		l.Fatal().Err(err).Msg("Writing Yaml")
 	}

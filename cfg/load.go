@@ -2,45 +2,46 @@ package cfg
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"strings"
 
-	"github.com/gofoji/foji/embed"
 	"gopkg.in/yaml.v3"
+
+	"github.com/gofoji/foji/embed"
 )
 
 // Load reads a config file from filename.  If includeDefaults it will also load the defaults
 // from the embedded config and merges.
 func Load(filename string, includeDefaults bool) (Config, error) {
-	c := Config{}
+	cfg := Config{}
 
 	f, err := os.Open(filename)
 	if err != nil {
-		return c, fmt.Errorf("can't open config file:%w", err)
+		return cfg, fmt.Errorf("can't open config file:%w", err)
 	}
 
-	b, err := ioutil.ReadAll(f)
+	b, err := io.ReadAll(f)
 	_ = f.Close() //nolint
 	if err != nil {
-		return c, fmt.Errorf("can't read config file:%w", err)
+		return cfg, fmt.Errorf("can't read config file:%w", err)
 	}
 
-	c, err = loadYaml(string(b))
+	cfg, err = loadYaml(string(b))
 	if err != nil {
-		return c, fmt.Errorf("can't parse config file:%w", err)
+		return cfg, fmt.Errorf("can't parse config file:%w", err)
 	}
 
 	if !includeDefaults {
-		return c, nil
+		return cfg, nil
 	}
 
 	defaults, err := loadYaml(embed.FojiDotYaml)
 	if err != nil {
-		return c, fmt.Errorf("can't parse defaults:%w", err)
+		return cfg, fmt.Errorf("can't parse defaults:%w", err)
 	}
 
-	return c.Merge(defaults), nil
+	return cfg.Merge(defaults), nil
 }
 
 func loadYaml(source string) (Config, error) {

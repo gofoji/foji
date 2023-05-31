@@ -3,10 +3,11 @@ package cmd
 import (
 	"regexp"
 
+	"github.com/spf13/cobra"
+
 	"github.com/gofoji/foji/cfg"
 	"github.com/gofoji/foji/embed"
 	"github.com/gofoji/foji/stringlist"
-	"github.com/spf13/cobra"
 )
 
 var copyTemplatesCmd = &cobra.Command{
@@ -21,7 +22,7 @@ var copyTemplatesCmd = &cobra.Command{
 func copyTemplates(_ *cobra.Command, args []string) {
 	l := getLogger(quiet, trace, verbose)
 
-	c, err := cfg.Load(cfgFile, true)
+	config, err := cfg.Load(cfgFile, true)
 	if err != nil {
 		l.Fatal().Err(err).Msg("Failed to load config")
 	}
@@ -32,13 +33,13 @@ func copyTemplates(_ *cobra.Command, args []string) {
 		templates = embed.List()
 		templates = templates.Filter(templateRegex.MatchString)
 	} else {
-		targets, err := c.Processes.Target(args)
+		targets, err := config.Processes.Target(args)
 		if err != nil {
 			l.Fatal().Err(err).Msg("Failed to process targets")
 		}
 
 		if len(targets) == 0 {
-			l.Fatal().Str("processes", c.Processes.String()).Strs("targets", args).Msg("No valid targets defined.")
+			l.Fatal().Str("processes", config.Processes.String()).Strs("targets", args).Msg("No valid targets defined.")
 		}
 
 		templateMaps := stringlist.StringMap{}

@@ -6,9 +6,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/gofoji/foji/embed"
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
+
+	"github.com/gofoji/foji/embed"
 )
 
 var copyTemplateCmd = &cobra.Command{
@@ -29,13 +30,13 @@ func copyTemplate(_ *cobra.Command, args []string) {
 }
 
 func writeTemplate(l zerolog.Logger, dir, filename string, useStdout, overwrite bool) error {
-	c, err := embed.Get(filename)
+	b, err := embed.Get(filename)
 	if err != nil {
 		return fmt.Errorf("failed to read template:%w", err)
 	}
 
 	if useStdout {
-		_, err = os.Stdout.Write(c)
+		_, err = os.Stdout.Write(b)
 
 		return err //nolint:wrapcheck
 	}
@@ -49,7 +50,7 @@ func writeTemplate(l zerolog.Logger, dir, filename string, useStdout, overwrite 
 	if useStdout || overwrite || !fileExists(filename) {
 		l.Debug().Msg("Writing")
 
-		err = WriteToFile(c, filename)
+		err = WriteToFile(b, filename)
 		if err != nil {
 			return fmt.Errorf("failed to write template:%w", err)
 		}

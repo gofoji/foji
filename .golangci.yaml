@@ -18,6 +18,12 @@ linters:
     - wrapcheck
     - golint
     - exhaustive
+    - exhaustruct
+    - nosnakecase
+    - deadcode
+    - varcheck
+    - structcheck
+    - ifshort
 linters-settings:
   godox:
     keywords:
@@ -28,3 +34,20 @@ linters-settings:
       - FIXME
   cyclop:
     max-complexity: 15
+  varnamelen:
+    ignore-type-assert-ok: true
+    ignore-map-index-ok: true
+    ignore-decls:
+      - p Process
+      - l zerolog.Logger
+      - b []byte
+    ignore-names:
+      - ss
+      - id
+      - to
+    max-distance: 10
+  gci:
+    sections:
+      - standard
+      - default
+      - prefix(github.com/gofoji/foji)
