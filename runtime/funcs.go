@@ -9,10 +9,11 @@ import (
 	"unsafe"
 
 	"github.com/codemodus/kace"
+	"github.com/jinzhu/inflection"
+
 	"github.com/gofoji/foji/cfg"
 	"github.com/gofoji/foji/color"
 	"github.com/gofoji/foji/stringlist"
-	"github.com/jinzhu/inflection"
 )
 
 type Error string
@@ -81,11 +82,22 @@ var Funcs = map[string]interface{}{
 	"yellow":     color.Yellow,
 }
 
-// Token converts the in string into a valid Go Token by converting "/" an ".".
+var goKeywords = map[string]string{"break": "Break", "default": "Default", "func": "Func", "interface": "Interface",
+	"select": "Select", "case": "Case", "defer": "Defer", "go": "Go", "map": "Map", "struct": "Struct", "chan": "Chan",
+	"else": "Else", "goto": "Goto", "package": "Package", "switch": "Switch", "const": "Const",
+	"fallthrough": "Fallthrough", "if": "If", "range": "Range", "type": "Type", "continue": "Continue", "for": "For",
+	"import": "Import", "return": "Return", "var": "Var",
+}
+
+// GoToken converts the in string into a valid Go Token by converting "/" an ".".  It also filters for reserved words.
 func GoToken(in string) string {
 	s := strings.ReplaceAll(in, "/", "_SLASH_")
 	s = strings.ReplaceAll(s, ".", "_DOT_")
 	s = strings.ReplaceAll(s, "$", "_DOLLAR_")
+
+	if m, ok := goKeywords[s]; ok {
+		return m
+	}
 
 	return s
 }

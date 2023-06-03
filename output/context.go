@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/gofoji/plates"
+	"github.com/rs/zerolog"
+
 	"github.com/gofoji/foji/cfg"
 	"github.com/gofoji/foji/runtime"
 	"github.com/gofoji/foji/stringlist"
-	"github.com/gofoji/plates"
-	"github.com/rs/zerolog"
 )
 
 type RuntimeParams map[string]interface{}
@@ -106,28 +107,34 @@ func (c *Context) PackageName() string {
 }
 
 // Imports tracks dynamic usage of objects.  Because templates are executed in order, using this to populate a list
-// at the top of a generated file requires precalculating all of the imports.  See SQLContext.Init as an example.
+// at the top of a generated file requires precalculating all the imports.  See SQLContext.Init as an example.
 // Another option would be to create a buffer of generated code at the beginning, then generate the final output.
 type Imports stringlist.Strings
 
-// CheckPackage is used for type mapping.  Currently it is designed for go fully qualified package names.
+// CheckPackage is used for type mapping.  Currently, it is designed for go fully qualified package names.
 // Examples:
 // "github.com/domain/repo/package/subpackage.Type", "" => "subpackage.Type"
 // "time.Time", "" => "time.Time"
 // "int", "" => "int"
 // "github.com/domain/repo/package/subpackage.Type", "github.com/domain/repo/package/subpackage" => "Type"
 // If the type is defined in a separate package the package is added to the import list.
-func (ii *Imports) CheckPackage(t, pkg string) string {
+func (ii *Imports) CheckPackage(t, currentPackage string) string {
 	tt := strings.Split(t, ".")
 	// Base Type
 	if len(tt) == 1 {
 		return t
 	}
 
+	prefix := ""
 	typePkg := strings.Join(tt[0:len(tt)-1], ".")
+	if typePkg[0] == '*' {
+		prefix = "*"
+		typePkg = typePkg[1:]
+	}
+
 	// Type defined in same package
-	if typePkg == pkg {
-		return tt[len(tt)-1]
+	if typePkg == currentPackage {
+		return prefix + tt[len(tt)-1]
 	}
 
 	// Type defined in external package

@@ -10,5 +10,5 @@ type OpResponse struct {
 }
 
 func (op OpResponse) IsLongPollingOperation() bool {
-	return op.MimeType == "application/jsonl"
+	return op.MimeType == ApplicationJSONL
 }
