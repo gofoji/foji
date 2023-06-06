@@ -69,7 +69,7 @@ processes:
     format: go
     resources: [ embed ]
     params:
-      PackageName: embed
+      Package: embed
     EmbedAll:
       embed/embeds_gen.go: foji/embed.go.tpl
   dbList:
@@ -106,7 +106,6 @@ processes:
       'models_gen.go': foji/openapi/model.go.tpl
       '!service.go': foji/openapi/service.go.tpl
       'http/handler_gen.go': foji/openapi/handler.go.tpl
-      '!http/error.go': foji/openapi/error.go.tpl
       '!cmd/serve/main.go': foji/openapi/main.go.tpl
   openAPIByTag:
     format: go
@@ -115,7 +114,6 @@ processes:
       '{{lower .}}/models_gen.go': foji/openapi/model.go.tpl
       '{{lower .}}/http/auth_gen.go': foji/openapi/auth.go.tpl
       '{{lower .}}/http/handler_gen.go': foji/openapi/handler.go.tpl
-      '!{{lower .}}/http/error.go': foji/openapi/error.go.tpl
       '!{{lower .}}/service.go': foji/openapi/service.go.tpl
       '!{{lower .}}/cmd/serve/main.go': foji/openapi/main.go.tpl
   openAPIDocs:
@@ -123,7 +121,6 @@ processes:
     resources: [ api ]
     params:
       Package: doc
-      RedocOptions: hide-download-button=true hide-loading=true
     EmbedAll:
       doc/embed_gen.go: foji/embed.go.tpl
       '!doc/handler.go': foji/openapi/docs.go.tpl

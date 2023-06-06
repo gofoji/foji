@@ -8,13 +8,14 @@ import (
 	"strings"
 
 	"github.com/Masterminds/sprig/v3"
+	"github.com/gofoji/plates"
+	"github.com/gofoji/plates/plush"
+	"github.com/rs/zerolog"
+
 	"github.com/gofoji/foji/cfg"
 	"github.com/gofoji/foji/embed"
 	"github.com/gofoji/foji/runtime"
 	"github.com/gofoji/foji/stringlist"
-	"github.com/gofoji/plates"
-	"github.com/gofoji/plates/plush"
-	"github.com/rs/zerolog"
 )
 
 type Error string
@@ -40,18 +41,18 @@ type Initializer interface {
 const PermPrefix = "!"
 
 func (p ProcessRunner) process(tm stringlist.StringMap, data interface{}) error {
-	err := doInit(data)
-	if err != nil {
-		return err
-	}
-
 	f, ok := data.(FuncMapper)
 	if ok {
 		p.AddFuncs(f.Funcs())
 	}
 
 	for targetFile, templateFile := range tm {
-		err := p.template(targetFile, templateFile, data)
+		err := doInit(data)
+		if err != nil {
+			return err
+		}
+
+		err = p.template(targetFile, templateFile, data)
 		if err != nil {
 			if !errors.Is(err, ErrPermExists) {
 				return err

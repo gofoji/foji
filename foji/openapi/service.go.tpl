@@ -1,38 +1,55 @@
+{{/*{{- define "methodSignature"}}*/}}
+{{/*	{{- $op := .RuntimeParams.op -}}*/}}
+{{/*	{{- if not (empty ($.OpSecurity $op)) }} user *{{ $.CheckPackage $.Params.Auth .PackageName -}},{{- end }}*/}}
+{{/*	{{- range $param := $op.Parameters -}}*/}}
+{{/*		{{ camel $param.Value.Name }} {{ if and (not $param.Value.Required) (not (eq $param.Value.Schema.Value.Type "array")) }}*{{ end }}{{ $.GetType "" $param.Value.Name $param.Value.Schema }},*/}}
+{{/*	{{- end -}}*/}}
+{{/*	{{- if isNotNil $op.RequestBody}}*/}}
+{{/*		{{- $index := index .RuntimeParams.op.RequestBody.Value.Content "application/json" -}}*/}}
+{{/*		{{- if empty $index -}} MISSING*/}}
+{{/*		{{ else }}*/}}
+{{/*		{{- $type := $.GetType .PackageName (print $op.OperationID "Request") $index.Schema}}*/}}
+{{/*		{{- camel $type}} {{ pascal $type -}}*/}}
+{{/*		{{ end }}*/}}
+{{/*	{{- end -}}*/}}
+{{/*	) (*/}}
+{{/*	{{- $response := $.GetOpHappyResponseType .PackageName .RuntimeParams.op}}*/}}
+{{/*	{{- if notEmpty $response}}{{ $.CheckPackage $response .PackageName -}}, {{ end }}error)*/}}
+{{/*{{- end -}}*/}}
 {{- define "methodSignature"}}
-	{{- if not (empty ($.OpSecurity .RuntimeParams.op)) -}}
-		user *{{ $.CheckPackage $.Params.Auth $.Params.Package -}},
-	{{- end }}
-	{{- range $param := .RuntimeParams.op.Parameters -}}
-		{{ camel $param.Value.Name }}  {{ if and (not $param.Value.Required) (not (eq $param.Value.Schema.Value.Type "array")) }}*{{ end }}{{ $.GetType "" $param.Value.Name $param.Value.Schema }},
-	{{- end -}}
-	{{- if isNotNil .RuntimeParams.op.RequestBody}}
-		{{- $type := $.GetType .PackageName "" (index  .RuntimeParams.op.RequestBody.Value.Content "application/json").Schema}}
-		{{- camel $type}} {{ $type -}}
-	{{- end -}}
+    {{- $op := .RuntimeParams.op -}}
+    {{- $body := .GetRequestBody $op -}}
+    {{- if not (empty ($.OpSecurity $op)) }} user *{{ $.CheckPackage $.Params.Auth .PackageName -}},{{- end }}
+    {{- range $param := $op.Parameters -}}
+        {{ goToken (camel $param.Value.Name) }} {{ if and (not $param.Value.Required) (not (eq $param.Value.Schema.Value.Type "array")) }}*{{ end }}{{ $.GetType "" $param.Value.Name $param.Value.Schema }},
+    {{- end -}}
+    {{- if isNotNil $body}}
+        {{- $type := $.GetType .PackageName (print $op.OperationID "Request") $body.Schema }} body {{ $type  -}}
+    {{- end -}}
 	) (
-	{{- $response := $.GetOpHappyResponseType .PackageName .RuntimeParams.op}}
-	{{- if notEmpty $response}} {{$response}},
-	{{- end -}}
-	error)
+    {{- $response := $.GetOpHappyResponseType .PackageName .RuntimeParams.op}}
+    {{- if notEmpty $response}}{{ $.CheckPackage $response .PackageName}}, {{ end }}error)
 {{- end -}}
+
 
 package {{ .PackageName }}
 
 import (
-	"time"
+	"context"
 
-	"github.com/bir/iken/errs"
-	"github.com/bir/iken/validation"
-	"github.com/valyala/fasthttp"
+{{- .CheckAllTypes .PackageName $.Params.Auth -}}
+{{ range .GoImports }}
+	"{{ . }}"
+{{- end }}
 )
 
-type ServiceError string
+type Error string
 
-func (e ServiceError) Error() string {
+func (e Error) Error() string {
 	return string(e)
 }
 
-const ErrNotImplemented = ServiceError("not implemented")
+const ErrNotImplemented = Error("not implemented")
 
 // New creates a new service instance.
 func New() *Service {

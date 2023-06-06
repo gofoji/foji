@@ -59,7 +59,7 @@ Overrides
 - [x] Generate Repo (pgx) 
 - [x] Stub Swagger from Schema 
 - [x] Read Swagger Spec 
-- [x] Generate FastHTTPRouter
+- [x] Generate chi v5 Router
 - [x] Format Encode/Decode
 - [x] Input Validation 
 - [x] Authentication

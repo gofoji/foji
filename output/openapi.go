@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/codemodus/kace"
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/rs/zerolog"
+
 	"github.com/gofoji/foji/cfg"
 	"github.com/gofoji/foji/input/openapi"
-	"github.com/rs/zerolog"
 )
 
 const (
@@ -32,6 +34,9 @@ func OpenAPI(p cfg.Process, fn cfg.FileHandler, l zerolog.Logger, groups openapi
 
 			err := runner.process(p.Output[OpenAPIFile], &ctx)
 			if err != nil {
+				if len(ctx.RuntimeParams) > 0 {
+					return fmt.Errorf("%w:%v", err, ctx.RuntimeParams)
+				}
 				return err
 			}
 		}
@@ -44,6 +49,19 @@ type OpenAPIFileContext struct {
 	Context
 	Imports
 	openapi.File
+}
+
+func (o *OpenAPIFileContext) GoImports() []string {
+	var out []string
+
+	for _, i := range o.Imports {
+		if i == o.PackageName() {
+			continue
+		}
+		out = append(out, i)
+	}
+
+	return out
 }
 
 func (o *OpenAPIFileContext) WithParams(values ...interface{}) (*OpenAPIFileContext, error) {
@@ -89,7 +107,26 @@ func getExtAsString(in interface{}) string {
 	return s
 }
 
-func (o *OpenAPIFileContext) GetType(pkg, name string, s *openapi3.SchemaRef) string {
+func (o *OpenAPIFileContext) TypeOnly(name string) string {
+	tt := strings.Split(name, ".")
+
+	return tt[len(tt)-1]
+}
+
+// getXGoType maps x-go-type declarations to an actual type definition.
+// Supports formats:
+//
+//	x-go-type: full/path/to.type
+//	x-go-type: int
+func (o *OpenAPIFileContext) getXGoType(currentPackage string, goType any) string {
+	if s, ok := goType.(string); ok {
+		return o.CheckPackage(s, currentPackage)
+	}
+
+	return fmt.Sprintf("INVALID x-go-type: %v", goType)
+}
+
+func (o *OpenAPIFileContext) GetType(currentPackage, name string, s *openapi3.SchemaRef) string {
 	xPkg, ok := s.Value.Extensions["x-package"]
 	if ok {
 		customPkg := getExtAsString(xPkg)
@@ -97,58 +134,54 @@ func (o *OpenAPIFileContext) GetType(pkg, name string, s *openapi3.SchemaRef) st
 			return fmt.Sprint("INVALID x-package: ", xPkg.(string))
 		}
 
-		pkg = customPkg
+		currentPackage = customPkg
 	}
 
-	override, ok := s.Value.Extensions["x-go-type"]
-	if ok {
-		typeName := getExtAsString(override)
-		if typeName != "" {
-			return o.CheckPackage(typeName, pkg)
-		}
-
-		return fmt.Sprint("INVALID x-go-type: ", override.(string))
+	if override, ok := s.Value.Extensions["x-go-type"]; ok {
+		return o.getXGoType(currentPackage, override)
 	}
 
 	if s.Value.Type == "array" {
-		//r := s.Value.Items.Ref
-		//if r != "" {
-		//	return "[]" + o.CheckPackage(o.RefToName(r), pkg)
-		//}
-
-		return "[]" + o.GetType(pkg, name, s.Value.Items)
+		return "[]" + o.GetType(currentPackage, name, s.Value.Items)
 	}
 
 	if s.Value.Type == "object" {
-		// TODO: Nested anonymous structs
 		if s.Ref != "" {
-			return o.GetTypeName(pkg, s)
+			return o.GetTypeName(currentPackage, s)
 		}
+
+		if len(s.Value.Properties) == 0 {
+			return "any"
+		}
+
+		// Anonymous Struct
+		name = o.PackageName() + "." + kace.Pascal(name)
+		return o.CheckPackage(name, currentPackage)
 	}
 
 	t, ok := o.Maps.Type[name]
 	if ok {
-		return o.CheckPackage(t, pkg)
+		return o.CheckPackage(t, currentPackage)
 	}
 
 	if s.Value.Format != "" {
 		t, ok = o.Maps.Type[s.Value.Type+","+s.Value.Format]
 		if ok {
-			return o.CheckPackage(t, pkg)
+			return o.CheckPackage(t, currentPackage)
 		}
 	}
 
 	if s.Value.Type == "" {
 		if s.Ref != "" {
-			return o.CheckPackage(o.RefToName(s.Ref), pkg)
+			return o.CheckPackage(o.RefToName(s.Ref), currentPackage)
 		}
 
-		return "interface{}"
+		return "any"
 	}
 
 	t, ok = o.Maps.Type[s.Value.Type]
 	if ok {
-		return o.CheckPackage(t, pkg)
+		return o.CheckPackage(t, currentPackage)
 	}
 
 	return fmt.Sprintf("UNKNOWN:name(%s):ref(%s):type(%s)", name, s.Ref, s.Value.Type)
@@ -156,19 +189,40 @@ func (o *OpenAPIFileContext) GetType(pkg, name string, s *openapi3.SchemaRef) st
 
 func (o *OpenAPIFileContext) Init() error {
 	o.AbortError = nil
-	o.CheckAllTypes()
+	o.Imports = nil
 
 	return nil
 }
 
-func (o *OpenAPIFileContext) CheckAllTypes() {
-	pkg, _ := o.Params.HasString("PackageName")
+func (o *OpenAPIFileContext) AllComponentSchemas() openapi3.Schemas {
+	if o.API.Components == nil {
+		return nil
+	}
 
-	for _, s := range o.API.Components.Schemas {
+	return o.API.Components.Schemas
+}
+
+// CheckAllTypes is a helper to iterate all property references for import requirements.
+// This is expected to inject imports for unnecessary packages depending on the template
+// generated, the post-processing should remove unused imports.
+func (o *OpenAPIFileContext) CheckAllTypes(pkg string, types ...string) string {
+	for _, s := range o.AllComponentSchemas() {
 		for key, schema := range s.Value.Properties {
 			o.GetType(pkg, key, schema)
 		}
+
+		for _, nested := range s.Value.AllOf {
+			for key, schema := range nested.Value.Properties {
+				o.GetType(pkg, key, schema)
+			}
+		}
 	}
+
+	for _, s := range types {
+		o.CheckPackage(s, pkg)
+	}
+
+	return ""
 }
 
 func hasValidation(s *openapi3.Schema) bool {
@@ -198,32 +252,57 @@ func (o *OpenAPIFileContext) IsDefaultEnum(name string, s *openapi3.SchemaRef) b
 	return !ok
 }
 
+func (o *OpenAPIFileContext) GetRequestBody(op *openapi3.Operation) *OpBody {
+	if op.RequestBody != nil && op.RequestBody.Value != nil {
+		mediaType := op.RequestBody.Value.Content.Get(ApplicationJSON)
+		if mediaType != nil {
+			return &OpBody{MimeType: ApplicationJSON, Schema: mediaType.Schema}
+		}
+
+		mediaType = op.RequestBody.Value.Content.Get(TextPlain)
+		if mediaType != nil {
+			return &OpBody{MimeType: TextPlain, Schema: mediaType.Schema}
+		}
+	}
+
+	return nil
+}
+
+func (o *OpenAPIFileContext) GetRequestBodyLocal(op *openapi3.Operation) *openapi3.SchemaRef {
+	if op.RequestBody != nil && op.RequestBody.Ref == "" && op.RequestBody.Value != nil {
+		mediaType := op.RequestBody.Value.Content.Get(ApplicationJSON)
+		if mediaType != nil && mediaType.Schema.Ref == "" {
+			return mediaType.Schema
+		}
+	}
+
+	return nil
+}
+
 func (o *OpenAPIFileContext) GetOpHappyResponse(pkg string, op *openapi3.Operation) OpResponse {
-	// TODO: Figure out if the mime type can be extracted from the openapi3.MediaType type
-	supportedResponseContentTypes := [3]string{"application/json", "application/jsonl", ""}
+	supportedResponseContentTypes := []string{ApplicationJSON, ApplicationJSONL, TextPlain, TextHTML}
 
 	for key, r := range op.Responses {
 		if len(key) == 3 && key[0] == '2' {
 			for _, mimeType := range supportedResponseContentTypes {
-				if mimeType == "" {
-					return OpResponse{Key: key, MimeType: "", MediaType: nil, GoType: ""}
-				}
 				mediaType := r.Value.Content.Get(mimeType)
 				if mediaType != nil {
-					t := o.GetType(pkg, op.OperationID+"."+key, mediaType.Schema)
+					t := o.GetType(pkg, kace.Pascal(op.OperationID)+" Response", mediaType.Schema)
+
 					var goType string
 					if strings.HasPrefix(t, "[]") {
 						goType = t
 					} else {
 						goType = "*" + t
 					}
+
 					return OpResponse{Key: key, MimeType: mimeType, MediaType: mediaType, GoType: goType}
 				}
 			}
 		}
 	}
 
-	return OpResponse{Key: "", MimeType: "", MediaType: nil, GoType: ""}
+	return OpResponse{Key: "200", MimeType: "", MediaType: nil, GoType: ""}
 }
 
 func (o *OpenAPIFileContext) GetOpHappyResponseKey(op *openapi3.Operation) string {
@@ -243,6 +322,8 @@ func (o *OpenAPIFileContext) GetOpHappyResponseType(pkg string, op *openapi3.Ope
 	return opResponse.GoType
 }
 
+/* Auth Focused Helpers */
+
 func (o *OpenAPIFileContext) OpSecurity(op *openapi3.Operation) openapi3.SecurityRequirements {
 	if op.Security != nil {
 		return *op.Security
@@ -261,6 +342,10 @@ func hasAuthorization(security openapi3.SecurityRequirements) bool {
 	}
 
 	return false
+}
+
+func (o *OpenAPIFileContext) HasAuthentication() bool {
+	return o.API.Components != nil && o.API.Components.SecuritySchemes != nil && len(o.API.Components.SecuritySchemes) > 0
 }
 
 func (o *OpenAPIFileContext) HasAuthorization() bool {
