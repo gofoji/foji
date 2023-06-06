@@ -145,11 +145,11 @@ func (o *OpenAPIFileContext) GetType(currentPackage, name string, s *openapi3.Sc
 		return "[]" + o.GetType(currentPackage, name, s.Value.Items)
 	}
 
-	if s.Value.Type == "object" {
-		if s.Ref != "" {
-			return o.GetTypeName(currentPackage, s)
-		}
+	if s.Ref != "" {
+		return o.GetTypeName(currentPackage, s)
+	}
 
+	if s.Value.Type == "object" {
 		if len(s.Value.Properties) == 0 {
 			return "any"
 		}
@@ -282,8 +282,11 @@ func (o *OpenAPIFileContext) GetRequestBodyLocal(op *openapi3.Operation) *openap
 func (o *OpenAPIFileContext) GetOpHappyResponse(pkg string, op *openapi3.Operation) OpResponse {
 	supportedResponseContentTypes := []string{ApplicationJSON, ApplicationJSONL, TextPlain, TextHTML}
 
+	happyKey := "200"
 	for key, r := range op.Responses {
 		if len(key) == 3 && key[0] == '2' {
+			happyKey = key
+
 			for _, mimeType := range supportedResponseContentTypes {
 				mediaType := r.Value.Content.Get(mimeType)
 				if mediaType != nil {
@@ -302,7 +305,7 @@ func (o *OpenAPIFileContext) GetOpHappyResponse(pkg string, op *openapi3.Operati
 		}
 	}
 
-	return OpResponse{Key: "200", MimeType: "", MediaType: nil, GoType: ""}
+	return OpResponse{Key: happyKey, MimeType: "", MediaType: nil, GoType: ""}
 }
 
 func (o *OpenAPIFileContext) GetOpHappyResponseKey(op *openapi3.Operation) string {
