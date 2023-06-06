@@ -114,7 +114,6 @@ processes:
       '{{lower .}}/models_gen.go': foji/openapi/model.go.tpl
       '{{lower .}}/http/auth_gen.go': foji/openapi/auth.go.tpl
       '{{lower .}}/http/handler_gen.go': foji/openapi/handler.go.tpl
-      '!{{lower .}}/http/error.go': foji/openapi/error.go.tpl
       '!{{lower .}}/service.go': foji/openapi/service.go.tpl
       '!{{lower .}}/cmd/serve/main.go': foji/openapi/main.go.tpl
   openAPIDocs:

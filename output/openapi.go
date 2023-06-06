@@ -252,23 +252,6 @@ func (o *OpenAPIFileContext) IsDefaultEnum(name string, s *openapi3.SchemaRef) b
 	return !ok
 }
 
-const ApplicationJSON = "application/json"
-const ApplicationJSONL = "application/jsonl"
-const TextPlain = "text/plain"
-
-type OpBody struct {
-	MimeType string
-	Schema   *openapi3.SchemaRef
-}
-
-func (o OpBody) IsJson() bool {
-	return o.MimeType == ApplicationJSON
-}
-
-func (o OpBody) IsText() bool {
-	return o.MimeType == TextPlain
-}
-
 func (o *OpenAPIFileContext) GetRequestBody(op *openapi3.Operation) *OpBody {
 	if op.RequestBody != nil && op.RequestBody.Value != nil {
 		mediaType := op.RequestBody.Value.Content.Get(ApplicationJSON)
@@ -297,15 +280,11 @@ func (o *OpenAPIFileContext) GetRequestBodyLocal(op *openapi3.Operation) *openap
 }
 
 func (o *OpenAPIFileContext) GetOpHappyResponse(pkg string, op *openapi3.Operation) OpResponse {
-	supportedResponseContentTypes := []string{ApplicationJSON, ApplicationJSONL, TextPlain, ""}
+	supportedResponseContentTypes := []string{ApplicationJSON, ApplicationJSONL, TextPlain, TextHTML}
 
 	for key, r := range op.Responses {
 		if len(key) == 3 && key[0] == '2' {
 			for _, mimeType := range supportedResponseContentTypes {
-				if mimeType == "" {
-					return OpResponse{Key: key, MimeType: "", MediaType: nil, GoType: ""}
-				}
-
 				mediaType := r.Value.Content.Get(mimeType)
 				if mediaType != nil {
 					t := o.GetType(pkg, kace.Pascal(op.OperationID)+" Response", mediaType.Schema)

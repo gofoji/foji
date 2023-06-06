@@ -129,9 +129,11 @@ func shutdownServer(server *http.Server, duration time.Duration, wg *sync.WaitGr
 	}()
 }
 
-{{- range $security, $value := .File.API.Components.SecuritySchemes }}
+{{- if .HasAuthentication -}}
+	{{- range $security, $value := .File.API.Components.SecuritySchemes }}
 
 func {{ pascal $security }}Auth(ctx context.Context, key string) (*{{ $.CheckPackage $.Params.Auth "" }}, error){
 	return nil, {{ $.PackageName }}.ErrNotImplemented
 }
+	{{- end -}}
 {{- end -}}

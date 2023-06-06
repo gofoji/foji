@@ -1230,7 +1230,7 @@ import (
 {{- end }}
 )
 
-type Service interface {
+type Operations interface {
 {{- range $name, $path := .API.Paths }}
     {{- range $verb, $op := $path.Operations }}
         {{- $opResponse := $.GetOpHappyResponse $package $op }}
@@ -1241,7 +1241,7 @@ type Service interface {
 }
 
 type OpenAPIHandlers struct {
-	service      Service
+	ops      Operations
 {{- if .HasAuthentication }}
     {{- range $security, $value := .API.Components.SecuritySchemes }}
 	{{ camel $security }}Auth HttpAuthFunc
@@ -1259,7 +1259,7 @@ type OpenAPIHandlers struct {
 {{- end}}
 }
 
-func RegisterOperations(svc Service, r chi.Router
+func RegisterOperations(ops Operations, r chi.Router
 {{- if .HasAuthentication }}
 {{- range $security, $value := .API.Components.SecuritySchemes -}}
     , {{ camel $security }}Auth
@@ -1269,7 +1269,7 @@ func RegisterOperations(svc Service, r chi.Router
 {{- end -}}
 {{- end -}}
 ) *OpenAPIHandlers {
-	s := OpenAPIHandlers{service: svc
+	s := OpenAPIHandlers{ops: ops
 {{- if .HasAuthentication }}
 {{- range $security, $value := .API.Components.SecuritySchemes -}}
     , {{ camel $security }}Auth: {{ camel $security }}Auth
@@ -1360,6 +1360,7 @@ err = h.authorize(authCtx{{range $scopes}}, "{{.}}"{{end}})
 	}
         {{- end}}
         {{- if not (empty $op.Parameters) }}
+
 	var validationErrors validation.Errors
 
         {{- range $param := $op.Parameters }}
@@ -1393,8 +1394,6 @@ err = h.authorize(authCtx{{range $scopes}}, "{{.}}"{{end}})
 			{{- if $opBody.IsText }}
 
 	b, err := io.ReadAll(r.Body)
-	_ = r.Body.Close()
-
 	if err != nil {
 		httputil.ErrorHandler(w, r, validation.Error{Message:"unable to read body", Source:err})
 
@@ -1408,10 +1407,10 @@ err = h.authorize(authCtx{{range $scopes}}, "{{.}}"{{end}})
         {{- $responseGoType := $opResponse.GoType}}
         {{- if notEmpty $responseGoType }}
 
-	response, err := h.service.{{ pascal $op.OperationID}}(r.Context(),
+	response, err := h.ops.{{ pascal $op.OperationID}}(r.Context(),
         {{- else}}
 
-	err = h.service.{{ pascal $op.OperationID}}(r.Context(),
+	err = h.ops.{{ pascal $op.OperationID}}(r.Context(),
         {{- end}}
         {{- if not (empty $securityList) }} authCtx,{{- end -}}
         {{- range $param := $op.Parameters }} {{ goToken (camel $param.Value.Name) }},{{- end -}}
@@ -1426,8 +1425,16 @@ err = h.authorize(authCtx{{range $scopes}}, "{{.}}"{{end}})
 
         {{- $key := $.GetOpHappyResponseKey $op }}
         {{- if notEmpty $responseGoType }}
+			{{- if $opResponse.IsJson }}
 
 	httputil.JSONWrite(w, r, {{$key}}, response)
+			{{- else if $opResponse.IsHTML }}
+
+	httputil.HTMLWrite(w, r, {{$key}}, *response)
+            {{- else }}
+
+	httputil.Write(w, r, TextHTML,  {{$key}}, []byte(*response))
+			{{- end -}}
         {{- else }}
 
 	w.WriteHeader({{$key}})
@@ -1571,11 +1578,13 @@ func shutdownServer(server *http.Server, duration time.Duration, wg *sync.WaitGr
 	}()
 }
 
-{{- range $security, $value := .File.API.Components.SecuritySchemes }}
+{{- if .HasAuthentication -}}
+	{{- range $security, $value := .File.API.Components.SecuritySchemes }}
 
 func {{ pascal $security }}Auth(ctx context.Context, key string) (*{{ $.CheckPackage $.Params.Auth "" }}, error){
 	return nil, {{ $.PackageName }}.ErrNotImplemented
 }
+	{{- end -}}
 {{- end -}}`
 
 var FojiSlashOpenapiSlashModelDotGoDotTplBytes = []byte(FojiSlashOpenapiSlashModelDotGoDotTpl)
@@ -2632,7 +2641,6 @@ processes:
       '{{lower .}}/models_gen.go': foji/openapi/model.go.tpl
       '{{lower .}}/http/auth_gen.go': foji/openapi/auth.go.tpl
       '{{lower .}}/http/handler_gen.go': foji/openapi/handler.go.tpl
-      '!{{lower .}}/http/error.go': foji/openapi/error.go.tpl
       '!{{lower .}}/service.go': foji/openapi/service.go.tpl
       '!{{lower .}}/cmd/serve/main.go': foji/openapi/main.go.tpl
   openAPIDocs:
