@@ -53,7 +53,7 @@
 	}
 
 	if !ok {
-	    {{ goToken (camel $param.Value.Name) }} = {{ $param.Value.Schema.Value.Default }}
+	    {{ goToken (camel $param.Value.Name) }} = {{ printf "%#v" $param.Value.Schema.Value.Default }}
 	}
 	{{- else }}
 	var {{ goToken (camel $param.Value.Name) }} *{{$goType}}
@@ -292,7 +292,7 @@ err = h.authorize(authCtx{{range $scopes}}, "{{.}}"{{end}})
 	httputil.HTMLWrite(w, r, {{$key}}, *response)
             {{- else }}
 
-	httputil.Write(w, r, TextHTML,  {{$key}}, []byte(*response))
+	httputil.Write(w, r, httputil.TextPlain,  {{$key}}, []byte(*response))
 			{{- end -}}
         {{- else }}
 
