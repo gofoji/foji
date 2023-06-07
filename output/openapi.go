@@ -126,6 +126,12 @@ func (o *OpenAPIFileContext) getXGoType(currentPackage string, goType any) strin
 	return fmt.Sprintf("INVALID x-go-type: %v", goType)
 }
 
+func (o *OpenAPIFileContext) HasExtension(s *openapi3.SchemaRef, ext string) bool {
+	_, ok := s.Value.Extensions[ext]
+
+	return ok
+}
+
 func (o *OpenAPIFileContext) GetType(currentPackage, name string, s *openapi3.SchemaRef) string {
 	xPkg, ok := s.Value.Extensions["x-package"]
 	if ok {
@@ -306,6 +312,14 @@ func (o *OpenAPIFileContext) GetOpHappyResponse(pkg string, op *openapi3.Operati
 	}
 
 	return OpResponse{Key: happyKey, MimeType: "", MediaType: nil, GoType: ""}
+}
+
+func (o *OpenAPIFileContext) OpParams(path *openapi3.PathItem, op *openapi3.Operation) openapi3.Parameters {
+	var out openapi3.Parameters
+	out = append(out, path.Parameters...)
+	out = append(out, op.Parameters...)
+
+	return out
 }
 
 func (o *OpenAPIFileContext) GetOpHappyResponseKey(op *openapi3.Operation) string {

@@ -2,9 +2,7 @@
     {{- $key := .RuntimeParams.key }}
     {{- $schema := .RuntimeParams.schema }}
     {{- $typeName := .RuntimeParams.typeName }}
-    {{- if not (empty $schema.Value.Description) }}
-    {{ goComment $schema.Value.Description }}
-    {{- end }}
+    {{- goDoc $schema.Value.Description }}
     {{- if $.IsDefaultEnum  $key $schema }}
     {{ pascal $key }}  {{ $typeName }}{{ pascal $key }}Enum
     {{- else }}
@@ -35,7 +33,6 @@ func New{{ $enumType }}(name string) {{ $enumType }} {
 
     return {{ $enumType }}(0)
 }
-
 
 var  {{ $enumType }}String = map[{{ $enumType }}]string{
     {{- range $enums }}
@@ -73,158 +70,158 @@ func (e *{{ $enumType }}) MarshalJSON() ([]byte, error) {
 }
 {{- end -}}
 
-{{ define "typeDeclaration"}}
-{{- $schema := .RuntimeParams.schema }}
+{{- define "typeDeclaration"}}
+{{ $schema := .RuntimeParams.schema }}
 {{- $key := .RuntimeParams.key }}
 {{- $label := .RuntimeParams.label }}
 
-    {{- if isNil (index $schema.Value.Extensions "x-go-type" ) }}
+{{- if not ($.HasExtension $schema "x-go-type" )}}
 {{- $typeName := $.GetType $.PackageName $key $schema }}
-    {{- if not (empty $schema.Value.Description) }}
-{{ goComment $schema.Value.Description }}
-    {{- end}}
+// {{ $typeName}}
+{{- goDoc $schema.Value.Description }}
 //
 // OpenAPI {{$label}}: {{ $key }}
 
-{{- if in $schema.Value.Type "object" "" }}
+    {{- if in $schema.Value.Type "object" "" }}
 type {{ pascal $key }} struct {
-{{- range $key, $schema := $schema.Value.Properties }}
-    {{- template "propertyDeclaration" ($.WithParams "key" $key "schema" $schema "typeName" $typeName)}}
-{{- end }}
-{{- range $schema.Value.AllOf }}
-    {{- if notEmpty .Ref }}
-        {{ $.GetTypeName $.PackageName  . }}
-    {{- else }}
-        {{- range $key, $schema := $schema.Value.Properties }}
-            {{- template "propertyDeclaration" ($.WithParams "key" $key "schema" $schema "typeName" $typeName)}}
+    {{- range $key, $schema := $schema.Value.Properties }}
+        {{- template "propertyDeclaration" ($.WithParams "key" $key "schema" $schema "typeName" $typeName)}}
+    {{- end }}
+    {{- range $schema.Value.AllOf }}
+        {{- if notEmpty .Ref }}
+
+    // OpenAPI Ref: {{ .Ref }}
+    {{ $.GetType $.PackageName "" . }}
+        {{- else }}
+            {{- range $key, $schema := .Value.Properties }}
+                {{- template "propertyDeclaration" ($.WithParams "key" $key "schema" $schema "typeName" $typeName)}}
+            {{- end }}
         {{- end }}
     {{- end }}
-{{- end }}
 }
-{{- else }}
+    {{- else }}
 type {{ pascal $key }} {{ $.GetType $.PackageName (pascal (print $typeName " Item" )) $schema }}
-{{- end }}
+    {{- end }}
 
-{{/* Nested Types */}}
-{{- range $key, $schema := $schema.Value.Properties }}
-    {{- if empty $schema.Ref -}}
-    {{- if not (empty $schema.Value.Properties )}}
-        {{- template "typeDeclaration" ($.WithParams "key" (pascal (print $typeName " " $key)) "schema" $schema "label" (print  $typeName " inline " $key))}}
-        {{- else if eq $schema.Value.Type "array"}}
-            {{- if empty $schema.Value.Items.Ref -}}
-                {{- if not (empty $schema.Value.Items.Value.Properties )}}
-                    {{- template "typeDeclaration" ($.WithParams "key" (pascal (print $typeName " " $key)) "schema" $schema.Value.Items "label" (print  $typeName " inline item " $key))}}
+{{- /* Nested Types */}}
+    {{- range $key, $schema := $schema.Value.Properties }}
+        {{- if empty $schema.Ref -}}
+        {{- if not (empty $schema.Value.Properties )}}
+            {{- template "typeDeclaration" ($.WithParams "key" (pascal (print $typeName " " $key)) "schema" $schema "label" (print  $typeName " inline " $key))}}
+            {{- else if eq $schema.Value.Type "array"}}
+                {{- if empty $schema.Value.Items.Ref -}}
+                    {{- if not (empty $schema.Value.Items.Value.Properties )}}
+                        {{- template "typeDeclaration" ($.WithParams "key" (pascal (print $typeName " " $key)) "schema" $schema.Value.Items "label" (print  $typeName " inline item " $key))}}
+                    {{- end }}
                 {{- end }}
             {{- end }}
         {{- end }}
     {{- end }}
-{{- end }}
-{{/* Nested Arrays */}}
-{{- if empty $schema.Ref -}}
-    {{- if eq $schema.Value.Type "array"}}
-        {{- if empty $schema.Value.Items.Ref -}}
-            {{- if not (empty $schema.Value.Items.Value.Properties )}}
-                {{- template "typeDeclaration" ($.WithParams "key" (pascal (print $typeName " Item" )) "schema" $schema.Value.Items "label" (print  $typeName " inline item " $key))}}
+    {{- /* Nested Arrays */}}
+    {{- if empty $schema.Ref -}}
+        {{- if eq $schema.Value.Type "array"}}
+            {{- if empty $schema.Value.Items.Ref -}}
+                {{- if not (empty $schema.Value.Items.Value.Properties )}}
+                    {{- template "typeDeclaration" ($.WithParams "key" (pascal (print $typeName " Item" )) "schema" $schema.Value.Items "label" (print  $typeName " inline item " $key))}}
+                {{- end }}
             {{- end }}
         {{- end }}
     {{- end }}
-{{- end }}
-
 
 {{- /*    Regex Validation Patterns */ -}}
-{{- range $key, $schema := $schema.Value.Properties }}
-    {{- if notEmpty $schema.Value.Pattern }}
+    {{- range $key, $schema := $schema.Value.Properties }}
+        {{- if notEmpty $schema.Value.Pattern }}
 
 var {{ camel $typeName }}{{ pascal $key }}Pattern = regexp.MustCompile(`{{ $schema.Value.Pattern }}`)
-    {{- end}}
-{{- end }}
+        {{- end}}
+    {{- end }}
 
-{{/*    Enums */}}
-{{- range $key, $schema := $schema.Value.Properties }}
-    {{- if not (empty $schema.Value.Enum) }}
-        {{- $enumType := print $typeName (pascal $key) "Enum" }}
-        {{- template "enum" ($.WithParams "Type" $enumType "Values" $schema.Value.Enum)}}
-    {{- end -}}
-{{- end -}}
-
-{{- range $schema.Value.AllOf }}
+{{- /*    Enums */}}
     {{- range $key, $schema := $schema.Value.Properties }}
         {{- if not (empty $schema.Value.Enum) }}
             {{- $enumType := print $typeName (pascal $key) "Enum" }}
             {{- template "enum" ($.WithParams "Type" $enumType "Values" $schema.Value.Enum)}}
         {{- end -}}
     {{- end -}}
-{{- end }}
 
-{{- if $.HasValidation $schema }}
+    {{- range $schema.Value.AllOf }}
+        {{- range $key, $schema := $schema.Value.Properties }}
+            {{- if not (empty $schema.Value.Enum) }}
+                {{- $enumType := print $typeName (pascal $key) "Enum" }}
+                {{- template "enum" ($.WithParams "Type" $enumType "Values" $schema.Value.Enum)}}
+            {{- end -}}
+        {{- end -}}
+    {{- end }}
+
+    {{- if $.HasValidation $schema }}
 func (p {{ pascal $key }}) Validate() error {
     var err validation.Errors
-{{- range $key, $schema := $schema.Value.Properties }}
-    {{- if in $schema.Value.Type "number" "integer" }}
-        {{- $fieldType := $.GetType $.PackageName $key $schema }}
-        {{- if isNotNil $schema.Value.Min }}
+        {{- range $key, $schema := $schema.Value.Properties }}
+            {{- if in $schema.Value.Type "number" "integer" }}
+                {{- $fieldType := $.GetType $.PackageName $key $schema }}
+                {{- if isNotNil $schema.Value.Min }}
 
     if p.{{ pascal $key }} <{{ if $schema.Value.ExclusiveMin }}={{end}} {{ $schema.Value.Min }} {
         _ = err.Add("{{$key}}", "must be >{{ if not $schema.Value.ExclusiveMin }}={{end}} {{ $schema.Value.Min }}")
     }
-        {{- end }}
-        {{- if isNotNil $schema.Value.Max }}
+                {{- end }}
+                {{- if isNotNil $schema.Value.Max }}
 
     if p.{{ pascal $key }} >{{ if $schema.Value.ExclusiveMax }}={{end}} {{ $schema.Value.Max }} {
         _ = err.Add("{{$key}}", "must be <{{ if not $schema.Value.ExclusiveMax }}={{end}} {{ $schema.Value.Max }}")
     }
-        {{- end }}
-        {{- if isNotNil $schema.Value.MultipleOf }}
-            {{- if eq $schema.Value.Type "integer" }}
+                {{- end }}
+                {{- if isNotNil $schema.Value.MultipleOf }}
+                    {{- if eq $schema.Value.Type "integer" }}
 
     if p.{{ pascal $key }} % {{ $schema.Value.MultipleOf }} != 0 {
         _ = err.Add("{{$key}}", "must be multiple of {{ $schema.Value.MultipleOf }}")
     }
-            {{- else }}
+                    {{- else }}
     if math.Mod({{ if not (eq $fieldType "float64") }}float64({{ end }}p.{{ pascal $key }}{{ if not (eq $fieldType "float64") }}){{end}}, {{ $schema.Value.MultipleOf }}) != 0 {
         _ = err.Add("{{$key}}", "must be multiple of {{ $schema.Value.MultipleOf }}")
     }
-            {{- end }}
-        {{- end }}
-    {{- else if eq $schema.Value.Type "string" }}
-        {{- $fieldType := $.GetType $.PackageName $key $schema }}
-        {{- if gt $schema.Value.MinLength 0 }}
+                    {{- end }}
+                {{- end }}
+            {{- else if eq $schema.Value.Type "string" }}
+                {{- $fieldType := $.GetType $.PackageName $key $schema }}
+                {{- if gt $schema.Value.MinLength 0 }}
 
     if len(p.{{ pascal $key }}) < {{ $schema.Value.MinLength }} {
         _ = err.Add("{{$key}}", "length must be >= {{ $schema.Value.MinLength }}")
     }
-        {{- end }}
-        {{- if isNotNil $schema.Value.MaxLength }}
+                {{- end }}
+                {{- if isNotNil $schema.Value.MaxLength }}
 
     if len(p.{{ pascal $key }}) > {{ $schema.Value.MaxLength }} {
         _ = err.Add("{{$key}}", "length must be <= {{ $schema.Value.MaxLength }}")
     }
-        {{- end }}
-        {{- if notEmpty $schema.Value.Pattern }}
+                {{- end }}
+                {{- if notEmpty $schema.Value.Pattern }}
 
     if !{{ camel $typeName }}{{ pascal $key }}Pattern.MatchString( p.{{ pascal $key }})  {
         _ = err.Add("{{$key}}", `must match "{{ $schema.Value.Pattern }}"`)
     }
-        {{- end }}
-    {{- else if eq $schema.Value.Type "array" }}
-        {{- if gt $schema.Value.MinItems 0 }}
+                {{- end }}
+            {{- else if eq $schema.Value.Type "array" }}
+                {{- if gt $schema.Value.MinItems 0 }}
 
     if len(p.{{ pascal $key }}) < {{ $schema.Value.MinItems }} {
         _ = err.Add("{{$key}}", "length must be >= {{ $schema.Value.MinItems }}")
     }
-        {{- end }}
-        {{- if isNotNil $schema.Value.MaxItems }}
+                {{- end }}
+                {{- if isNotNil $schema.Value.MaxItems }}
 
     if len(p.{{ pascal $key }}) > {{ $schema.Value.MaxItems }} {
         _ = err.Add("{{$key}}", "length must be <= {{ $schema.Value.MaxItems }}")
     }
+                {{- end }}
+            {{- end }}
         {{- end }}
-    {{- end }}
-{{- end }}
 
     return err.GetErr()
 }
-{{- end -}}
+    {{- end -}}
 {{- end -}}
 {{- end -}}
 
@@ -245,7 +242,7 @@ import (
 
 {{/* Components */}}
 {{- range $key, $schema := .AllComponentSchemas }}
-    {{- template "typeDeclaration" ($.WithParams "key" $key "schema" $schema "label" "component")}}
+    {{- template "typeDeclaration" ($.WithParams "key" $key "schema" $schema "label" "Component")}}
 {{- end }}
 
 {{- /* Local Request/Reponse Types */ -}}

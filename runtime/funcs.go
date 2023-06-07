@@ -251,13 +251,18 @@ func In(needle interface{}, haystack ...interface{}) (bool, error) {
 
 const (
 	CommentPrefix = "//"
-	MaxWidth      = 80
+	MaxWidth      = 100
 )
 
 // GoDoc wraps the string to a MaxWidth and prepends with CommentPrefix.
 func GoDoc(s string) string {
-	ss := strings.Split(s, "\n")
-	out := CommentPrefix
+	s = strings.TrimSpace(s)
+	if len(s) == 0 {
+		return ""
+	}
+
+	ss := strings.Split(strings.TrimSpace(s), "\n")
+	out := "\n" + CommentPrefix
 	length := 0
 
 	for lineNumber, s := range ss {
@@ -272,7 +277,7 @@ func GoDoc(s string) string {
 			out += " " + l
 		}
 
-		if lineNumber > 0 {
+		if lineNumber > 0 && lineNumber < len(ss)-1 {
 			out += "\n" + CommentPrefix
 		}
 	}

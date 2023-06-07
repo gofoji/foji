@@ -1,30 +1,25 @@
 {{- define "methodSignature"}}
+    {{- $path := .RuntimeParams.path -}}
     {{- $op := .RuntimeParams.op -}}
     {{- $body := .GetRequestBody $op -}}
-    {{- if not (empty ($.OpSecurity $op)) }} user *{{ $.CheckPackage $.Params.Auth "http" -}},{{- end }}
-    {{- range $param := $op.Parameters -}}
-        {{ goToken (camel $param.Value.Name) }} {{ if and (not $param.Value.Required) (not (eq $param.Value.Schema.Value.Type "array")) }}*{{ end }}{{ $.GetType "" $param.Value.Name $param.Value.Schema }},
+    {{- $package := .RuntimeParams.package -}}
+    {{- if not (empty ($.OpSecurity $op)) }} user *{{ $.CheckPackage $.Params.Auth $package -}},{{- end }}
+    {{- range $param := $.OpParams $path $op -}}
+        {{ goToken (camel $param.Value.Name) }} {{ if and (and (not $param.Value.Required) (not (eq $param.Value.Schema.Value.Type "array"))) (isNil $param.Value.Schema.Value.Default) }}*{{ end }}{{ $.GetType "" $param.Value.Name $param.Value.Schema }},
     {{- end -}}
     {{- if isNotNil $body}}
-            {{- $type := $.GetType "http" (print $op.OperationID "Request") $body.Schema }} body {{ $type  -}}
+            {{- $type := $.GetType $package (print $op.OperationID "Request") $body.Schema }} body {{ $type  -}}
     {{- end -}}
 	) (
-    {{- $response := $.GetOpHappyResponseType "http" .RuntimeParams.op}}
-    {{- if notEmpty $response}}{{ $.CheckPackage $response "http"}}, {{ end }}error)
-{{- end -}}
-
-{{- define "paramExtractionFunc" -}}
-    {{- $source := .RuntimeParams.source }}
-    {{- $type := .RuntimeParams.type }}
-    {{- pascal $source -}}
-    {{- if eq $type "[]string" -}}Strings
-    {{- else }}{{pascal $type}}{{end -}}
+    {{- $response := $.GetOpHappyResponseType $package .RuntimeParams.op}}
+    {{- if notEmpty $response}}{{ $.CheckPackage $response $package}}, {{ end }}error)
 {{- end -}}
 
 {{- define "paramExtraction" -}}
     {{- $param := .RuntimeParams.param }}
     {{- $goType := ($.GetType "" $param.Value.Name $param.Value.Schema) }}
     {{- $required := $param.Value.Required }}
+    {{- $hasDefault := isNotNil $param.Value.Schema.Value.Default }}
     {{- $getRequiredParamFunction := "" -}}
     {{- if eq $param.Value.Schema.Value.Type "array" -}}
         {{- if eq $goType "[]int32" -}}
@@ -45,14 +40,24 @@
             {{- $getRequiredParamFunction = "GetString" -}}
         {{- end -}}
     {{- end -}}
-
-	{{- if or $required (eq $param.Value.Schema.Value.Type "array")}}
+{{- goDoc $param.Value.Description }}
+	{{- if or $required (eq $param.Value.Schema.Value.Type "array") }}
 	{{ goToken (camel $param.Value.Name) }}, _, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", {{ $required }})
 	if err != nil {
 		validationErrors.Add("{{ $param.Value.Name }}", err)
 	}
-	{{- else -}}
+	{{- else if $hasDefault }}
+	{{ goToken (camel $param.Value.Name) }}, ok, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", {{ $required }})
+	if err != nil {
+		validationErrors.Add("{{ $param.Value.Name }}", err)
+	}
+
+	if !ok {
+	    {{ goToken (camel $param.Value.Name) }} = {{ $param.Value.Schema.Value.Default }}
+	}
+	{{- else }}
 	var {{ goToken (camel $param.Value.Name) }} *{{$goType}}
+
 	{{ goToken (camel $param.Value.Name) }}Val, ok, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", {{ $required }})
 	if err != nil {
 		validationErrors.Add("{{ $param.Value.Name }}", err)
@@ -62,6 +67,7 @@
 		{{ goToken (camel $param.Value.Name) }} = &{{ goToken (camel $param.Value.Name) }}Val
 	}
 	{{- end -}}
+
 {{- end -}}
 {{- $package := "http" -}}
 
@@ -92,7 +98,7 @@ type Operations interface {
     {{- range $verb, $op := $path.Operations }}
         {{- $opResponse := $.GetOpHappyResponse $package $op }}
 	{{ pascal $op.OperationID}}(ctx context.Context,
-        {{- template "methodSignature" ($.WithParams "op" $op "Package" $package) }}
+        {{- template "methodSignature" ($.WithParams "op" $op "package" $package "path" $path) }}
     {{- end }}
 {{- end }}
 }
@@ -118,23 +124,22 @@ type OpenAPIHandlers struct {
 
 func RegisterOperations(ops Operations, r chi.Router
 {{- if .HasAuthentication }}
-{{- range $security, $value := .API.Components.SecuritySchemes -}}
+	{{- range $security, $value := .API.Components.SecuritySchemes -}}
     , {{ camel $security }}Auth
-{{- end }} HttpAuthFunc
-{{- if .HasAuthorization }}
+	{{- end }} HttpAuthFunc
+	{{- if .HasAuthorization }}
     , authorize Authorizer
-{{- end -}}
+	{{- end -}}
 {{- end -}}
 ) *OpenAPIHandlers {
 	s := OpenAPIHandlers{ops: ops
 {{- if .HasAuthentication }}
-{{- range $security, $value := .API.Components.SecuritySchemes -}}
+	{{- range $security, $value := .API.Components.SecuritySchemes -}}
     , {{ camel $security }}Auth: {{ camel $security }}Auth
-{{- end -}}
-{{- if .HasAuthorization }}
+	{{- end -}}
+	{{- if .HasAuthorization }}
 	, authorize: authorize{{- end -}}
 {{- end -}}
-
 }
 {{ range $name, $path := .API.Paths }}
     {{- range $verb, $op := $path.Operations }}
@@ -142,7 +147,7 @@ func RegisterOperations(ops Operations, r chi.Router
     {{- end }}
 {{- end }}
 
-{{ range $name, $path := .API.Paths }}
+{{- range $name, $path := .API.Paths }}
     {{- range $verb, $op := $path.Operations }}
         {{- if not ($.IsSimpleAuth $op) }}
 	s.{{ camel $op.OperationID}}AuthGroups = NewSecurityGroups(
@@ -171,7 +176,9 @@ func RegisterOperations(ops Operations, r chi.Router
         {{- $opResponse := $.GetOpHappyResponse $package $op }}
         {{- $opBody := $.GetRequestBody $op }}
 
-{{ goDoc (print (pascal $op.OperationID) " " $op.Description) }}.
+{{ goDoc (pascal $op.OperationID) }}
+{{- goDoc $op.Summary }}
+{{- goDoc $op.Description }}
 func (h OpenAPIHandlers) {{ pascal $op.OperationID}}(w http.ResponseWriter, r *http.Request) {
 	var err error
         {{- $securityList := $.OpSecurity $op }}
@@ -216,11 +223,10 @@ err = h.authorize(authCtx{{range $scopes}}, "{{.}}"{{end}})
 		return
 	}
         {{- end}}
-        {{- if not (empty $op.Parameters) }}
+        {{- if not (empty ($.OpParams $path $op)) }}
 
 	var validationErrors validation.Errors
-
-        {{- range $param := $op.Parameters }}
+        {{- range $param := $.OpParams $path $op }}
 
 	{{ template "paramExtraction" ($.WithParams "param" $param "Package" $package) }}
         {{- end }}
@@ -235,11 +241,7 @@ err = h.authorize(authCtx{{range $scopes}}, "{{.}}"{{end}})
         {{- $hasBody := not (empty $opBody)}}
 		{{- if $hasBody }}
 			{{- $bodyType := $.GetType $package (print (pascal $op.OperationID) "Request") $opBody.Schema}}
-			{{- if notEmpty $opBody.Schema.Ref }}
-				{{- $bodyType = $.GetTypeName $package $opBody.Schema}}
-			{{- end }}
-
-				{{- if $opBody.IsJson }}
+			{{- if $opBody.IsJson }}
 
 	var body {{ $bodyType }}
 	if err = json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -270,7 +272,7 @@ err = h.authorize(authCtx{{range $scopes}}, "{{.}}"{{end}})
 	err = h.ops.{{ pascal $op.OperationID}}(r.Context(),
         {{- end}}
         {{- if not (empty $securityList) }} authCtx,{{- end -}}
-        {{- range $param := $op.Parameters }} {{ goToken (camel $param.Value.Name) }},{{- end -}}
+        {{- range $param := $.OpParams $path $op}} {{ goToken (camel $param.Value.Name) }},{{- end -}}
         {{- if $hasBody }} body{{- end -}}
 
         )

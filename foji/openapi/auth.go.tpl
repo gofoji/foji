@@ -52,7 +52,7 @@ var (
 // {{toJson $value}}
 // {{ pascal $security }}Auth is responsible for extracting "{{$security}}" credentials from a request and calling the
 // supplied Authenticator to authenticate
-{{ goDoc $value.Value.Description }}
+{{- goDoc $value.Value.Description }}
 func {{ pascal $security }}Auth(fn {{if eq $value.Value.Scheme "basic"}}Basic{{end}}Authenticator) HttpAuthFunc {
 	return func(r *http.Request) (*{{ $.CheckPackage $.Params.Auth $packageName }}, error) {
     {{- if eq $value.Value.Type "apiKey" }}

@@ -1,36 +1,19 @@
-{{/*{{- define "methodSignature"}}*/}}
-{{/*	{{- $op := .RuntimeParams.op -}}*/}}
-{{/*	{{- if not (empty ($.OpSecurity $op)) }} user *{{ $.CheckPackage $.Params.Auth .PackageName -}},{{- end }}*/}}
-{{/*	{{- range $param := $op.Parameters -}}*/}}
-{{/*		{{ camel $param.Value.Name }} {{ if and (not $param.Value.Required) (not (eq $param.Value.Schema.Value.Type "array")) }}*{{ end }}{{ $.GetType "" $param.Value.Name $param.Value.Schema }},*/}}
-{{/*	{{- end -}}*/}}
-{{/*	{{- if isNotNil $op.RequestBody}}*/}}
-{{/*		{{- $index := index .RuntimeParams.op.RequestBody.Value.Content "application/json" -}}*/}}
-{{/*		{{- if empty $index -}} MISSING*/}}
-{{/*		{{ else }}*/}}
-{{/*		{{- $type := $.GetType .PackageName (print $op.OperationID "Request") $index.Schema}}*/}}
-{{/*		{{- camel $type}} {{ pascal $type -}}*/}}
-{{/*		{{ end }}*/}}
-{{/*	{{- end -}}*/}}
-{{/*	) (*/}}
-{{/*	{{- $response := $.GetOpHappyResponseType .PackageName .RuntimeParams.op}}*/}}
-{{/*	{{- if notEmpty $response}}{{ $.CheckPackage $response .PackageName -}}, {{ end }}error)*/}}
-{{/*{{- end -}}*/}}
 {{- define "methodSignature"}}
+    {{- $path := .RuntimeParams.path -}}
     {{- $op := .RuntimeParams.op -}}
     {{- $body := .GetRequestBody $op -}}
-    {{- if not (empty ($.OpSecurity $op)) }} user *{{ $.CheckPackage $.Params.Auth .PackageName -}},{{- end }}
-    {{- range $param := $op.Parameters -}}
-        {{ goToken (camel $param.Value.Name) }} {{ if and (not $param.Value.Required) (not (eq $param.Value.Schema.Value.Type "array")) }}*{{ end }}{{ $.GetType "" $param.Value.Name $param.Value.Schema }},
+    {{- $package := .RuntimeParams.package -}}
+    {{- if not (empty ($.OpSecurity $op)) }} user *{{ $.CheckPackage $.Params.Auth $package -}},{{- end }}
+    {{- range $param := $.OpParams $path $op -}}
+        {{ goToken (camel $param.Value.Name) }} {{ if and (and (not $param.Value.Required) (not (eq $param.Value.Schema.Value.Type "array"))) (isNil $param.Value.Schema.Value.Default) }}*{{ end }}{{ $.GetType "" $param.Value.Name $param.Value.Schema }},
     {{- end -}}
     {{- if isNotNil $body}}
-        {{- $type := $.GetType .PackageName (print $op.OperationID "Request") $body.Schema }} body {{ $type  -}}
+        {{- $type := $.GetType $package (print $op.OperationID "Request") $body.Schema }} body {{ $type  -}}
     {{- end -}}
 	) (
-    {{- $response := $.GetOpHappyResponseType .PackageName .RuntimeParams.op}}
-    {{- if notEmpty $response}}{{ $.CheckPackage $response .PackageName}}, {{ end }}error)
+    {{- $response := $.GetOpHappyResponseType $package .RuntimeParams.op}}
+    {{- if notEmpty $response}}{{ $.CheckPackage $response $package}}, {{ end }}error)
 {{- end -}}
-
 
 package {{ .PackageName }}
 
@@ -63,9 +46,11 @@ type Service struct {
 {{- range $name, $path := .File.API.Paths }}
 	{{- range $verb, $op := $path.Operations }}
 
-{{ goDoc (print (pascal $op.OperationID) " " $op.Description) }}.
+{{ goDoc (pascal $op.OperationID) }}
+{{- goDoc $op.Summary }}
+{{- goDoc $op.Description }}
 func (s *Service) {{ pascal $op.OperationID}}(ctx context.Context,
-	{{- template "methodSignature" ($.WithParams "op" $op) }}{
+	{{- template "methodSignature" ($.WithParams "op" $op "path" $path "package" $.PackageName) }}{
 	{{- $response := $.GetOpHappyResponseType $.PackageName $op}}
 	{{- if notEmpty $response }}
 	return nil, ErrNotImplemented
