@@ -1148,25 +1148,41 @@ const FojiSlashOpenapiSlashHandlerDotGoDotTpl = `{{- define "methodSignature"}}
     {{- $package := .RuntimeParams.package -}}
     {{- if not (empty ($.OpSecurity $op)) }} user *{{ $.CheckPackage $.Params.Auth $package -}},{{- end }}
     {{- range $param := $.OpParams $path $op -}}
-        {{ goToken (camel $param.Value.Name) }} {{ if and (and (not $param.Value.Required) (not (eq $param.Value.Schema.Value.Type "array"))) (isNil $param.Value.Schema.Value.Default) }}*{{ end }}{{ $.GetType "" $param.Value.Name $param.Value.Schema }},
+		{{- $name := (print $op.OperationID " " $param.Value.Name) -}}
+        {{ goToken (camel $param.Value.Name) -}}
+		{{- if notEmpty $param.Ref -}}
+			{{- $name = $param.Value.Name -}}
+		{{- end -}}
+        {{- if $.ParamIsOptionalType $param }} *{{ end }} {{ $.GetType $package $name $param.Value.Schema }},
     {{- end -}}
     {{- if isNotNil $body}}
-            {{- $type := $.GetType $package (print $op.OperationID "Request") $body.Schema }} body {{ $type  -}}
+        {{- $type := $.GetType $package (print $op.OperationID "Request") $body.Schema }} body {{ $type  -}}
     {{- end -}}
 	) (
     {{- $response := $.GetOpHappyResponseType $package .RuntimeParams.op}}
     {{- if notEmpty $response}}{{ $.CheckPackage $response $package}}, {{ end }}error)
 {{- end -}}
 
+
 {{- define "paramExtraction" -}}
+    {{- $op := .RuntimeParams.op }}
     {{- $param := .RuntimeParams.param }}
-    {{- $goType := ($.GetType "" $param.Value.Name $param.Value.Schema) }}
+    {{- $package := .RuntimeParams.package }}
+    {{- $goType := $.GetType $package (print $op.OperationID " " $param.Value.Name) $param.Value.Schema }}
+	{{- if notEmpty $param.Ref -}}
+        {{- $goType = $.GetType $package $param.Value.Name $param.Value.Schema  }}
+	{{- end -}}
+    {{- $enumNew := $.EnumNew $goType }}
     {{- $required := $param.Value.Required }}
     {{- $hasDefault := isNotNil $param.Value.Schema.Value.Default }}
+    {{- $isEnum := $.ParamIsEnum $param }}
+    {{- $isArrayEnum := $.ParamIsEnumArray $param }}
     {{- $getRequiredParamFunction := "" -}}
     {{- if eq $param.Value.Schema.Value.Type "array" -}}
         {{- if eq $goType "[]int32" -}}
             {{- $getRequiredParamFunction = "GetInt32Array" -}}
+        {{- else if $isArrayEnum }}
+            {{- $getRequiredParamFunction = "GetEnumArray" -}}
         {{- else }}
             {{- $getRequiredParamFunction = "GetStringArray" -}}
         {{- end -}}
@@ -1179,29 +1195,53 @@ const FojiSlashOpenapiSlashHandlerDotGoDotTpl = `{{- define "methodSignature"}}
             {{- $getRequiredParamFunction = "GetInt64" -}}
         {{- else if eq $goType "time.Time" }}
             {{- $getRequiredParamFunction = "GetTime" -}}
+        {{- else if $isEnum }}
+            {{- $getRequiredParamFunction = "GetEnum" -}}
         {{- else }}
             {{- $getRequiredParamFunction = "GetString" -}}
         {{- end -}}
     {{- end -}}
 {{- goDoc $param.Value.Description }}
-	{{- if or $required (eq $param.Value.Schema.Value.Type "array") }}
-	{{ goToken (camel $param.Value.Name) }}, _, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", {{ $required }})
+	{{- if eq $param.Value.Schema.Value.Type "array" }}
+	{{ goToken (camel $param.Value.Name) }}, _, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", {{ $required }}
+		{{- if $isArrayEnum -}}, {{ $enumNew  }}{{- end -}})
 	if err != nil {
 		validationErrors.Add("{{ $param.Value.Name }}", err)
 	}
-	{{- else if $hasDefault }}
-	{{ goToken (camel $param.Value.Name) }}, ok, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", {{ $required }})
+		{{ if $hasDefault }}
+	if len({{ goToken (camel $param.Value.Name) }}) == 0 {
+	    {{ goToken (camel $param.Value.Name) }} = {{$goType}}{
+		    {{- range $val := $.DefaultValues  $param.Value.Schema.Value.Default}}
+        {{ if $isArrayEnum}}{{$.StripArray $goType}}{{ pascal (goToken $val) }}{{else}}{{ printf "%#v" $param.Value.Schema.Value.Default }}{{end}},
+			{{end}}
+		}
+	}
+		{{end}}
+
+
+	{{- else if $required }}
+	{{ goToken (camel $param.Value.Name) }}, _, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", {{ $required }}
+		{{- if or $isEnum $isArrayEnum -}}, {{ $enumNew  }}{{- end -}})
 	if err != nil {
 		validationErrors.Add("{{ $param.Value.Name }}", err)
 	}
 
-	if !ok {
-	    {{ goToken (camel $param.Value.Name) }} = {{ $param.Value.Schema.Value.Default }}
+
+	{{- else if $hasDefault }}
+	{{ goToken (camel $param.Value.Name) }}, ok, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", {{ $required }}
+    {{- if $isEnum -}}, {{ $enumNew  }}{{- end -}})
+	if err != nil {
+		validationErrors.Add("{{ $param.Value.Name }}", err)
+	} else if !ok {
+	    {{ goToken (camel $param.Value.Name) }} = {{ if $isEnum}}{{$goType}}{{ pascal (goToken (printf "%#v" $param.Value.Schema.Value.Default)) }}{{else}}{{ printf "%#v" $param.Value.Schema.Value.Default }}{{end}}
 	}
+
+
 	{{- else }}
 	var {{ goToken (camel $param.Value.Name) }} *{{$goType}}
 
-	{{ goToken (camel $param.Value.Name) }}Val, ok, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", {{ $required }})
+	{{ goToken (camel $param.Value.Name) }}Val, ok, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", {{ $required }}
+    {{- if $isEnum -}}, {{ $enumNew  }}{{- end -}})
 	if err != nil {
 		validationErrors.Add("{{ $param.Value.Name }}", err)
 	}
@@ -1371,7 +1411,7 @@ err = h.authorize(authCtx{{range $scopes}}, "{{.}}"{{end}})
 	var validationErrors validation.Errors
         {{- range $param := $.OpParams $path $op }}
 
-	{{ template "paramExtraction" ($.WithParams "param" $param "Package" $package) }}
+	{{ template "paramExtraction" ($.WithParams "param" $param "package" $package "op" $op) }}
         {{- end }}
 
 	if validationErrors != nil {
@@ -1435,7 +1475,7 @@ err = h.authorize(authCtx{{range $scopes}}, "{{.}}"{{end}})
 	httputil.HTMLWrite(w, r, {{$key}}, *response)
             {{- else }}
 
-	httputil.Write(w, r, TextHTML,  {{$key}}, []byte(*response))
+	httputil.Write(w, r, httputil.TextPlain,  {{$key}}, []byte(*response))
 			{{- end -}}
         {{- else }}
 
@@ -1596,31 +1636,32 @@ const FojiSlashOpenapiSlashModelDotGoDotTpl = `{{- define "propertyDeclaration"}
     {{- $schema := .RuntimeParams.schema }}
     {{- $typeName := .RuntimeParams.typeName }}
     {{- goDoc $schema.Value.Description }}
-    {{- if $.IsDefaultEnum  $key $schema }}
-    {{ pascal $key }}  {{ $typeName }}{{ pascal $key }}Enum
-    {{- else }}
-    {{ pascal $key }} {{ $.GetType .PackageName (print $typeName " " $key) $schema }}
-    {{- end }}  ` + "`" + `json:"{{$key}},omitempty"` + "`" + `
+    {{ pascal $key }} {{ $.GetType .PackageName (print $typeName " " $key) $schema }} ` + "`" + `json:"{{$key}},omitempty"` + "`" + `
 {{- end -}}
 
 {{- define "enum"}}
-{{- $enumType := .RuntimeParams.Type }}
-{{- $enums := .RuntimeParams.Values }}
+{{- $schema := .RuntimeParams.schema }}
+{{- $description := .RuntimeParams.description }}
+{{- $name := .RuntimeParams.name }}
+{{- $enumType := $.CheckPackage ($.EnumName $name) $.PackageName -}}
+{{- if and (empty $schema.Ref) (not (empty $schema.Value.Enum)) }}
 
+// {{$enumType}}
+{{- goDoc $description }}
 type {{ $enumType }} int8
 
 const (
     Unknown{{ $enumType }} {{ $enumType }} = iota
-    {{- range $i, $value := $enums }}
-    {{ $enumType }}{{ pascal (goToken $value) }}
+    {{- range $i, $value := $schema.Value.Enum }}
+    {{ $enumType }}{{ pascal (goToken (printf "%v" $value)) }}
     {{- end }}
 )
 
 func New{{ $enumType }}(name string) {{ $enumType }} {
     switch name {
-    {{- range $enums  }}
+    {{- range $schema.Value.Enum  }}
     case "{{ . }}":
-        return {{ $enumType }}{{ pascal (goToken .) }}
+        return {{ $enumType }}{{ pascal (goToken (printf "%v" .)) }}
     {{- end }}
     }
 
@@ -1628,8 +1669,8 @@ func New{{ $enumType }}(name string) {{ $enumType }} {
 }
 
 var  {{ $enumType }}String = map[{{ $enumType }}]string{
-    {{- range $enums }}
-        {{ $enumType }}{{ pascal (goToken .) }}: "{{ . }}",
+    {{- range $schema.Value.Enum }}
+        {{ $enumType }}{{ pascal (goToken (printf "%v" .)) }}: "{{ (printf "%v" .) }}",
     {{- end }}
 }
 
@@ -1662,6 +1703,7 @@ func (e *{{ $enumType }}) MarshalJSON() ([]byte, error) {
     return json.Marshal(e.String())
 }
 {{- end -}}
+{{- end -}}
 
 {{- define "typeDeclaration"}}
 {{ $schema := .RuntimeParams.schema }}
@@ -1677,7 +1719,7 @@ func (e *{{ $enumType }}) MarshalJSON() ([]byte, error) {
 
     {{- if in $schema.Value.Type "object" "" }}
 type {{ pascal $key }} struct {
-    {{- range $key, $schema := $schema.Value.Properties }}
+    {{- range $key, $schema := $.SchemaProperties $schema  false}}
         {{- template "propertyDeclaration" ($.WithParams "key" $key "schema" $schema "typeName" $typeName)}}
     {{- end }}
     {{- range $schema.Value.AllOf }}
@@ -1685,10 +1727,6 @@ type {{ pascal $key }} struct {
 
     // OpenAPI Ref: {{ .Ref }}
     {{ $.GetType $.PackageName "" . }}
-        {{- else }}
-            {{- range $key, $schema := .Value.Properties }}
-                {{- template "propertyDeclaration" ($.WithParams "key" $key "schema" $schema "typeName" $typeName)}}
-            {{- end }}
         {{- end }}
     {{- end }}
 }
@@ -1697,59 +1735,44 @@ type {{ pascal $key }} {{ $.GetType $.PackageName (pascal (print $typeName " Ite
     {{- end }}
 
 {{- /* Nested Types */}}
-    {{- range $key, $schema := $schema.Value.Properties }}
-        {{- if empty $schema.Ref -}}
+    {{- range $key, $schema := $.SchemaProperties $schema false }}
         {{- if not (empty $schema.Value.Properties )}}
-            {{- template "typeDeclaration" ($.WithParams "key" (pascal (print $typeName " " $key)) "schema" $schema "label" (print  $typeName " inline " $key))}}
-            {{- else if eq $schema.Value.Type "array"}}
-                {{- if empty $schema.Value.Items.Ref -}}
-                    {{- if not (empty $schema.Value.Items.Value.Properties )}}
-                        {{- template "typeDeclaration" ($.WithParams "key" (pascal (print $typeName " " $key)) "schema" $schema.Value.Items "label" (print  $typeName " inline item " $key))}}
-                    {{- end }}
+            {{- if empty $schema.Ref -}}
+                {{- template "typeDeclaration" ($.WithParams "key" (pascal (print $typeName " " $key)) "schema" $schema "label" (print  $typeName " inline " $key))}}
+            {{- end -}}
+        {{- else if eq $schema.Value.Type "array"}}
+            {{- if empty $schema.Value.Items.Ref -}}
+                {{- if not (empty ($.SchemaProperties $schema.Value.Items false ))}}
+                    {{- template "typeDeclaration" ($.WithParams "key" (pascal (print $typeName " " $key)) "schema" $schema.Value.Items "label" (print  $typeName " inline item " $key))}}
                 {{- end }}
             {{- end }}
         {{- end }}
     {{- end }}
-    {{- /* Nested Arrays */}}
-    {{- if empty $schema.Ref -}}
-        {{- if eq $schema.Value.Type "array"}}
-            {{- if empty $schema.Value.Items.Ref -}}
-                {{- if not (empty $schema.Value.Items.Value.Properties )}}
-                    {{- template "typeDeclaration" ($.WithParams "key" (pascal (print $typeName " Item" )) "schema" $schema.Value.Items "label" (print  $typeName " inline item " $key))}}
-                {{- end }}
+        {{- /* Nested Arrays */}}
+    {{- if eq $schema.Value.Type "array"}}
+        {{- if empty $schema.Value.Items.Ref -}}
+            {{- if not (empty ($.SchemaProperties $schema.Value.Items false ))}}
+                {{- template "typeDeclaration" ($.WithParams "key" (pascal (print $typeName " Item" )) "schema" $schema.Value.Items "label" (print  $typeName " inline item " $key))}}
             {{- end }}
         {{- end }}
     {{- end }}
 
 {{- /*    Regex Validation Patterns */ -}}
-    {{- range $key, $schema := $schema.Value.Properties }}
+    {{- range $key, $schema := $.SchemaProperties $schema false}}
         {{- if notEmpty $schema.Value.Pattern }}
-
 var {{ camel $typeName }}{{ pascal $key }}Pattern = regexp.MustCompile(` + "`" + `{{ $schema.Value.Pattern }}` + "`" + `)
         {{- end}}
     {{- end }}
 
 {{- /*    Enums */}}
-    {{- range $key, $schema := $schema.Value.Properties }}
-        {{- if not (empty $schema.Value.Enum) }}
-            {{- $enumType := print $typeName (pascal $key) "Enum" }}
-            {{- template "enum" ($.WithParams "Type" $enumType "Values" $schema.Value.Enum)}}
-        {{- end -}}
+    {{- range $key, $schema := $.SchemaEnums $schema }}
+        {{- template "enum" ($.WithParams "name" (print $typeName " " $key) "schema" $schema "description" (print $label " : " $key ))}}
     {{- end -}}
-
-    {{- range $schema.Value.AllOf }}
-        {{- range $key, $schema := $schema.Value.Properties }}
-            {{- if not (empty $schema.Value.Enum) }}
-                {{- $enumType := print $typeName (pascal $key) "Enum" }}
-                {{- template "enum" ($.WithParams "Type" $enumType "Values" $schema.Value.Enum)}}
-            {{- end -}}
-        {{- end -}}
-    {{- end }}
 
     {{- if $.HasValidation $schema }}
 func (p {{ pascal $key }}) Validate() error {
     var err validation.Errors
-        {{- range $key, $schema := $schema.Value.Properties }}
+        {{- range $key, $schema := $.SchemaProperties $schema true }}
             {{- if in $schema.Value.Type "number" "integer" }}
                 {{- $fieldType := $.GetType $.PackageName $key $schema }}
                 {{- if isNotNil $schema.Value.Min }}
@@ -1809,6 +1832,13 @@ func (p {{ pascal $key }}) Validate() error {
         _ = err.Add("{{$key}}", "length must be <= {{ $schema.Value.MaxItems }}")
     }
                 {{- end }}
+            {{- else if notEmpty $schema.Ref }}
+                {{- if $.HasValidation $schema }}
+
+    if subErr := p.{{ pascal $key }}.Validate(); subErr != nil {
+        _ = err.Add("{{ $key }}", subErr)
+    }
+                {{- end -}}
             {{- end }}
         {{- end }}
 
@@ -1833,23 +1863,52 @@ import (
     "github.com/bir/iken/validation"
 )
 
-{{/* Components */}}
-{{- range $key, $schema := .AllComponentSchemas }}
-    {{- template "typeDeclaration" ($.WithParams "key" $key "schema" $schema "label" "Component")}}
+// Component Schemas
+
+{{ range $key, $schema := .ComponentSchemas }}
+    {{- template "typeDeclaration" ($.WithParams "key" $key "schema" $schema "label" "Component Schema")}}
 {{- end }}
 
-{{- /* Local Request/Reponse Types */ -}}
-{{- range $name, $path := .API.Paths }}
+// Component Parameters
+
+{{ range $key, $param := .ComponentParameters }}
+        {{- template "paramDeclaration" ($.WithParams "param" $param "name" "" "label" "Component Parameter: ")}}
+{{- end }}
+
+{{- define "paramDeclaration"}}
+    {{- $param := .RuntimeParams.param }}
+    {{- $name := .RuntimeParams.name }}
+    {{- $label := .RuntimeParams.label }}
+    {{- if empty $param.Ref -}}
+        {{- template "enum" ($.WithParams "name" (print $name " " $param.Value.Name) "schema" $param.Value.Schema "description" (print $param.Value.Description "\n" $label $param.Value.Name ))}}
+        {{- if eq $param.Value.Schema.Value.Type "array"}}
+            {{- template "enum" ($.WithParams "name" (print $name " " $param.Value.Name) "schema" $param.Value.Schema.Value.Items "description" (print $label $param.Value.Name " Item"))}}
+        {{- end }}
+    {{- end -}}
+{{- end }}
+
+// Path Operations
+
+{{/* Inline Request/Reponse Types */ -}}
+{{ range $name, $path := .API.Paths }}
     {{- range $verb, $op := $path.Operations }}
+        {{- /* Inline Request */ -}}
         {{- $bodySchema := $.GetRequestBodyLocal $op}}
-        {{- if isNotNil $bodySchema}}
+        {{- if $.SchemaIsComplex $bodySchema -}}
             {{- template "typeDeclaration" ($.WithParams "key" (print $op.OperationID "Request") "schema" $bodySchema "label" (print $op.OperationID " Body") )}}
         {{- end }}
+
+        {{- /* Inline Response */ -}}
         {{- $opResponse := $.GetOpHappyResponse $.PackageName $op }}
         {{- if isNotNil $opResponse.MediaType }}
-            {{- if empty $opResponse.MediaType.Schema.Ref -}}
+            {{- if  $.SchemaIsComplex $opResponse.MediaType.Schema -}}
                 {{- template "typeDeclaration" ($.WithParams "key" (print $op.OperationID " Response") "schema" $opResponse.MediaType.Schema "label" (print $op.OperationID " Response") )}}
             {{- end }}
+        {{- end }}
+
+        {{- /* Inline Params */ -}}
+        {{- range $param := $.OpParams $path $op }}
+            {{- template "paramDeclaration" ($.WithParams "param" $param "name" $op.OperationID "label" (print "Op: " $op.OperationID " Param: "))}}
         {{- end }}
     {{- end }}
 {{- end }}
@@ -1864,7 +1923,12 @@ const FojiSlashOpenapiSlashServiceDotGoDotTpl = `{{- define "methodSignature"}}
     {{- $package := .RuntimeParams.package -}}
     {{- if not (empty ($.OpSecurity $op)) }} user *{{ $.CheckPackage $.Params.Auth $package -}},{{- end }}
     {{- range $param := $.OpParams $path $op -}}
-        {{ goToken (camel $param.Value.Name) }} {{ if and (and (not $param.Value.Required) (not (eq $param.Value.Schema.Value.Type "array"))) (isNil $param.Value.Schema.Value.Default) }}*{{ end }}{{ $.GetType "" $param.Value.Name $param.Value.Schema }},
+        {{- $name := (print $op.OperationID " " $param.Value.Name) -}}
+        {{ goToken (camel $param.Value.Name) -}}
+        {{- if notEmpty $param.Ref -}}
+            {{- $name = $param.Value.Name -}}
+        {{- end -}}
+        {{- if $.ParamIsOptionalType $param }} *{{ end }} {{ $.GetType $package $name $param.Value.Schema }},
     {{- end -}}
     {{- if isNotNil $body}}
         {{- $type := $.GetType $package (print $op.OperationID "Request") $body.Schema }} body {{ $type  -}}

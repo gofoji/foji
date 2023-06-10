@@ -5,7 +5,12 @@
     {{- $package := .RuntimeParams.package -}}
     {{- if not (empty ($.OpSecurity $op)) }} user *{{ $.CheckPackage $.Params.Auth $package -}},{{- end }}
     {{- range $param := $.OpParams $path $op -}}
-        {{ goToken (camel $param.Value.Name) }} {{ if and (and (not $param.Value.Required) (not (eq $param.Value.Schema.Value.Type "array"))) (isNil $param.Value.Schema.Value.Default) }}*{{ end }}{{ $.GetType "" $param.Value.Name $param.Value.Schema }},
+        {{- $name := (print $op.OperationID " " $param.Value.Name) -}}
+        {{ goToken (camel $param.Value.Name) -}}
+        {{- if notEmpty $param.Ref -}}
+            {{- $name = $param.Value.Name -}}
+        {{- end -}}
+        {{- if $.ParamIsOptionalType $param }} *{{ end }} {{ $.GetType $package $name $param.Value.Schema }},
     {{- end -}}
     {{- if isNotNil $body}}
         {{- $type := $.GetType $package (print $op.OperationID "Request") $body.Schema }} body {{ $type  -}}

@@ -127,7 +127,7 @@ func (ii *Imports) CheckPackage(t, currentPackage string) string {
 
 	prefix := ""
 	typePkg := strings.Join(tt[0:len(tt)-1], ".")
-	if typePkg[0] == '*' {
+	if len(typePkg) > 0 && typePkg[0] == '*' {
 		prefix = "*"
 		typePkg = typePkg[1:]
 	}
