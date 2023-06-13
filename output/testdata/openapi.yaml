@@ -5,6 +5,8 @@ info:
 paths: {}
 components:
   schemas:
+    Nada:
+      type: ""
     Foo:
       properties:
         bad:

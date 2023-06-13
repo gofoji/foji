@@ -6,6 +6,7 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/gofoji/foji/cfg"
 	"github.com/gofoji/foji/embed"
@@ -15,7 +16,7 @@ import (
 
 func TestGetType(t *testing.T) {
 	doc, err := openapi3.NewLoader().LoadFromFile("testdata/openapi.yaml")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	ctx := getContext(doc)
 
@@ -30,7 +31,8 @@ func TestGetType(t *testing.T) {
 		{"Nest.label", "foreign", "*string"},
 		{"Main.list", "foreign", "[]local.Nest"},
 		{"Main.override_name", "foreign", "typeOverride"},
-		{"EmptyObject", "local", "any"},
+		{"EmptyObject", "local", "DefaultObject"},
+		{"Nada", "foreign", "any"},
 		{"EmptyAlias", "local", "myOverride"},
 		{"Foo.bad", "local", "INVALID x-go-type: map[foo:bar]"},
 		{"Foo", "local", "Foo"},
@@ -53,7 +55,7 @@ func getContext(doc *openapi3.T) OpenAPIFileContext {
 	}
 
 	config := cfg.Config{Processes: cfg.Processes{"openAPI": cfg.Process{Maps: cfg.Maps{
-		Type: stringlist.StringMap{"Main.override_name": "typeOverride", "EmptyAlias": "myOverride"},
+		Type: stringlist.StringMap{"Main.override_name": "typeOverride", "EmptyAlias": "myOverride", "object": "DefaultObject"},
 	}, Params: cfg.ParamMap{"Package": "local"}}}}
 	config = config.Merge(defaults)
 

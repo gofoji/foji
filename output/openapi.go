@@ -163,6 +163,10 @@ func (o *OpenAPIFileContext) GetType(currentPackage, name string, s *openapi3.Sc
 
 	if s.Value.Type == "object" || s.Value.Type == "" {
 		if len(o.SchemaProperties(s, true)) == 0 {
+			if t, ok := o.Maps.Type[s.Value.Type]; ok {
+				return o.CheckPackage(t, currentPackage)
+			}
+
 			return "any"
 		}
 
