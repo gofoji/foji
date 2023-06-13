@@ -5,6 +5,12 @@ info:
 paths: {}
 components:
   schemas:
+    MapTest:
+      type: object
+      properties:
+        page:
+          type: integer
+      x-go-type: "*github.com/google/uuid.UUID"
     Nada:
       type: ""
     Foo:
