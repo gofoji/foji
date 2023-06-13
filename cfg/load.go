@@ -27,7 +27,7 @@ func Load(filename string, includeDefaults bool) (Config, error) {
 		return cfg, fmt.Errorf("can't read config file:%w", err)
 	}
 
-	cfg, err = loadYaml(string(b))
+	cfg, err = LoadYaml(string(b))
 	if err != nil {
 		return cfg, fmt.Errorf("can't parse config file:%w", err)
 	}
@@ -36,7 +36,7 @@ func Load(filename string, includeDefaults bool) (Config, error) {
 		return cfg, nil
 	}
 
-	defaults, err := loadYaml(embed.FojiDotYaml)
+	defaults, err := LoadYaml(embed.FojiDotYaml)
 	if err != nil {
 		return cfg, fmt.Errorf("can't parse defaults:%w", err)
 	}
@@ -44,7 +44,7 @@ func Load(filename string, includeDefaults bool) (Config, error) {
 	return cfg.Merge(defaults), nil
 }
 
-func loadYaml(source string) (Config, error) {
+func LoadYaml(source string) (Config, error) {
 	c := Config{}
 
 	d := yaml.NewDecoder(strings.NewReader(source))

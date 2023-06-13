@@ -266,6 +266,10 @@ func GoDoc(s string) string {
 	length := 0
 
 	for lineNumber, s := range ss {
+		if len(s) == 0 {
+			continue
+		}
+
 		ll := strings.Split(s, " ")
 		for _, l := range ll {
 			if len(l)+length > MaxWidth {
@@ -277,7 +281,7 @@ func GoDoc(s string) string {
 			out += " " + l
 		}
 
-		if lineNumber > 0 && lineNumber < len(ss)-1 {
+		if lineNumber < len(ss)-1 {
 			out += "\n" + CommentPrefix
 		}
 	}

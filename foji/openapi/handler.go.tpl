@@ -5,25 +5,41 @@
     {{- $package := .RuntimeParams.package -}}
     {{- if not (empty ($.OpSecurity $op)) }} user *{{ $.CheckPackage $.Params.Auth $package -}},{{- end }}
     {{- range $param := $.OpParams $path $op -}}
-        {{ goToken (camel $param.Value.Name) }} {{ if and (and (not $param.Value.Required) (not (eq $param.Value.Schema.Value.Type "array"))) (isNil $param.Value.Schema.Value.Default) }}*{{ end }}{{ $.GetType "" $param.Value.Name $param.Value.Schema }},
+		{{- $name := (print $op.OperationID " " $param.Value.Name) -}}
+        {{ goToken (camel $param.Value.Name) -}}
+		{{- if notEmpty $param.Ref -}}
+			{{- $name = $param.Value.Name -}}
+		{{- end -}}
+        {{- if $.ParamIsOptionalType $param }} *{{ end }} {{ $.GetType $package $name $param.Value.Schema }},
     {{- end -}}
     {{- if isNotNil $body}}
-            {{- $type := $.GetType $package (print $op.OperationID "Request") $body.Schema }} body {{ $type  -}}
+        {{- $type := $.GetType $package (print $op.OperationID "Request") $body.Schema }} body {{ $type  -}}
     {{- end -}}
 	) (
     {{- $response := $.GetOpHappyResponseType $package .RuntimeParams.op}}
     {{- if notEmpty $response}}{{ $.CheckPackage $response $package}}, {{ end }}error)
 {{- end -}}
 
+
 {{- define "paramExtraction" -}}
+    {{- $op := .RuntimeParams.op }}
     {{- $param := .RuntimeParams.param }}
-    {{- $goType := ($.GetType "" $param.Value.Name $param.Value.Schema) }}
+    {{- $package := .RuntimeParams.package }}
+    {{- $goType := $.GetType $package (print $op.OperationID " " $param.Value.Name) $param.Value.Schema }}
+	{{- if notEmpty $param.Ref -}}
+        {{- $goType = $.GetType $package $param.Value.Name $param.Value.Schema  }}
+	{{- end -}}
+    {{- $enumNew := $.EnumNew $goType }}
     {{- $required := $param.Value.Required }}
     {{- $hasDefault := isNotNil $param.Value.Schema.Value.Default }}
+    {{- $isEnum := $.ParamIsEnum $param }}
+    {{- $isArrayEnum := $.ParamIsEnumArray $param }}
     {{- $getRequiredParamFunction := "" -}}
     {{- if eq $param.Value.Schema.Value.Type "array" -}}
         {{- if eq $goType "[]int32" -}}
             {{- $getRequiredParamFunction = "GetInt32Array" -}}
+        {{- else if $isArrayEnum }}
+            {{- $getRequiredParamFunction = "GetEnumArray" -}}
         {{- else }}
             {{- $getRequiredParamFunction = "GetStringArray" -}}
         {{- end -}}
@@ -36,29 +52,53 @@
             {{- $getRequiredParamFunction = "GetInt64" -}}
         {{- else if eq $goType "time.Time" }}
             {{- $getRequiredParamFunction = "GetTime" -}}
+        {{- else if $isEnum }}
+            {{- $getRequiredParamFunction = "GetEnum" -}}
         {{- else }}
             {{- $getRequiredParamFunction = "GetString" -}}
         {{- end -}}
     {{- end -}}
 {{- goDoc $param.Value.Description }}
-	{{- if or $required (eq $param.Value.Schema.Value.Type "array") }}
-	{{ goToken (camel $param.Value.Name) }}, _, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", {{ $required }})
+	{{- if eq $param.Value.Schema.Value.Type "array" }}
+	{{ goToken (camel $param.Value.Name) }}, _, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", {{ $required }}
+		{{- if $isArrayEnum -}}, {{ $enumNew  }}{{- end -}})
 	if err != nil {
 		validationErrors.Add("{{ $param.Value.Name }}", err)
 	}
-	{{- else if $hasDefault }}
-	{{ goToken (camel $param.Value.Name) }}, ok, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", {{ $required }})
+		{{ if $hasDefault }}
+	if len({{ goToken (camel $param.Value.Name) }}) == 0 {
+	    {{ goToken (camel $param.Value.Name) }} = {{$goType}}{
+		    {{- range $val := $.DefaultValues  $param.Value.Schema.Value.Default}}
+        {{ if $isArrayEnum}}{{$.StripArray $goType}}{{ pascal (goToken $val) }}{{else}}{{ printf "%#v" $param.Value.Schema.Value.Default }}{{end}},
+			{{end}}
+		}
+	}
+		{{end}}
+
+
+	{{- else if $required }}
+	{{ goToken (camel $param.Value.Name) }}, _, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", {{ $required }}
+		{{- if or $isEnum $isArrayEnum -}}, {{ $enumNew  }}{{- end -}})
 	if err != nil {
 		validationErrors.Add("{{ $param.Value.Name }}", err)
 	}
 
-	if !ok {
-	    {{ goToken (camel $param.Value.Name) }} = {{ $param.Value.Schema.Value.Default }}
+
+	{{- else if $hasDefault }}
+	{{ goToken (camel $param.Value.Name) }}, ok, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", {{ $required }}
+    {{- if $isEnum -}}, {{ $enumNew  }}{{- end -}})
+	if err != nil {
+		validationErrors.Add("{{ $param.Value.Name }}", err)
+	} else if !ok {
+	    {{ goToken (camel $param.Value.Name) }} = {{ if $isEnum}}{{$goType}}{{ pascal (goToken (printf "%#v" $param.Value.Schema.Value.Default)) }}{{else}}{{ printf "%#v" $param.Value.Schema.Value.Default }}{{end}}
 	}
+
+
 	{{- else }}
 	var {{ goToken (camel $param.Value.Name) }} *{{$goType}}
 
-	{{ goToken (camel $param.Value.Name) }}Val, ok, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", {{ $required }})
+	{{ goToken (camel $param.Value.Name) }}Val, ok, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", {{ $required }}
+    {{- if $isEnum -}}, {{ $enumNew  }}{{- end -}})
 	if err != nil {
 		validationErrors.Add("{{ $param.Value.Name }}", err)
 	}
@@ -228,7 +268,7 @@ err = h.authorize(authCtx{{range $scopes}}, "{{.}}"{{end}})
 	var validationErrors validation.Errors
         {{- range $param := $.OpParams $path $op }}
 
-	{{ template "paramExtraction" ($.WithParams "param" $param "Package" $package) }}
+	{{ template "paramExtraction" ($.WithParams "param" $param "package" $package "op" $op) }}
         {{- end }}
 
 	if validationErrors != nil {
@@ -292,7 +332,7 @@ err = h.authorize(authCtx{{range $scopes}}, "{{.}}"{{end}})
 	httputil.HTMLWrite(w, r, {{$key}}, *response)
             {{- else }}
 
-	httputil.Write(w, r, TextHTML,  {{$key}}, []byte(*response))
+	httputil.Write(w, r, httputil.TextPlain,  {{$key}}, []byte(*response))
 			{{- end -}}
         {{- else }}
 

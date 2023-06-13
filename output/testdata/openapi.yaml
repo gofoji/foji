@@ -1,0 +1,73 @@
+openapi: 3.0.2
+info:
+  title: "Test"
+  version: "1.0"
+paths: {}
+components:
+  schemas:
+    MapTest:
+      type: object
+      properties:
+        page:
+          type: integer
+      x-go-type: "*github.com/google/uuid.UUID"
+    Nada:
+      type: ""
+    Foo:
+      properties:
+        bad:
+          type: string
+          x-go-type:
+            foo: bar
+
+    EmptyObject:
+      type: object
+
+    EmptyAlias:
+      type: object
+
+    Nest:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        label:
+          type: string
+          x-go-type: "*string"
+
+    Main:
+      type: object
+      properties:
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        total:
+          type: integer
+        override_name:
+          type: string
+        list:
+          type: array
+          items:
+            $ref: '#/components/schemas/Nest'
+
+    Complex:
+      allOf:
+        - type: object
+          properties:
+            id:
+              type: string
+            status:
+              type: string
+              enum:
+                - first
+                - second
+                - third
+            nests:
+              type: array
+              items:
+                $ref: '#/components/schemas/Nest'
+            main:
+              $ref: '#/components/schemas/Main'
+        - $ref: '#/components/schemas/Main'

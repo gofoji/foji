@@ -1,6 +1,8 @@
 package output
 
 import (
+	"bytes"
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -133,64 +135,75 @@ func (o *OpenAPIFileContext) HasExtension(s *openapi3.SchemaRef, ext string) boo
 }
 
 func (o *OpenAPIFileContext) GetType(currentPackage, name string, s *openapi3.SchemaRef) string {
-	xPkg, ok := s.Value.Extensions["x-package"]
-	if ok {
-		customPkg := getExtAsString(xPkg)
-		if customPkg == "" {
-			return fmt.Sprint("INVALID x-package: ", xPkg.(string))
-		}
-
-		currentPackage = customPkg
+	if s == nil {
+		return ""
 	}
 
 	if override, ok := s.Value.Extensions["x-go-type"]; ok {
 		return o.getXGoType(currentPackage, override)
 	}
 
-	if s.Value.Type == "array" {
-		return "[]" + o.GetType(currentPackage, name, s.Value.Items)
+	if t, ok := o.Maps.Type[name]; ok {
+		return o.CheckPackage(t, currentPackage)
+	}
+
+	if s.Value.Format != "" {
+		if t, ok := o.Maps.Type[s.Value.Type+","+s.Value.Format]; ok {
+			return o.CheckPackage(t, currentPackage)
+		}
 	}
 
 	if s.Ref != "" {
 		return o.GetTypeName(currentPackage, s)
 	}
 
-	if s.Value.Type == "object" {
-		if len(s.Value.Properties) == 0 {
+	if s.Value.Type == "array" {
+		return "[]" + o.GetType(currentPackage, name, s.Value.Items)
+	}
+
+	if s.Value.Type == "object" || s.Value.Type == "" {
+		if len(o.SchemaProperties(s, true)) == 0 {
+			if t, ok := o.Maps.Type[s.Value.Type]; ok {
+				return o.CheckPackage(t, currentPackage)
+			}
+
 			return "any"
 		}
 
-		// Anonymous Struct
 		name = o.PackageName() + "." + kace.Pascal(name)
 		return o.CheckPackage(name, currentPackage)
 	}
 
-	t, ok := o.Maps.Type[name]
-	if ok {
+	if o.IsDefaultEnum(name, s) {
+		return o.CheckPackage(o.EnumName(name), currentPackage)
+	}
+
+	if t, ok := o.Maps.Type[s.Value.Type]; ok {
 		return o.CheckPackage(t, currentPackage)
 	}
 
-	if s.Value.Format != "" {
-		t, ok = o.Maps.Type[s.Value.Type+","+s.Value.Format]
-		if ok {
-			return o.CheckPackage(t, currentPackage)
-		}
+	return fmt.Sprintf("unknown type: name(%s): type(%s)", name, s.Value.Type)
+}
+
+func (o *OpenAPIFileContext) EnumName(name string) string {
+	// TODO: Support override via template
+	return o.PackageName() + "." + kace.Pascal(name) + "Enum"
+}
+
+func (o *OpenAPIFileContext) EnumNew(name string) string {
+	if strings.HasPrefix(name, "[]") {
+		name = name[2:]
+	}
+	pos := strings.Index(name, ".") + 1
+	return name[:pos] + "New" + name[pos:]
+}
+
+func (o *OpenAPIFileContext) StripArray(name string) string {
+	if strings.HasPrefix(name, "[]") {
+		return name[2:]
 	}
 
-	if s.Value.Type == "" {
-		if s.Ref != "" {
-			return o.CheckPackage(o.RefToName(s.Ref), currentPackage)
-		}
-
-		return "any"
-	}
-
-	t, ok = o.Maps.Type[s.Value.Type]
-	if ok {
-		return o.CheckPackage(t, currentPackage)
-	}
-
-	return fmt.Sprintf("UNKNOWN:name(%s):ref(%s):type(%s)", name, s.Ref, s.Value.Type)
+	return name
 }
 
 func (o *OpenAPIFileContext) Init() error {
@@ -200,7 +213,7 @@ func (o *OpenAPIFileContext) Init() error {
 	return nil
 }
 
-func (o *OpenAPIFileContext) AllComponentSchemas() openapi3.Schemas {
+func (o *OpenAPIFileContext) ComponentSchemas() openapi3.Schemas {
 	if o.API.Components == nil {
 		return nil
 	}
@@ -208,11 +221,19 @@ func (o *OpenAPIFileContext) AllComponentSchemas() openapi3.Schemas {
 	return o.API.Components.Schemas
 }
 
+func (o *OpenAPIFileContext) ComponentParameters() openapi3.ParametersMap {
+	if o.API.Components == nil {
+		return nil
+	}
+
+	return o.API.Components.Parameters
+}
+
 // CheckAllTypes is a helper to iterate all property references for import requirements.
 // This is expected to inject imports for unnecessary packages depending on the template
 // generated, the post-processing should remove unused imports.
 func (o *OpenAPIFileContext) CheckAllTypes(pkg string, types ...string) string {
-	for _, s := range o.AllComponentSchemas() {
+	for _, s := range o.ComponentSchemas() {
 		for key, schema := range s.Value.Properties {
 			o.GetType(pkg, key, schema)
 		}
@@ -256,6 +277,38 @@ func (o *OpenAPIFileContext) IsDefaultEnum(name string, s *openapi3.SchemaRef) b
 	_, ok := o.Maps.Type[name]
 
 	return !ok
+}
+
+func (o *OpenAPIFileContext) SchemaProperties(schema *openapi3.SchemaRef, includeRefs bool) openapi3.Schemas {
+	out := openapi3.Schemas{}
+
+	for k, v := range schema.Value.Properties {
+		out[k] = v
+	}
+
+	for _, subSchema := range schema.Value.AllOf {
+		if !includeRefs && subSchema.Ref != "" {
+			continue
+		}
+
+		for k, v := range subSchema.Value.Properties {
+			out[k] = v
+		}
+	}
+
+	return out
+}
+
+func (o *OpenAPIFileContext) SchemaEnums(schema *openapi3.SchemaRef) openapi3.Schemas {
+	out := openapi3.Schemas{}
+
+	for k, v := range o.SchemaProperties(schema, false) {
+		if len(v.Value.Enum) > 0 {
+			out[k] = v
+		}
+	}
+
+	return out
 }
 
 func (o *OpenAPIFileContext) GetRequestBody(op *openapi3.Operation) *OpBody {
@@ -320,6 +373,64 @@ func (o *OpenAPIFileContext) OpParams(path *openapi3.PathItem, op *openapi3.Oper
 	out = append(out, op.Parameters...)
 
 	return out
+}
+
+func (o *OpenAPIFileContext) DefaultValues(val string) []string {
+	if val == "" {
+		return nil
+	}
+
+	if len(val) < 2 || val[0] != '[' || val[len(val)-1] != ']' {
+		return []string{val}
+	}
+
+	csvReader := csv.NewReader(bytes.NewReader([]byte(val[1 : len(val)-1])))
+	records, err := csvReader.ReadAll()
+	if err != nil {
+		o.Logger.Err(err).Str("val", val).Msg("error reading csv for default")
+	}
+
+	if len(records) > 0 {
+		return records[0]
+	}
+
+	return nil
+}
+
+func (o *OpenAPIFileContext) ParamIsOptionalType(param *openapi3.ParameterRef) bool {
+	if param.Value.Required {
+		return false
+	}
+
+	if param.Value.Schema.Value.Type == "array" {
+		return false
+	}
+
+	return param.Value.Schema.Value.Default == nil
+}
+
+func (o *OpenAPIFileContext) ParamIsEnum(param *openapi3.ParameterRef) bool {
+	return len(param.Value.Schema.Value.Enum) > 0
+}
+
+func (o *OpenAPIFileContext) ParamIsEnumArray(param *openapi3.ParameterRef) bool {
+	return param.Value.Schema.Value.Items != nil && len(param.Value.Schema.Value.Items.Value.Enum) > 0
+}
+
+func (o *OpenAPIFileContext) SchemaIsComplex(schema *openapi3.SchemaRef) bool {
+	if schema == nil || schema.Ref != "" {
+		return false
+	}
+
+	if schema.Value.Type == "object" {
+		return true
+	}
+
+	if schema.Value.Type != "array" {
+		return false
+	}
+
+	return schema.Value.Items.Ref == "" && schema.Value.Items.Value.Type == "object"
 }
 
 func (o *OpenAPIFileContext) GetOpHappyResponseKey(op *openapi3.Operation) string {
