@@ -142,7 +142,11 @@ func (ii *Imports) CheckPackage(t, currentPackage string) string {
 
 	pp := strings.Split(t, "/")
 
-	return prefix + pp[len(pp)-1]
+	if len(pp) > 1 {
+		return prefix + pp[len(pp)-1]
+	}
+
+	return t
 }
 
 // Add filters duplicates and appends to the import list.

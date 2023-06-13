@@ -41,6 +41,7 @@ func TestGetType(t *testing.T) {
 		{"Complex.nests", "local", "[]Nest"},
 		{"Complex", "local", "Complex"},
 		{"MapTest", "local", "*uuid.UUID"},
+		{"PtrToString", "local", "*foo.Bar"},
 	} {
 		t.Run(testcase.name, func(t *testing.T) {
 			got := ctx.GetType(testcase.pkg, testcase.name, evalPath(doc, testcase.name))
