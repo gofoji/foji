@@ -11,8 +11,13 @@ components:
         page:
           type: integer
       x-go-type: "*github.com/google/uuid.UUID"
-    Nada:
-      type: ""
+
+    PtrToString:
+      type: string
+      x-go-type: "*foo.Bar"
+
+    Nada: {}
+
     Foo:
       properties:
         bad:
