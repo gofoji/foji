@@ -1426,8 +1426,8 @@ err = h.authorize(authCtx{{range $scopes}}, "{{.}}"{{end}})
 			{{- if $opBody.IsJson }}
 
 	var body {{ $bodyType }}
-	if err = json.NewDecoder(r.Body).Decode(&body); err != nil {
-		httputil.ErrorHandler(w, r, validation.Error{Source:err})
+	if err = getBody(r.Body, &body); err != nil {
+		httputil.ErrorHandler(w, r, err)
 
 		return
 	}
@@ -1484,7 +1484,29 @@ err = h.authorize(authCtx{{range $scopes}}, "{{.}}"{{end}})
 
     {{- end }}
 {{- end }}
-`
+
+func getBody(r io.Reader, body any) error {
+	err := json.NewDecoder(r).Decode(&body)
+	if err == nil {
+		return nil
+	}
+
+	var (
+		validationError  validation.Error
+		validationErrors *validation.Errors
+	)
+
+	switch {
+	case err == io.EOF:
+		return validation.Error{Message: "missing body"}
+	case errors.As(err, &validationError):
+		return err
+	case errors.As(err, &validationErrors):
+		return err
+	default:
+		return validation.Error{Source: err}
+	}
+}`
 
 var FojiSlashOpenapiSlashMainDotGoDotTplBytes = []byte(FojiSlashOpenapiSlashMainDotGoDotTpl)
 
@@ -1766,6 +1788,64 @@ var {{ camel $typeName }}{{ pascal $key }}Pattern = regexp.MustCompile(` + "`" +
     {{- range $key, $schema := $.SchemaEnums $schema }}
         {{- template "enum" ($.WithParams "name" (print $typeName " " $key) "schema" $schema "description" (print $label " : " $key ))}}
     {{- end -}}
+
+{{- $hasValidation := $.HasValidation $schema -}}
+{{- if or $hasValidation  $schema.Value.Required }}
+
+func (p *{{ pascal $key }}) UnmarshalJSON(b []byte) error {
+    {{- if $schema.Value.Required }}
+    var requiredCheck map[string]interface{}
+
+    if err := json.Unmarshal(b, &requiredCheck); err != nil {
+        return validation.Error{err.Error(), fmt.Errorf("{{ pascal $key }}.UnmarshalJSON Required: ` + "`" + `%v` + "`" + `: %w", string(b), err)}
+    }
+
+    var validationErrors validation.Errors
+    {{ range $field := $schema.Value.Required }}
+    if _, ok := requiredCheck["{{ $field }}"]; !ok {
+        validationErrors.Add("{{ $field }}", "missing required field")
+    }
+    {{ end }}
+
+    if validationErrors != nil {
+        return validationErrors.GetErr()
+    }
+    {{ end }}
+    type  {{ pascal $key }}JSON {{ pascal $key }}
+    var parseObject {{ pascal $key }}JSON
+
+    if err := json.Unmarshal(b, &parseObject); err != nil {
+        return validation.Error{err.Error(), fmt.Errorf("{{ pascal $key }}.UnmarshalJSON: ` + "`" + `%v` + "`" + `: %w", string(b), err)}
+    }
+
+    v := {{ pascal $key }}(parseObject)
+
+{{ if $hasValidation}}
+    if err := v.Validate(); err != nil {
+        return err
+    }
+{{ end }}
+
+    p = &v
+
+    return nil
+}
+
+    {{ if $hasValidation}}
+func (p {{ pascal $key }}) MarshalJSON() ([]byte, error) {
+    if err := p.Validate(); err != nil {
+        return nil, err
+    }
+
+    b, err := json.Marshal(p)
+    if err != nil {
+        return nil, fmt.Errorf("{{ pascal $key }}.Marshal: ` + "`" + `%+v` + "`" + `: %w", p, err)
+    }
+
+    return b, nil
+}
+    {{ end }}
+{{end}}
 
     {{- if $.HasValidation $schema }}
 func (p {{ pascal $key }}) Validate() error {
