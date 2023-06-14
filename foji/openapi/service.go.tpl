@@ -25,7 +25,7 @@ package {{ .PackageName }}
 import (
 	"context"
 
-{{- .CheckAllTypes .PackageName $.Params.Auth -}}
+{{- .CheckAllTypes .PackageName ($.Params.GetWithDefault "Auth" "") -}}
 {{ range .GoImports }}
 	"{{ . }}"
 {{- end }}

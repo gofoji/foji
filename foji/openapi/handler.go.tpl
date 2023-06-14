@@ -127,7 +127,7 @@ import (
 	"github.com/bir/iken/validation"
 	"github.com/go-chi/chi/v5"
 	"{{ $.Params.Package}}"
-{{- .CheckAllTypes $package $.Params.Auth -}}
+{{- .CheckAllTypes $package ($.Params.GetWithDefault "Auth" "") -}}
 {{- range .GoImports }}
 	"{{ . }}"
 {{- end }}
