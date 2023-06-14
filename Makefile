@@ -29,5 +29,4 @@ update:
 install:
 	go install
 
-
-.PHONY:	lint testStub testList genPGQueries update tidy
+.PHONY:	sqlRepo testSchemaList testStub testDumpConfig lint test cover tidy update install
