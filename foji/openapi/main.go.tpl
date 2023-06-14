@@ -21,7 +21,6 @@ import (
 	chiTrace "gopkg.in/DataDog/dd-trace-go.v1/contrib/go-chi/chi.v5"
 
 	"{{ .Params.Package }}"
-	{{ $.PackageName }}Http "{{ .Params.Package }}/http"
 )
 
 type Config struct {
@@ -49,10 +48,10 @@ func main() {
 	l := setupLogging(true)
 
 	svc :=  {{ $.PackageName }}.New()
-	{{ $.PackageName }}Http.RegisterOperations(svc, router
+	{{ $.PackageName }}.RegisterHTTP(svc, router
 {{- if .HasAuthentication -}}
 	{{- range $security, $value := .File.API.Components.SecuritySchemes -}}
-	, {{ $.PackageName }}Http.{{ pascal $security }}Auth({{ pascal $security }}Auth)
+	, {{ $.PackageName }}.{{ pascal $security }}Auth({{ pascal $security }}Auth)
 	{{- end -}}
 {{- end -}}
 )

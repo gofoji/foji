@@ -143,6 +143,21 @@ func (pp ParamMap) HasString(name string) (string, bool) {
 	return s, ok
 }
 
+// GetWithDefault returns a string param identified by `name`, otherwise returns the default.
+func (pp ParamMap) GetWithDefault(name, def string) string {
+	p, ok := pp[name]
+	if !ok {
+		return def
+	}
+
+	s, ok := p.(string)
+	if !ok {
+		return def
+	}
+
+	return s
+}
+
 // All merges all the mapped TypeMaps into a single StringMap, useful for getting the list of all templates.
 func (o Output) All() stringlist.StringMap {
 	result := stringlist.StringMap{}
