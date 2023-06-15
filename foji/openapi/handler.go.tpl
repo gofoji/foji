@@ -90,7 +90,15 @@
 	if err != nil {
 		validationErrors.Add("{{ $param.Value.Name }}", err)
 	} else if !ok {
-	    {{ goToken (camel $param.Value.Name) }} = {{ if $isEnum}}{{$goType}}{{ pascal (goToken (printf "%#v" $param.Value.Schema.Value.Default)) }}{{else}}{{ printf "%#v" $param.Value.Schema.Value.Default }}{{end}}
+	    {{ goToken (camel $param.Value.Name) }} = {{ if $isEnum -}}
+			{{- $goType}}{{ pascal (goToken (printf "%#v" $param.Value.Schema.Value.Default)) }}
+		{{else -}}
+			{{- if and (eq $goType "time.Time") (eq $param.Value.Schema.Value.Default "") -}}
+                time.Time{}
+            {{else -}}
+				{{ printf "%#v" $param.Value.Schema.Value.Default }}
+			{{- end}}
+		{{- end}}
 	}
 
 

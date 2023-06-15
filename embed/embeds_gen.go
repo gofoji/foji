@@ -1232,7 +1232,15 @@ const FojiSlashOpenapiSlashHandlerDotGoDotTpl = `{{- define "methodSignature"}}
 	if err != nil {
 		validationErrors.Add("{{ $param.Value.Name }}", err)
 	} else if !ok {
-	    {{ goToken (camel $param.Value.Name) }} = {{ if $isEnum}}{{$goType}}{{ pascal (goToken (printf "%#v" $param.Value.Schema.Value.Default)) }}{{else}}{{ printf "%#v" $param.Value.Schema.Value.Default }}{{end}}
+	    {{ goToken (camel $param.Value.Name) }} = {{ if $isEnum -}}
+			{{- $goType}}{{ pascal (goToken (printf "%#v" $param.Value.Schema.Value.Default)) }}
+		{{else -}}
+			{{- if and (eq $goType "time.Time") (eq $param.Value.Schema.Value.Default "") -}}
+                time.Time{}
+            {{else -}}
+				{{ printf "%#v" $param.Value.Schema.Value.Default }}
+			{{- end}}
+		{{- end}}
 	}
 
 
@@ -1260,6 +1268,7 @@ package {{ $package }}
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 
@@ -1516,7 +1525,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"os/signal"
@@ -1551,13 +1559,13 @@ func main() {
 		log.Fatal().Err(err).Msg("loading config")
 	}
 
+	l := setupLogging(true)
+
 	router := chi.NewRouter().With(
-		httplog.RecoverLogger(log.Logger),
+		httplog.RecoverLogger(l),
 		chiTrace.Middleware(),
 		httplog.RequestLogger(httplog.LogAll),
 	)
-
-	l := setupLogging(true)
 
 	svc :=  {{ $.PackageName }}.New()
 	{{ $.PackageName }}.RegisterHTTP(svc, router
@@ -1576,14 +1584,12 @@ func main() {
 		Handler:      router,
 	}
 
-	l.Info().Msgf("Serving on: http://%s", httpServer.Addr)
-
 	httpServerExit := make(chan int, 1)
 
 	go func() {
 		defer func() { httpServerExit <- 1 }()
 
-		log.Info().Msg("HTTP Server starting")
+		l.Info().Msgf("Serving on: http://%s", httpServer.Addr)
 		if err := httpServer.ListenAndServe(); err != nil {
 			if !errors.Is(err, http.ErrServerClosed) {
 				log.Error().Stack().Err(err).Msg("HTTP Server error")
@@ -1614,14 +1620,15 @@ func setupLogging(consoleLog bool) zerolog.Logger {
 	zerolog.DurationFieldInteger = true
 	zerolog.DurationFieldUnit = time.Millisecond
 	zerolog.ErrorStackMarshaler = errs.MarshalStack
-
-	var out io.Writer = os.Stdout
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 
 	if consoleLog {
-		out = zerolog.NewConsoleWriter()
+		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	}
 
-	return log.Output(out)
+	zerolog.DefaultContextLogger = &log.Logger
+
+	return log.Logger
 }
 
 func shutdownServer(server *http.Server, duration time.Duration, wg *sync.WaitGroup) {
