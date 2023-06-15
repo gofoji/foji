@@ -136,6 +136,64 @@ var {{ camel $typeName }}{{ pascal $key }}Pattern = regexp.MustCompile(`{{ $sche
         {{- template "enum" ($.WithParams "name" (print $typeName " " $key) "schema" $schema "description" (print $label " : " $key ))}}
     {{- end -}}
 
+{{- $hasValidation := $.HasValidation $schema -}}
+{{- if or $hasValidation  $schema.Value.Required }}
+
+func (p *{{ pascal $key }}) UnmarshalJSON(b []byte) error {
+    {{- if $schema.Value.Required }}
+    var requiredCheck map[string]interface{}
+
+    if err := json.Unmarshal(b, &requiredCheck); err != nil {
+        return validation.Error{err.Error(), fmt.Errorf("{{ pascal $key }}.UnmarshalJSON Required: `%v`: %w", string(b), err)}
+    }
+
+    var validationErrors validation.Errors
+    {{ range $field := $schema.Value.Required }}
+    if _, ok := requiredCheck["{{ $field }}"]; !ok {
+        validationErrors.Add("{{ $field }}", "missing required field")
+    }
+    {{ end }}
+
+    if validationErrors != nil {
+        return validationErrors.GetErr()
+    }
+    {{ end }}
+    type  {{ pascal $key }}JSON {{ pascal $key }}
+    var parseObject {{ pascal $key }}JSON
+
+    if err := json.Unmarshal(b, &parseObject); err != nil {
+        return validation.Error{err.Error(), fmt.Errorf("{{ pascal $key }}.UnmarshalJSON: `%v`: %w", string(b), err)}
+    }
+
+    v := {{ pascal $key }}(parseObject)
+
+{{ if $hasValidation}}
+    if err := v.Validate(); err != nil {
+        return err
+    }
+{{ end }}
+
+    p = &v
+
+    return nil
+}
+
+    {{ if $hasValidation}}
+func (p {{ pascal $key }}) MarshalJSON() ([]byte, error) {
+    if err := p.Validate(); err != nil {
+        return nil, err
+    }
+
+    b, err := json.Marshal(p)
+    if err != nil {
+        return nil, fmt.Errorf("{{ pascal $key }}.Marshal: `%+v`: %w", p, err)
+    }
+
+    return b, nil
+}
+    {{ end }}
+{{end}}
+
     {{- if $.HasValidation $schema }}
 func (p {{ pascal $key }}) Validate() error {
     var err validation.Errors

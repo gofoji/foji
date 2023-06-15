@@ -1232,7 +1232,15 @@ const FojiSlashOpenapiSlashHandlerDotGoDotTpl = `{{- define "methodSignature"}}
 	if err != nil {
 		validationErrors.Add("{{ $param.Value.Name }}", err)
 	} else if !ok {
-	    {{ goToken (camel $param.Value.Name) }} = {{ if $isEnum}}{{$goType}}{{ pascal (goToken (printf "%#v" $param.Value.Schema.Value.Default)) }}{{else}}{{ printf "%#v" $param.Value.Schema.Value.Default }}{{end}}
+	    {{ goToken (camel $param.Value.Name) }} = {{ if $isEnum -}}
+			{{- $goType}}{{ pascal (goToken (printf "%#v" $param.Value.Schema.Value.Default)) }}
+		{{else -}}
+			{{- if and (eq $goType "time.Time") (eq $param.Value.Schema.Value.Default "") -}}
+                time.Time{}
+            {{else -}}
+				{{ printf "%#v" $param.Value.Schema.Value.Default }}
+			{{- end}}
+		{{- end}}
 	}
 
 
@@ -1260,6 +1268,7 @@ package {{ $package }}
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 
@@ -1426,8 +1435,8 @@ err = h.authorize(authCtx{{range $scopes}}, "{{.}}"{{end}})
 			{{- if $opBody.IsJson }}
 
 	var body {{ $bodyType }}
-	if err = json.NewDecoder(r.Body).Decode(&body); err != nil {
-		httputil.ErrorHandler(w, r, validation.Error{Source:err})
+	if err = getBody(r.Body, &body); err != nil {
+		httputil.ErrorHandler(w, r, err)
 
 		return
 	}
@@ -1484,7 +1493,29 @@ err = h.authorize(authCtx{{range $scopes}}, "{{.}}"{{end}})
 
     {{- end }}
 {{- end }}
-`
+
+func getBody(r io.Reader, body any) error {
+	err := json.NewDecoder(r).Decode(&body)
+	if err == nil {
+		return nil
+	}
+
+	var (
+		validationError  validation.Error
+		validationErrors *validation.Errors
+	)
+
+	switch {
+	case err == io.EOF:
+		return validation.Error{Message: "missing body"}
+	case errors.As(err, &validationError):
+		return err
+	case errors.As(err, &validationErrors):
+		return err
+	default:
+		return validation.Error{Source: err}
+	}
+}`
 
 var FojiSlashOpenapiSlashMainDotGoDotTplBytes = []byte(FojiSlashOpenapiSlashMainDotGoDotTpl)
 
@@ -1494,7 +1525,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"os/signal"
@@ -1529,13 +1559,13 @@ func main() {
 		log.Fatal().Err(err).Msg("loading config")
 	}
 
+	l := setupLogging(true)
+
 	router := chi.NewRouter().With(
-		httplog.RecoverLogger(log.Logger),
+		httplog.RecoverLogger(l),
 		chiTrace.Middleware(),
 		httplog.RequestLogger(httplog.LogAll),
 	)
-
-	l := setupLogging(true)
 
 	svc :=  {{ $.PackageName }}.New()
 	{{ $.PackageName }}.RegisterHTTP(svc, router
@@ -1554,14 +1584,12 @@ func main() {
 		Handler:      router,
 	}
 
-	l.Info().Msgf("Serving on: http://%s", httpServer.Addr)
-
 	httpServerExit := make(chan int, 1)
 
 	go func() {
 		defer func() { httpServerExit <- 1 }()
 
-		log.Info().Msg("HTTP Server starting")
+		l.Info().Msgf("Serving on: http://%s", httpServer.Addr)
 		if err := httpServer.ListenAndServe(); err != nil {
 			if !errors.Is(err, http.ErrServerClosed) {
 				log.Error().Stack().Err(err).Msg("HTTP Server error")
@@ -1592,14 +1620,15 @@ func setupLogging(consoleLog bool) zerolog.Logger {
 	zerolog.DurationFieldInteger = true
 	zerolog.DurationFieldUnit = time.Millisecond
 	zerolog.ErrorStackMarshaler = errs.MarshalStack
-
-	var out io.Writer = os.Stdout
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 
 	if consoleLog {
-		out = zerolog.NewConsoleWriter()
+		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	}
 
-	return log.Output(out)
+	zerolog.DefaultContextLogger = &log.Logger
+
+	return log.Logger
 }
 
 func shutdownServer(server *http.Server, duration time.Duration, wg *sync.WaitGroup) {
@@ -1766,6 +1795,64 @@ var {{ camel $typeName }}{{ pascal $key }}Pattern = regexp.MustCompile(` + "`" +
     {{- range $key, $schema := $.SchemaEnums $schema }}
         {{- template "enum" ($.WithParams "name" (print $typeName " " $key) "schema" $schema "description" (print $label " : " $key ))}}
     {{- end -}}
+
+{{- $hasValidation := $.HasValidation $schema -}}
+{{- if or $hasValidation  $schema.Value.Required }}
+
+func (p *{{ pascal $key }}) UnmarshalJSON(b []byte) error {
+    {{- if $schema.Value.Required }}
+    var requiredCheck map[string]interface{}
+
+    if err := json.Unmarshal(b, &requiredCheck); err != nil {
+        return validation.Error{err.Error(), fmt.Errorf("{{ pascal $key }}.UnmarshalJSON Required: ` + "`" + `%v` + "`" + `: %w", string(b), err)}
+    }
+
+    var validationErrors validation.Errors
+    {{ range $field := $schema.Value.Required }}
+    if _, ok := requiredCheck["{{ $field }}"]; !ok {
+        validationErrors.Add("{{ $field }}", "missing required field")
+    }
+    {{ end }}
+
+    if validationErrors != nil {
+        return validationErrors.GetErr()
+    }
+    {{ end }}
+    type  {{ pascal $key }}JSON {{ pascal $key }}
+    var parseObject {{ pascal $key }}JSON
+
+    if err := json.Unmarshal(b, &parseObject); err != nil {
+        return validation.Error{err.Error(), fmt.Errorf("{{ pascal $key }}.UnmarshalJSON: ` + "`" + `%v` + "`" + `: %w", string(b), err)}
+    }
+
+    v := {{ pascal $key }}(parseObject)
+
+{{ if $hasValidation}}
+    if err := v.Validate(); err != nil {
+        return err
+    }
+{{ end }}
+
+    p = &v
+
+    return nil
+}
+
+    {{ if $hasValidation}}
+func (p {{ pascal $key }}) MarshalJSON() ([]byte, error) {
+    if err := p.Validate(); err != nil {
+        return nil, err
+    }
+
+    b, err := json.Marshal(p)
+    if err != nil {
+        return nil, fmt.Errorf("{{ pascal $key }}.Marshal: ` + "`" + `%+v` + "`" + `: %w", p, err)
+    }
+
+    return b, nil
+}
+    {{ end }}
+{{end}}
 
     {{- if $.HasValidation $schema }}
 func (p {{ pascal $key }}) Validate() error {

@@ -90,7 +90,15 @@
 	if err != nil {
 		validationErrors.Add("{{ $param.Value.Name }}", err)
 	} else if !ok {
-	    {{ goToken (camel $param.Value.Name) }} = {{ if $isEnum}}{{$goType}}{{ pascal (goToken (printf "%#v" $param.Value.Schema.Value.Default)) }}{{else}}{{ printf "%#v" $param.Value.Schema.Value.Default }}{{end}}
+	    {{ goToken (camel $param.Value.Name) }} = {{ if $isEnum -}}
+			{{- $goType}}{{ pascal (goToken (printf "%#v" $param.Value.Schema.Value.Default)) }}
+		{{else -}}
+			{{- if and (eq $goType "time.Time") (eq $param.Value.Schema.Value.Default "") -}}
+                time.Time{}
+            {{else -}}
+				{{ printf "%#v" $param.Value.Schema.Value.Default }}
+			{{- end}}
+		{{- end}}
 	}
 
 
@@ -118,6 +126,7 @@ package {{ $package }}
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 
@@ -284,8 +293,8 @@ err = h.authorize(authCtx{{range $scopes}}, "{{.}}"{{end}})
 			{{- if $opBody.IsJson }}
 
 	var body {{ $bodyType }}
-	if err = json.NewDecoder(r.Body).Decode(&body); err != nil {
-		httputil.ErrorHandler(w, r, validation.Error{Source:err})
+	if err = getBody(r.Body, &body); err != nil {
+		httputil.ErrorHandler(w, r, err)
 
 		return
 	}
@@ -342,3 +351,26 @@ err = h.authorize(authCtx{{range $scopes}}, "{{.}}"{{end}})
 
     {{- end }}
 {{- end }}
+
+func getBody(r io.Reader, body any) error {
+	err := json.NewDecoder(r).Decode(&body)
+	if err == nil {
+		return nil
+	}
+
+	var (
+		validationError  validation.Error
+		validationErrors *validation.Errors
+	)
+
+	switch {
+	case err == io.EOF:
+		return validation.Error{Message: "missing body"}
+	case errors.As(err, &validationError):
+		return err
+	case errors.As(err, &validationErrors):
+		return err
+	default:
+		return validation.Error{Source: err}
+	}
+}
