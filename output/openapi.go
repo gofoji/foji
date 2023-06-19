@@ -352,7 +352,7 @@ func (o *OpenAPIFileContext) GetOpHappyResponse(pkg string, op *openapi3.Operati
 					t := o.GetType(pkg, kace.Pascal(op.OperationID)+" Response", mediaType.Schema)
 
 					var goType string
-					if strings.HasPrefix(t, "[]") {
+					if strings.HasPrefix(t, "[]") || strings.HasPrefix(t, "map[") {
 						goType = t
 					} else {
 						goType = "*" + t
@@ -403,6 +403,11 @@ func (o *OpenAPIFileContext) ParamIsOptionalType(param *openapi3.ParameterRef) b
 	}
 
 	if param.Value.Schema.Value.Type == "array" {
+		return false
+	}
+
+	t := o.GetType("", "", param.Value.Schema)
+	if strings.HasPrefix(t, "map[") {
 		return false
 	}
 

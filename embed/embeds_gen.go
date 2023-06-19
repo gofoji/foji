@@ -915,13 +915,24 @@ import (
 {{- end }}
 )
 
-// HttpAuthFunc is the signature of a function used to authenticate an http request.
-// Given a request, it returns the authenticated user.  If unable to authenticate the
-// request it returns an error.
-type HttpAuthFunc = func(r *http.Request) (*{{ $.CheckPackage $.Params.Auth $packageName }}, error)
+type (
+	// AuthenticateFunc is the signature of a function used to authenticate an http request.
+	// Given a request, it returns the authenticated user.  If unable to authenticate the
+	// request it returns an error.
+	AuthenticateFunc = httputil.AuthenticateFunc[*{{ $.CheckPackage $.Params.Auth $packageName }}]
+
+{{if .HasComplexAuth }}
+	SecurityGroup  = httputil.SecurityGroup[*{{ $.CheckPackage $.Params.Auth $packageName }}]
+	SecurityGroups = httputil.SecurityGroups[*{{ $.CheckPackage $.Params.Auth $packageName }}]
+{{- end}}
+
+{{- if .HasAuthorization }}
+	AuthorizeFunc  = httputil.AuthorizeFunc[*{{ $.CheckPackage $.Params.Auth $packageName }}]
+{{- end}}
+
 
 // Authenticator takes a key (for example a bearer token) and returns the authenticated user.
-type Authenticator = func(ctx context.Context, key string) (*{{ $.CheckPackage $.Params.Auth $packageName }}, error)
+	Authenticator = func(ctx context.Context, key string) (*{{ $.CheckPackage $.Params.Auth $packageName }}, error)
 
 {{- if .HasBasicAuth }}
 
@@ -929,11 +940,7 @@ type Authenticator = func(ctx context.Context, key string) (*{{ $.CheckPackage $
 type BasicAuthenticator = func(user,pass string) (*{{ $.CheckPackage $.Params.Auth $packageName }}, error)
 {{- end}}
 
-{{- if .HasAuthorization }}
-
-// Authorizer is given an authenticated User and a list of scopes to validate.
-type Authorizer = func(user *{{ $.CheckPackage $.Params.Auth $packageName }}, scopes ...string ) (error)
-{{- end}}
+)
 
 {{- if or .HasBasicAuth .HasBearerAuth }}
 var (
@@ -950,7 +957,7 @@ var (
 // {{ pascal $security }}Auth is responsible for extracting "{{$security}}" credentials from a request and calling the
 // supplied Authenticator to authenticate
 {{- goDoc $value.Value.Description }}
-func {{ pascal $security }}Auth(fn {{if eq $value.Value.Scheme "basic"}}Basic{{end}}Authenticator) HttpAuthFunc {
+func {{ pascal $security }}Auth(fn {{if eq $value.Value.Scheme "basic"}}Basic{{end}}Authenticator) AuthenticateFunc {
 	return func(r *http.Request) (*{{ $.CheckPackage $.Params.Auth $packageName }}, error) {
     {{- if eq $value.Value.Type "apiKey" }}
         {{- if eq $value.Value.In "query" }}
@@ -1009,98 +1016,6 @@ func {{ pascal $security }}Auth(fn {{if eq $value.Value.Scheme "basic"}}Basic{{e
     {{- end }}
 	}
 }
-{{- end }}
-
-{{- if $.HasComplexAuth }}
-
-// Complex Auth Support
-{{- if .HasAuthorization -}}
-// Scope is the individual security attribute to check for authorization
-type Scope = string
-
-// Scopes is the collection
-type Scopes = []string
-
-type AuthCheck struct {
-    fn HttpAuthFunc
-    Scopes
-}
-{{ else }}
-type AuthCheck struct {
-    fn HttpAuthFunc
-}
-
-{{ end }}
-type SecurityGroup map[string]AuthCheck
-
-type SecurityGroups  []SecurityGroup
-
-type AuthResults map[string] *{{ $.CheckPackage $.Params.Auth $packageName }}
-
-func (s SecurityGroup) Add(name string, fn HttpAuthFunc
-{{- if .HasAuthorization -}}
-, scopes ...string
-{{- end -}}
-) SecurityGroup{
-	s[name] = AuthCheck{ fn: fn
-{{- if .HasAuthorization -}}
-, Scopes: scopes
-{{- end -}}
-}
-
-	return s
-}
-
-func NewSecurityGroups(groups ...SecurityGroup) SecurityGroups{
-	return groups
-}
-
-func doAuthorize(r *http.Request,
-{{- if .HasAuthorization -}}
-    authorize Authorizer,
-{{- end -}}
-    groups ...SecurityGroup) (*{{ $.CheckPackage $.Params.Auth $packageName }}, error){
-
-	var user *{{ $.CheckPackage $.Params.Auth $packageName }}
-	var err error
-
-	users := AuthResults{}
-
-    authorizeGroup := func (group SecurityGroup)(*{{ $.CheckPackage $.Params.Auth $packageName }}, error){
-		for name, check := range group {
-			user,ok := users[name]
-			if !ok {
-				user, err = check.fn(r)
-				if err != nil {
-					return nil, err
-				}
-
-				users[name] = user
-			}
-{{- if .HasAuthorization }}
-
-			if len(check.Scopes) > 0 {
-				err = authorize(user, check.Scopes...)
-				if err != nil {
-					return nil, err
-				}
-			}
-{{ end -}}
-		}
-
-		return user, nil
-	}
-
-	for _, group := range groups {
-		user, err := authorizeGroup(group)
-		if err == nil {
-			return user, nil
-		}
-	}
-
-	return nil, err
-}
-
 {{- end }}
 `
 
@@ -1298,16 +1213,16 @@ type OpenAPIHandlers struct {
 	ops      Operations
 {{- if .HasAuthentication }}
     {{- range $security, $value := .API.Components.SecuritySchemes }}
-	{{ camel $security }}Auth HttpAuthFunc
+	{{ camel $security }}Auth AuthenticateFunc
     {{- end }}
 {{- if .HasAuthorization }}
-    authorize Authorizer
+    authorize AuthorizeFunc
 {{- end}}
 {{- end}}
 {{- range $name, $path := .API.Paths }}
     {{- range $verb, $op := $path.Operations }}
         {{- if not ($.IsSimpleAuth $op) }}
-	{{ camel $op.OperationID}}AuthGroups SecurityGroups
+	{{ camel $op.OperationID}}Security SecurityGroups
         {{- end}}
     {{- end}}
 {{- end}}
@@ -1317,9 +1232,9 @@ func RegisterHTTP(ops Operations, r chi.Router
 {{- if .HasAuthentication }}
 	{{- range $security, $value := .API.Components.SecuritySchemes -}}
     , {{ camel $security }}Auth
-	{{- end }} HttpAuthFunc
-	{{- if .HasAuthorization }}
-    , authorize Authorizer
+	{{- end }} AuthenticateFunc
+	{{- if .HasAuthorization -}}
+    , authorize AuthorizeFunc
 	{{- end -}}
 {{- end -}}
 ) *OpenAPIHandlers {
@@ -1328,36 +1243,43 @@ func RegisterHTTP(ops Operations, r chi.Router
 	{{- range $security, $value := .API.Components.SecuritySchemes -}}
     , {{ camel $security }}Auth: {{ camel $security }}Auth
 	{{- end -}}
-	{{- if .HasAuthorization }}
+	{{- if .HasAuthorization -}}
 	, authorize: authorize{{- end -}}
 {{- end -}}
 }
+
+{{- range $name, $path := .API.Paths }}
+    {{- range $verb, $op := $path.Operations }}
+        {{- if not ($.IsSimpleAuth $op) }}
+
+	s.{{ camel $op.OperationID}}Security = SecurityGroups{
+            {{- $securityList := $.OpSecurity $op }}
+            {{- range $securityGroup := $securityList }}
+		SecurityGroup{
+                {{- range $security, $scopes := $securityGroup -}}
+					httputil.NewAuthCheck({{camel $security}}Auth
+                    {{- if not (empty $scopes) -}}
+						, authorize
+                        {{- range $scopes -}}
+							, "{{.}}"
+                        {{- end -}}
+                    {{- else -}}
+						, nil
+                    {{- end -}}
+					),
+                {{- end -}}
+				},
+            {{- end -}}
+	}
+        {{- end}}
+    {{- end}}
+{{- end}}
+
 {{ range $name, $path := .API.Paths }}
     {{- range $verb, $op := $path.Operations }}
 	r.{{pascal $verb}}("{{$name}}", http.HandlerFunc(s.{{ pascal $op.OperationID}}))
     {{- end }}
 {{- end }}
-
-{{- range $name, $path := .API.Paths }}
-    {{- range $verb, $op := $path.Operations }}
-        {{- if not ($.IsSimpleAuth $op) }}
-	s.{{ camel $op.OperationID}}AuthGroups = NewSecurityGroups(
-            {{- $securityList := $.OpSecurity $op }}
-            {{- range $securityGroup := $securityList -}}
-                SecurityGroup{}
-                {{- range $security, $scopes := $securityGroup -}}
-                    .Add("{{camel $security}}",{{camel $security}}Auth
-                    {{- if not (empty $scopes) -}}
-                        {{- range $scopes -}}
-                            , "{{.}}"
-                        {{- end -}}
-                    {{- end -}}
-                    )
-                {{- end -}},
-            {{- end -}})
-        {{- end}}
-    {{- end}}
-{{- end}}
 
 	return &s
 }
@@ -1383,7 +1305,7 @@ func (h OpenAPIHandlers) {{ pascal $op.OperationID}}(w http.ResponseWriter, r *h
                     {{- if eq $lastAuth $security }}
                     {{- else }}
 
-	authCtx, err := h.{{ camel $security }}Auth(r)
+	user, err := h.{{ camel $security }}Auth(r)
                         {{- $lastAuth = $security -}}
                     {{- end -}}
                 {{- end -}}
@@ -1393,11 +1315,11 @@ func (h OpenAPIHandlers) {{ pascal $op.OperationID}}(w http.ResponseWriter, r *h
                 {{- range $security, $scopes := $securityGroup }}
                     {{- if not (empty $scopes) }}
                         {{- if eq $authCt 0 }}
-if err == nil {
+	if err == nil {
                         {{- else }}
-if err != nil {
+	if err != nil {
                         {{- end }}
-err = h.authorize(authCtx{{range $scopes}}, "{{.}}"{{end}})
+		err = h.authorize(r.Context(), user, []string{ {{range $scopes}}"{{.}}", {{end}} })
                         {{- $authCt = inc $authCt }}
                     {{- end}}
                 {{- end}}
@@ -1405,7 +1327,7 @@ err = h.authorize(authCtx{{range $scopes}}, "{{.}}"{{end}})
             {{- repeat $authCt "}\n" }}
         {{- else }}
 
-	authCtx, err := doAuthorize(r, {{- if $.HasAuthorization }}h.authorize,{{end}} h.{{ camel $op.OperationID}}AuthGroups...)
+	user, err := h.{{ camel $op.OperationID}}Security.Auth(r)
         {{- end -}}
         {{- if $.HasAnyAuth $op }}
 	if err != nil {
@@ -1435,7 +1357,7 @@ err = h.authorize(authCtx{{range $scopes}}, "{{.}}"{{end}})
 			{{- if $opBody.IsJson }}
 
 	var body {{ $bodyType }}
-	if err = getBody(r.Body, &body); err != nil {
+	if err = httputil.GetJSONBody(r.Body, &body); err != nil {
 		httputil.ErrorHandler(w, r, err)
 
 		return
@@ -1462,7 +1384,7 @@ err = h.authorize(authCtx{{range $scopes}}, "{{.}}"{{end}})
 
 	err = h.ops.{{ pascal $op.OperationID}}(r.Context(),
         {{- end}}
-        {{- if not (empty $securityList) }} authCtx,{{- end -}}
+        {{- if not (empty $securityList) }} user,{{- end -}}
         {{- range $param := $.OpParams $path $op}} {{ goToken (camel $param.Value.Name) }},{{- end -}}
         {{- if $hasBody }} body{{- end -}}
 
@@ -1493,29 +1415,7 @@ err = h.authorize(authCtx{{range $scopes}}, "{{.}}"{{end}})
 
     {{- end }}
 {{- end }}
-
-func getBody(r io.Reader, body any) error {
-	err := json.NewDecoder(r).Decode(&body)
-	if err == nil {
-		return nil
-	}
-
-	var (
-		validationError  validation.Error
-		validationErrors *validation.Errors
-	)
-
-	switch {
-	case err == io.EOF:
-		return validation.Error{Message: "missing body"}
-	case errors.As(err, &validationError):
-		return err
-	case errors.As(err, &validationErrors):
-		return err
-	default:
-		return validation.Error{Source: err}
-	}
-}`
+`
 
 var FojiSlashOpenapiSlashMainDotGoDotTplBytes = []byte(FojiSlashOpenapiSlashMainDotGoDotTpl)
 
@@ -1573,6 +1473,9 @@ func main() {
 	{{- range $security, $value := .File.API.Components.SecuritySchemes -}}
 	, {{ $.PackageName }}.{{ pascal $security }}Auth({{ pascal $security }}Auth)
 	{{- end -}}
+    {{- if .HasAuthorization -}}
+	, Authorize
+    {{- end -}}
 {{- end -}}
 )
 
@@ -1654,6 +1557,13 @@ func {{ pascal $security }}Auth(ctx context.Context, key string) (*{{ $.CheckPac
 	return nil, {{ $.PackageName }}.ErrNotImplemented
 }
 	{{- end -}}
+    {{- if .HasAuthentication }}
+
+func Authorize(ctx context.Context, user *auth.LavaUser, scopes []string) error {
+	return form.ErrNotImplemented
+}
+
+{{- end -}}
 {{- end -}}`
 
 var FojiSlashOpenapiSlashModelDotGoDotTplBytes = []byte(FojiSlashOpenapiSlashModelDotGoDotTpl)
