@@ -8,7 +8,7 @@ require (
 	github.com/getkin/kin-openapi v0.118.0
 	github.com/gofoji/plates v0.3.2
 	github.com/gofoji/plates/plush v0.3.2
-	github.com/jackc/pgx/v5 v5.3.1
+	github.com/jackc/pgx/v5 v5.4.1
 	github.com/jinzhu/inflection v1.0.0
 	github.com/rs/zerolog v1.29.1
 	github.com/spf13/cobra v1.7.0

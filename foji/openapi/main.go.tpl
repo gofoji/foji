@@ -52,6 +52,9 @@ func main() {
 	{{- range $security, $value := .File.API.Components.SecuritySchemes -}}
 	, {{ $.PackageName }}.{{ pascal $security }}Auth({{ pascal $security }}Auth)
 	{{- end -}}
+    {{- if .HasAuthorization -}}
+	, Authorize
+    {{- end -}}
 {{- end -}}
 )
 
@@ -133,4 +136,11 @@ func {{ pascal $security }}Auth(ctx context.Context, key string) (*{{ $.CheckPac
 	return nil, {{ $.PackageName }}.ErrNotImplemented
 }
 	{{- end -}}
+    {{- if .HasAuthentication }}
+
+func Authorize(ctx context.Context, user *auth.LavaUser, scopes []string) error {
+	return form.ErrNotImplemented
+}
+
+{{- end -}}
 {{- end -}}
