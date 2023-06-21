@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/Masterminds/sprig/v3 v3.2.3
+	github.com/bir/iken v0.4.15
 	github.com/codemodus/kace v0.5.1
 	github.com/getkin/kin-openapi v0.118.0
 	github.com/gofoji/plates v0.3.2

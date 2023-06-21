@@ -1,0 +1,36 @@
+openapi: 3.0.3
+info:
+  version: v0
+  title: Test
+tags:
+  - name: ME
+paths:
+  /bytesCSV:
+    get:
+      operationId: getByteCSV
+      responses:
+        "200":
+          description: 'renders service as []byte'
+          content:
+            text/csv: { }
+  /stringCSV:
+    get:
+      operationId: getStringCSV
+      responses:
+        200:
+          description: 'renders service as *string'
+          content:
+            text/csv:
+              schema:
+                type: string
+  /readerCSV:
+    get:
+      operationId: getReaderCSV
+      responses:
+        200:
+          description: 'renders service as io.Reader'
+          content:
+            text/csv:
+              schema:
+                type: string
+                x-go-type: io.Reader

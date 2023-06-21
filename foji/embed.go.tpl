@@ -42,6 +42,7 @@ func GetString(filename string) (string, error) {
 {{- range .FileGroups }}
 {{- range .Files }}
 
+// {{.Name}}
 var {{ case (goToken .Name) }}Bytes = []byte({{ case (goToken .Name) }})
 const {{ case (goToken .Name) }} = `{{ backQuote (toString .Content) }}`
 {{- end -}}

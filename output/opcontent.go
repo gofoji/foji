@@ -7,44 +7,40 @@ const (
 	ApplicationJSONL = "application/jsonl"
 	TextPlain        = "text/plain"
 	TextHTML         = "text/html"
+	TextCSV          = "text/csv"
 )
 
+type MimeType string
+
+func (m MimeType) IsJson() bool {
+	return m == ApplicationJSON
+}
+
+func (m MimeType) IsText() bool {
+	return m == TextPlain
+}
+
+func (m MimeType) IsHTML() bool {
+	return m == TextHTML
+}
+func (m MimeType) IsCSV() bool {
+	return m == TextCSV
+}
+
+func (m MimeType) IsLongPollingOperation() bool {
+	return m == ApplicationJSONL
+}
+
+func (m MimeType) String() string { return string(m) }
+
 type OpResponse struct {
-	Key       string
-	MimeType  string
+	Key string
+	MimeType
 	MediaType *openapi3.MediaType
 	GoType    string
 }
 
-func (o OpResponse) IsJson() bool {
-	return o.MimeType == ApplicationJSON
-}
-
-func (o OpResponse) IsText() bool {
-	return o.MimeType == TextPlain
-}
-
-func (o OpResponse) IsHTML() bool {
-	return o.MimeType == TextHTML
-}
-
-func (o OpResponse) IsLongPollingOperation() bool {
-	return o.MimeType == ApplicationJSONL
-}
-
 type OpBody struct {
-	MimeType string
-	Schema   *openapi3.SchemaRef
-}
-
-func (o OpBody) IsJson() bool {
-	return o.MimeType == ApplicationJSON
-}
-
-func (o OpBody) IsText() bool {
-	return o.MimeType == TextPlain
-}
-
-func (o OpBody) IsHTML() bool {
-	return o.MimeType == TextHTML
+	MimeType
+	Schema *openapi3.SchemaRef
 }

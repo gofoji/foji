@@ -1,0 +1,10 @@
+files:
+  api:
+    files:
+      - "tests/csvresponse/openapi.yaml"
+processes:
+  openAPI:
+    params:
+      Package: foji/tests/csvresponse
+    OpenAPIFile:
+      'tests/csvresponse/http_handler_gen.go': foji/openapi/handler.go.tpl

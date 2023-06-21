@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/bir/iken/arrays"
 	"github.com/codemodus/kace"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/rs/zerolog"
@@ -338,8 +339,10 @@ func (o *OpenAPIFileContext) GetRequestBodyLocal(op *openapi3.Operation) *openap
 	return nil
 }
 
+var knownInterfaces = []string{"io.Reader"}
+
 func (o *OpenAPIFileContext) GetOpHappyResponse(pkg string, op *openapi3.Operation) OpResponse {
-	supportedResponseContentTypes := []string{ApplicationJSON, ApplicationJSONL, TextPlain, TextHTML}
+	supportedResponseContentTypes := []string{ApplicationJSON, ApplicationJSONL, TextPlain, TextHTML, TextCSV}
 
 	happyKey := "200"
 	for key, r := range op.Responses {
@@ -349,16 +352,21 @@ func (o *OpenAPIFileContext) GetOpHappyResponse(pkg string, op *openapi3.Operati
 			for _, mimeType := range supportedResponseContentTypes {
 				mediaType := r.Value.Content.Get(mimeType)
 				if mediaType != nil {
+					mime := MimeType(mimeType)
 					t := o.GetType(pkg, kace.Pascal(op.OperationID)+" Response", mediaType.Schema)
 
+					if t == "" {
+						// Unknown type, use []byte by default
+						t = "[]byte"
+					}
 					var goType string
-					if strings.HasPrefix(t, "[]") || strings.HasPrefix(t, "map[") {
+					if strings.HasPrefix(t, "[]") || strings.HasPrefix(t, "map[") || arrays.Contains(t, knownInterfaces) {
 						goType = t
 					} else {
 						goType = "*" + t
 					}
 
-					return OpResponse{Key: key, MimeType: mimeType, MediaType: mediaType, GoType: goType}
+					return OpResponse{Key: key, MimeType: mime, MediaType: mediaType, GoType: goType}
 				}
 			}
 		}
@@ -447,7 +455,7 @@ func (o *OpenAPIFileContext) GetOpHappyResponseKey(op *openapi3.Operation) strin
 func (o *OpenAPIFileContext) GetOpHappyResponseMimeType(op *openapi3.Operation) string {
 	// passing "" as pkg because here we only need the MimeType part for which pkg is not needed
 	opResponse := o.GetOpHappyResponse("", op)
-	return opResponse.MimeType
+	return opResponse.MimeType.String()
 }
 
 func (o *OpenAPIFileContext) GetOpHappyResponseType(pkg string, op *openapi3.Operation) string {
