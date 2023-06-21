@@ -27,6 +27,10 @@ func (m MimeType) IsCSV() bool {
 	return m == TextCSV
 }
 
+func (m MimeType) IsLongPollingOperation() bool {
+	return m == ApplicationJSONL
+}
+
 func (m MimeType) String() string { return string(m) }
 
 type OpResponse struct {
@@ -34,10 +38,6 @@ type OpResponse struct {
 	MimeType
 	MediaType *openapi3.MediaType
 	GoType    string
-}
-
-func (o OpResponse) IsLongPollingOperation() bool {
-	return o.MimeType == ApplicationJSONL
 }
 
 type OpBody struct {
