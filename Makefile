@@ -16,6 +16,10 @@ lint:
 test:
 	go test ./...
 
+test_gen:
+	go run main.go weld openAPI -c tests/csvresponse/foji.yaml
+	cd tests; go run tests_main.go
+
 cover:
 	go test	-coverprofile cp.out ./...
 	go tool cover -html=cp.out
@@ -27,6 +31,7 @@ update:
 	go get -u all
 
 install:
+	go run main.go weld embed
 	go install
 
-.PHONY:	sqlRepo testSchemaList testStub testDumpConfig lint test cover tidy update install
+.PHONY:	sqlRepo testSchemaList testStub testDumpConfig lint test cover tidy update install test_gen
