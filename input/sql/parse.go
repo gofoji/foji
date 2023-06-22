@@ -7,14 +7,15 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/gofoji/foji/input"
+	"github.com/bir/iken/arrays"
 	"github.com/rs/zerolog"
+
+	"github.com/gofoji/foji/input"
 )
 
 var (
-	commentRE = regexp.MustCompile(`^--[-]*`)
+	commentRE = regexp.MustCompile(`^--# `)
 	paramRE   = regexp.MustCompile(`^@`)
-	nameRE    = regexp.MustCompile(`^.`)
 )
 
 type Repo interface {
@@ -66,8 +67,8 @@ func (r Result) GenerateType() bool {
 	return !strings.Contains(r.Type, ".")
 }
 
-func (q Query) IsType(t string) bool {
-	return q.Type == t
+func (q Query) IsType(t ...string) bool {
+	return arrays.Contains(q.Type, t)
 }
 
 func (p Parser) readDescriptor(s string) Query {
@@ -87,7 +88,7 @@ func (p Parser) parseDescriptorLine(line string, q *Query) {
 	l := strings.TrimSpace(commentRE.ReplaceAllString(line, ""))
 	if paramRE.MatchString(l) {
 		p.parseDescriptorParam(l, q)
-	} else if nameRE.MatchString(l) {
+	} else {
 		p.parseDescriptorHeader(l, q)
 	}
 }
@@ -101,11 +102,11 @@ const (
 func (p Parser) parseDescriptorHeader(l string, q *Query) {
 	/*
 		Example headers:
-		-- .FuncName
-		-- .FuncName ResultType
-		-- .FuncName ResultType QueryType
+		--# FuncName
+		--# FuncName ResultType
+		--# FuncName ResultType QueryType
 	*/
-	ll := strings.Split(strings.TrimSpace(nameRE.ReplaceAllString(l, "")), " ")
+	ll := strings.Split(strings.TrimSpace(l), " ")
 	if len(ll) > positionName {
 		q.Name = ll[positionName]
 	}

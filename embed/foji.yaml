@@ -36,6 +36,7 @@ formats:
         char: string
         bpchar: string
         timestamptz: time.Time
+        timestamp: time.Time
         varchar: string
   openapi:
     case: pascal
