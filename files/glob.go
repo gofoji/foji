@@ -33,6 +33,7 @@ func Expand(globs []string) ([]string, error) {
 		for _, match := range matches {
 			if match == "" {
 				match = "*"
+				hits = append(hits, ".")
 			}
 
 			paths, err := filepath.Glob(match + glob)

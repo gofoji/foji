@@ -63,14 +63,15 @@ Overrides
 - [x] Format Encode/Decode
 - [x] Input Validation 
 - [x] Authentication
-- [x] Publish Swagger Spec
+- [x] Publish Swagger Spec (RapiDoc)
 - [x] Authorization 
+- [x] Support [OR auth](https://swagger.io/docs/specification/authentication/)
 - [ ] Wrap Open API structs with helpers
 - [ ] Primary Tag OpenAPI generation 
 - [ ] Optionally Merge large param sets into struct 
 - [ ] Filter private attributes from Spec for export
-- [ ] Support multiple encodings
-- [x] Support [OR auth](https://swagger.io/docs/specification/authentication/) 
+- [ ] Support multiple encodings based on request at runtime
+- [ ] Support pluggable encodings
 - [ ] Support AsyncAPI
 
 Standard HTTP
