@@ -6,6 +6,7 @@ formats:
     maps:
       type:
         "_name": "[]string"
+        "_text": "[]string"
         bool: bool
         boolean: bool
         double: float64

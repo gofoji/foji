@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/bir/iken/arrays"
 	"github.com/codemodus/kace"
 	"github.com/rs/zerolog"
 
@@ -141,12 +140,6 @@ func (q SQLContext) GetType(c *sql.Param, pkg string) string {
 	}
 
 	return fmt.Sprintf("UNKNOWN:path(%s):type(%s)", c.Path(), c.Type)
-}
-
-var typeIdentifiers = []string{"bool", "byte", "complex64", "complex128", "float32", "float64", "int", "int8", "int16", "int32", "int64", "rune", "string", "uint", "uint8", "uint16", "uint32", "uint64", "uintptr"}
-
-func (q SQLContext) NativeType(t string) bool {
-	return arrays.Contains(t, typeIdentifiers)
 }
 
 var errMissingParam = errors.New("missing Param.Package")

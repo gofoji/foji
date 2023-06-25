@@ -12,11 +12,11 @@ import (
 )
 
 {{- range .Queries }}
-{{ $resultType := $.GetType .Result.TypeParam $.PackageName }}
+{{ $resultType := default (print .Name "Result") ($.GetType .Result.TypeParam $.PackageName) }}
 
-{{- if and .Result.GenerateType (not ($.NativeType .Result.Type)) }}
-// {{.Result.Type}} represents a result from '{{.Name}}'.
-type {{.Result.Type}} struct {
+{{- if .Result.GenerateType }}
+// {{$resultType}} represents a result from '{{.Name}}'.
+type {{$resultType}} struct {
 {{- range .Result.Params.ByOrdinal }}
 	{{ pascal .Name }} {{ $.GetType . $.PackageName }}  `json:"{{ .Name }},omitempty"` // postgres type: {{ .Type }} {{- if .Nullable }} NULLABLE {{ end }}
 {{- end }}
@@ -27,7 +27,7 @@ type {{.Result.Type}} struct {
 {{- goDoc .Comment}}
 func (r Repo) {{ .Name }}(ctx context.Context{{if gt (len .Params) 0}}, {{end -}}
 	{{ $.Parameterize .Params.ByOrdinal "%s %s" $.PackageName }}) ({{ if .IsType "query" "arrayBasic" }}[]{{ end -}}
-	{{if not ($.NativeType .Result.Type)}}*{{end}}{{$resultType}}, error) {
+	{{if not (isGoType .Result.Type)}}*{{end}}{{$resultType}}, error) {
 	const query = `{{ backQuote .SQL }}`
 
 {{- if .IsType "query" }}
@@ -37,7 +37,7 @@ func (r Repo) {{ .Name }}(ctx context.Context{{if gt (len .Params) 0}}, {{end -}
 		return nil, fmt.Errorf("{{.Name}}.Query:%w", err)
 	}
 
-	var out []{{if not ($.NativeType .Result.Type)}}*{{end}}{{$resultType}}
+	var out []{{if not (isGoType .Result.Type)}}*{{end}}{{$resultType}}
 
 	for q.Next() {
 		row := {{ $resultType }}{}
@@ -57,7 +57,7 @@ func (r Repo) {{ .Name }}(ctx context.Context{{if gt (len .Params) 0}}, {{end -}
 		return nil, fmt.Errorf("{{.Name}}.Query:%w", err)
 	}
 
-	var out []{{if not ($.NativeType .Result.Type)}}*{{end}}{{$resultType}}
+	var out []{{if not (isGoType .Result.Type)}}*{{end}}{{$resultType}}
 
 	for q.Next() {
 		var row {{ $resultType }}

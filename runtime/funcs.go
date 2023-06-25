@@ -8,6 +8,7 @@ import (
 	"strings"
 	"unsafe"
 
+	"github.com/bir/iken/arrays"
 	"github.com/codemodus/kace"
 	"github.com/jinzhu/inflection"
 
@@ -69,6 +70,7 @@ var Funcs = map[string]interface{}{
 	"goToken":   GoToken,
 	"goDoc":     GoDoc,
 	"goComment": GoComment,
+	"isGoType":  IsGoType,
 
 	// Console
 	"blue":       color.Blue,
@@ -304,4 +306,10 @@ func GoComment(s string) string {
 	}
 
 	return CommentPrefix + strings.Join(ss, "\n"+CommentPrefix+" ")
+}
+
+var typeIdentifiers = []string{"bool", "byte", "complex64", "complex128", "float32", "float64", "int", "int8", "int16", "int32", "int64", "rune", "string", "uint", "uint8", "uint16", "uint32", "uint64", "uintptr"}
+
+func IsGoType(token string) bool {
+	return arrays.Contains(token, typeIdentifiers)
 }

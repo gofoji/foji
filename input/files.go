@@ -3,14 +3,14 @@ package input
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"regexp"
+
+	"github.com/rs/zerolog"
 
 	"github.com/gofoji/foji/cfg"
 	"github.com/gofoji/foji/files"
 	"github.com/gofoji/foji/stringlist"
-	"github.com/rs/zerolog"
 )
 
 type FileGroup struct {
@@ -75,7 +75,7 @@ func Parse(_ context.Context, logger zerolog.Logger, input cfg.FileInput) (FileG
 
 			logger.Debug().Str("source", filename).Msg("Reading File")
 
-			b, err := ioutil.ReadFile(filename)
+			b, err := os.ReadFile(filename)
 			if err != nil {
 				return result, fmt.Errorf("error reading file: %s: %w", filename, err)
 			}

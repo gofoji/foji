@@ -16,7 +16,7 @@ type Param struct {
 	TypeID        uint32 // DB type ID
 	Nullable      bool   // True means the param is nullable
 	Generated     bool   // Indicates type should be generated (locally defined)
-	Query         *Query // The owning query
+	Query         *Query `json:"-"` // The owning query
 }
 
 func (p Param) Path() string {

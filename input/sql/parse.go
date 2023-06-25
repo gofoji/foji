@@ -11,6 +11,7 @@ import (
 	"github.com/rs/zerolog"
 
 	"github.com/gofoji/foji/input"
+	"github.com/gofoji/foji/runtime"
 )
 
 var (
@@ -64,7 +65,7 @@ func (r Result) TypeParam() *Param {
 }
 
 func (r Result) GenerateType() bool {
-	return !strings.Contains(r.Type, ".")
+	return !runtime.IsGoType(r.Type) && !strings.Contains(r.Type, ".")
 }
 
 func (q Query) IsType(t ...string) bool {
