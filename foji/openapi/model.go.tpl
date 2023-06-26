@@ -173,7 +173,7 @@ func (p *{{ pascal $key }}) UnmarshalJSON(b []byte) error {
     }
 {{ end }}
 
-    p = &v
+    *p = v
 
     return nil
 }
