@@ -150,7 +150,7 @@ func (p *{{ pascal $key }}) UnmarshalJSON(b []byte) error {
     var validationErrors validation.Errors
     {{ range $field := $schema.Value.Required }}
     if _, ok := requiredCheck["{{ $field }}"]; !ok {
-        validationErrors.Add("{{ $field }}", "missing required field")
+        validationErrors.Add("{{ $field }}", ErrMissingRequiredField)
     }
     {{ end }}
 
@@ -287,6 +287,8 @@ import (
 
     "github.com/bir/iken/validation"
 )
+
+var ErrMissingRequiredField = errors.New("missing required field")
 
 // Component Schemas
 
