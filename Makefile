@@ -1,14 +1,11 @@
+MODULE := $(shell go list -m -f {{.Path}})
+
 sqlRepo:
 	go run main.go weld sqlRepo
 
-testSchemaList:
-	go run main.go schemaList --config testlist.yaml
-
-testStub:
-	go run main.go stubAPI --config testTodo.yaml
-
-testDumpConfig:
-	go run main.go dumpConfig --config embed.yaml
+fmt:
+	gofumpt -l -w .
+	gci write . -s standard -s default -s "prefix($(MODULE))"
 
 lint:
 	golangci-lint run --sort-results
@@ -31,7 +28,6 @@ update:
 	go get -u all
 
 install:
-	go run main.go weld embed
 	go install
 
 .PHONY:	sqlRepo testSchemaList testStub testDumpConfig lint test cover tidy update install test_gen

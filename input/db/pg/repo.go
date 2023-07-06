@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/gofoji/foji/input/db"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/rs/zerolog"
+
+	"github.com/gofoji/foji/input/db"
 )
 
 // DB is the common interface for database operations.

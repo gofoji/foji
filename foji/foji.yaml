@@ -56,24 +56,12 @@ files:
       - "**/*.sql"
     filter:
       - "db/migrations/.*" # dbMate migrations
-  embed:
-    files:
-      - "embed/*"
-    filter:
-      - ".*\\.go"
   api:
     files:
       - "openapi.yaml"
 processes:
   repo:
     processes: [ sqlRepo, dbRepo ]
-  embed:
-    format: go
-    resources: [ embed ]
-    params:
-      Package: embed
-    EmbedAll:
-      embed/embeds_gen.go: foji/embed.go.tpl
   dbList:
     format: console
     case: unchanged

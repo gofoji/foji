@@ -5,9 +5,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/gofoji/foji/embed"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
+
+	"github.com/gofoji/foji/foji"
 )
 
 var initCmd = &cobra.Command{
@@ -46,7 +47,7 @@ func initConfig(_ *cobra.Command, _ []string) {
 func writeConfig() {
 	l := log.With().Str("cfgFile", cfgFile).Logger()
 
-	err := WriteToFile(embed.InitDotYamlBytes, cfgFile)
+	err := WriteToFile(foji.InitConfig, cfgFile)
 	if err != nil {
 		l.Fatal().Err(err).Msg("saving file")
 	}

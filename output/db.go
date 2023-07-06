@@ -5,10 +5,11 @@ import (
 	"strings"
 
 	"github.com/codemodus/kace"
+	"github.com/rs/zerolog"
+
 	"github.com/gofoji/foji/cfg"
 	"github.com/gofoji/foji/input/db"
 	"github.com/gofoji/foji/stringlist"
-	"github.com/rs/zerolog"
 )
 
 const (

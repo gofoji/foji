@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/rs/zerolog"
+
 	"github.com/gofoji/foji/cfg"
 	"github.com/gofoji/foji/input"
 	"github.com/gofoji/foji/input/db"
@@ -15,8 +18,6 @@ import (
 	sqlDB "github.com/gofoji/foji/input/sql/pg"
 	"github.com/gofoji/foji/output"
 	"github.com/gofoji/foji/runtime"
-	"github.com/jackc/pgx/v5"
-	"github.com/rs/zerolog"
 )
 
 type InputFiles struct {
@@ -65,7 +66,6 @@ func (w *Welder) Run(simulate bool) error {
 	pp := []Processor{
 		{guard: output.HasDBOutput, run: w.dbProcess},
 		{guard: output.HasSQLOutput, run: w.sqlProcess},
-		{guard: output.HasEmbedOutput, run: w.embedProcess},
 		{guard: output.HasProtoOutput, run: w.protoProcess},
 		{guard: output.HasOpenAPIOutput, run: w.apiProcess},
 	}
@@ -97,10 +97,6 @@ func (w *Welder) Run(simulate bool) error {
 	}
 
 	return nil
-}
-
-func (w *Welder) embedProcess(simulate bool, p cfg.Process, ff []input.FileGroup) error {
-	return output.Embed(p, w.postProcessor(p), w.logger, ff, simulate)
 }
 
 func (w *Welder) apiProcess(simulate bool, p cfg.Process, ff []input.FileGroup) error {
@@ -212,31 +208,6 @@ func (w *Welder) parseDB() (db.DB, error) {
 	return s.Filter(w.config.DB.Filter), nil
 }
 
-// TODO - Fix pgx v5 logger
-//func pgxzeroMapper(level pgx.LogLevel, msg string) zerolog.Level {
-//	switch level {
-//	case pgx.LogLevelNone:
-//		return zerolog.NoLevel
-//	case pgx.LogLevelError:
-//		return zerolog.ErrorLevel
-//	case pgx.LogLevelWarn:
-//		return zerolog.WarnLevel
-//	case pgx.LogLevelInfo:
-//		switch msg {
-//		case "Query":
-//			fallthrough
-//		case "Dialing PostgreSQL server":
-//			return zerolog.DebugLevel
-//		}
-//
-//		return zerolog.InfoLevel
-//	case pgx.LogLevelDebug:
-//		return zerolog.DebugLevel
-//	}
-//
-//	return zerolog.DebugLevel
-//}
-
 func (w *Welder) initDBConnection() error {
 	if w.conn != nil {
 		return nil
@@ -254,7 +225,7 @@ func (w *Welder) initDBConnection() error {
 	}
 
 	// TODO: Enable tracer on PGX V5
-	//config.Tracer = pgxzero.New(w.logger).WithMapper(pgxzeroMapper)
+	// config.Tracer = pgxzero.New(w.logger).WithMapper(pgxzeroMapper)
 
 	conn, err := pgx.ConnectConfig(context.Background(), config)
 	if err != nil {
@@ -273,7 +244,7 @@ func (w *Welder) initDBConnection() error {
 	return nil
 }
 
-func (w Welder) postProcessor(p cfg.Process) cfg.FileHandler {
+func (w *Welder) postProcessor(p cfg.Process) cfg.FileHandler {
 	w.logger.Debug().Interface("postProcessor", p.Post).Msg("post processor")
 
 	if len(p.Post) == 0 || len(p.Post[0]) == 0 {

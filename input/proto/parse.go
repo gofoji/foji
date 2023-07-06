@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/gofoji/foji/input"
 	"github.com/rs/zerolog"
 	"github.com/yoheimuta/go-protoparser/v4"
 	"github.com/yoheimuta/go-protoparser/v4/parser"
+
+	"github.com/gofoji/foji/input"
 )
 
 type (

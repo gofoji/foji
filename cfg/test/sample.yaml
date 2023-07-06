@@ -13,14 +13,10 @@ files:
     files:
       - "TEST.yaml"
 processes:
-  embed:
-    format: test
+  openAPIDocs:
     files:
       files:
-        - "TESTEMBED"
-    EmbedAll:
-      -: ignore
-  openAPIDocs:
+        - "TEST"
     format: go
     resources: [ api ]
     params:
@@ -35,6 +31,6 @@ processes:
     DbAll:
       stdout: foji/dbList.console.tpl
   groupTest:
-    processes: [ embed, openAPIDocs ]
+    processes: [ dbList, openAPIDocs ]
   badGroupTest:
-    processes: [ embed, foo ]
+    processes: [ dbList, foo ]

@@ -23,6 +23,7 @@ func (m MimeType) IsText() bool {
 func (m MimeType) IsHTML() bool {
 	return m == TextHTML
 }
+
 func (m MimeType) IsCSV() bool {
 	return m == TextCSV
 }

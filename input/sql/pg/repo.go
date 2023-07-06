@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/gofoji/foji/input/sql"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+
+	"github.com/gofoji/foji/input/sql"
 )
 
 // DB is the common interface for database operations.
@@ -105,8 +106,7 @@ func (r *Repo) DescribeQuery(ctx context.Context, q *sql.Query) error {
 	return nil
 }
 
-func (r *Repo) describeParam(ctx context.Context, q *sql.Query,
-	f pgconn.FieldDescription, fields sql.Params, i int) (sql.Param, error) {
+func (r *Repo) describeParam(ctx context.Context, q *sql.Query, f pgconn.FieldDescription, fields sql.Params, i int) (sql.Param, error) {
 	t, err := r.GetTypeNameByID(ctx, f.DataTypeOID)
 	if err != nil {
 		return sql.Param{}, fmt.Errorf("unable to locate data type: %d: %w", f.DataTypeOID, err)

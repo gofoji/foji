@@ -1,12 +1,10 @@
 package cmd
 
 import (
-	"regexp"
-
 	"github.com/spf13/cobra"
 
 	"github.com/gofoji/foji/cfg"
-	"github.com/gofoji/foji/embed"
+	"github.com/gofoji/foji/foji"
 	"github.com/gofoji/foji/stringlist"
 )
 
@@ -30,8 +28,7 @@ func copyTemplates(_ *cobra.Command, args []string) {
 	var templates stringlist.Strings
 
 	if len(args) == 1 && args[0] == "all" {
-		templates = embed.List()
-		templates = templates.Filter(templateRegex.MatchString)
+		templates, err = foji.AllTemplates()
 	} else {
 		targets, err := config.Processes.Target(args)
 		if err != nil {
@@ -58,5 +55,3 @@ func copyTemplates(_ *cobra.Command, args []string) {
 		}
 	}
 }
-
-var templateRegex = regexp.MustCompile("^foji/")

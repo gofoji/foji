@@ -8,7 +8,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/gofoji/foji/embed"
+	"github.com/gofoji/foji/foji"
 )
 
 // Load reads a config file from filename.  If includeDefaults it will also load the defaults
@@ -36,7 +36,7 @@ func Load(filename string, includeDefaults bool) (Config, error) {
 		return cfg, nil
 	}
 
-	defaults, err := LoadYaml(embed.FojiDotYaml)
+	defaults, err := LoadYaml(foji.DefaultConfig)
 	if err != nil {
 		return cfg, fmt.Errorf("can't parse defaults:%w", err)
 	}

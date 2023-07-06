@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/rs/zerolog"
+
 	"github.com/gofoji/foji/cfg"
 	"github.com/gofoji/foji/input/proto"
-	"github.com/rs/zerolog"
 )
 
 const (

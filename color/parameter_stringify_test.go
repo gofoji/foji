@@ -135,7 +135,7 @@ func TestParameterString(t *testing.T) {
 	if Parameter(107).String() != "BgBWhite" {
 		t.Errorf("Parameter(107).String() != \"BgBWhite\"")
 	}
-	//Test the default case.
+	// Test the default case.
 	if Parameter(255).String() != "Parameter(255)" {
 		t.Errorf("Parameter(255).String() != \"Parameter(255)\"")
 	}
@@ -271,7 +271,7 @@ func TestNewParameter(t *testing.T) {
 	if NewParameter("BgBWhite") != Parameter(107) {
 		t.Errorf("NewParameter(\"BgBWhite\") != Parameter(107)")
 	}
-	//Test the default case.
+	// Test the default case.
 	if NewParameter("1298498081") != Parameter(0) {
 		t.Errorf("NewParameter(\"1298498081\") != Parameter(0)")
 	}
