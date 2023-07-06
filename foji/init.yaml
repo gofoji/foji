@@ -2,13 +2,9 @@ db:
   connection: "host=localhost dbname=my_project sslmode=disable"
   filter:
     - "*.schema_migrations" # dbMate migrations
-sql:
-  files:
-    - "**/*.sql"
-  filter:
-    - "db/migrations/.*" # dbMate migrations
-embed:
-  files:
-    - "embed/**"
-  filter:
-    - "*.go"
+files:
+  sql:
+    files:
+      - "**/*.sql"
+    filter:
+      - "db/migrations/.*" # dbMate migrations

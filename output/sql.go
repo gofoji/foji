@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/codemodus/kace"
+	"github.com/gofoji/plates"
 	"github.com/rs/zerolog"
 
 	"github.com/gofoji/foji/cfg"
@@ -184,10 +185,20 @@ func (q *SQLFileGroupContext) Init() error {
 	return nil
 }
 
-func (q *SQLFileContext) Init() error {
+func (q *SQLFileContext) Init(p *plates.Factory) error {
 	name, ok := q.Params.HasString("Package")
 	if !ok {
 		return errMissingParam
+	}
+
+	if strings.Contains(name, "{{") {
+		var err error
+		name, err = p.From(name).To(q)
+		if err != nil {
+			return fmt.Errorf("mapping Package name:%w", err)
+		}
+
+		q.Params["Package"] = name
 	}
 
 	for _, qry := range q.File.Queries {

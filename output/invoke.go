@@ -38,6 +38,10 @@ type Initializer interface {
 	Init() error
 }
 
+type TemplateInitializer interface {
+	Init(*plates.Factory) error
+}
+
 const PermPrefix = "!"
 
 func (p ProcessRunner) process(tm stringlist.StringMap, data interface{}) error {
@@ -47,7 +51,7 @@ func (p ProcessRunner) process(tm stringlist.StringMap, data interface{}) error 
 	}
 
 	for targetFile, templateFile := range tm {
-		err := doInit(data)
+		err := p.doInit(data)
 		if err != nil {
 			return err
 		}
@@ -65,10 +69,18 @@ func (p ProcessRunner) process(tm stringlist.StringMap, data interface{}) error 
 	return nil
 }
 
-func doInit(data interface{}) error {
+func (p ProcessRunner) doInit(data interface{}) error {
 	init, ok := data.(Initializer)
 	if ok {
 		err := init.Init()
+		if err != nil {
+			return fmt.Errorf("error initializing context: %w", err)
+		}
+	}
+
+	tInit, ok := data.(TemplateInitializer)
+	if ok {
+		err := tInit.Init(p.Factory)
 		if err != nil {
 			return fmt.Errorf("error initializing context: %w", err)
 		}

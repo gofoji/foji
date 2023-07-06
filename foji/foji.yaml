@@ -71,7 +71,7 @@ processes:
     format: go
     resources: [ sql ]
     params:
-      Package: pg
+      Package: '{{ dir .File.Source }}'
     SQLFile:
       '{{ fileWithExt .File.Source "_gen.go" }}': foji/sqlRepo.go.tpl
   dbRepo:
@@ -106,11 +106,3 @@ processes:
       '{{lower .}}/http/handler_gen.go': foji/openapi/handler.go.tpl
       '!{{lower .}}/service.go': foji/openapi/service.go.tpl
       '!{{lower .}}/cmd/serve/main.go': foji/openapi/main.go.tpl
-  openAPIDocs:
-    format: go
-    resources: [ api ]
-    params:
-      Package: doc
-    EmbedAll:
-      doc/embed_gen.go: foji/embed.go.tpl
-      '!doc/handler.go': foji/openapi/docs.go.tpl
