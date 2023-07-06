@@ -17,7 +17,7 @@ func Default(name string) ([]byte, error) {
 }
 
 func walk(dir string) ([]string, error) {
-	ff, err := files.ReadDir(dir)
+	entries, err := files.ReadDir(dir)
 	if err != nil {
 		return nil, fmt.Errorf("readDir:%q:%w", dir, err)
 	}
@@ -28,7 +28,8 @@ func walk(dir string) ([]string, error) {
 	}
 
 	var out []string
-	for _, f := range ff {
+
+	for _, f := range entries {
 		if f.IsDir() {
 			name := f.Name()
 			if dir != "." {

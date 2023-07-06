@@ -29,6 +29,9 @@ func copyTemplates(_ *cobra.Command, args []string) {
 
 	if len(args) == 1 && args[0] == "all" {
 		templates, err = foji.AllTemplates()
+		if err != nil {
+			l.Fatal().Err(err).Msg("Failed to load templates")
+		}
 	} else {
 		targets, err := config.Processes.Target(args)
 		if err != nil {
