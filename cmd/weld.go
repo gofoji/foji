@@ -1,9 +1,10 @@
 package cmd
 
 import (
+	"github.com/spf13/cobra"
+
 	"github.com/gofoji/foji/cfg"
 	"github.com/gofoji/foji/welder"
-	"github.com/spf13/cobra"
 )
 
 var weldCmd = &cobra.Command{

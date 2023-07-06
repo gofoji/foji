@@ -41,7 +41,7 @@ func TestProcesses_Keys(t *testing.T) {
 		t.Errorf("Keys() Err = %v", err)
 	}
 	got := c.Processes.String()
-	want := "badGroupTest,dbList,embed,groupTest,openAPIDocs"
+	want := "badGroupTest,dbList,groupTest,openAPIDocs"
 	if got != want {
 		t.Errorf("Keys() = %v, want %v", got, want)
 	}
@@ -148,7 +148,7 @@ func TestFileInput_IsEmpty(t *testing.T) {
 		t.Errorf("Load() Err = %v", err)
 	}
 
-	if c.Processes["embed"].Files.IsEmpty() {
+	if c.Processes["openAPIDocs"].Files.IsEmpty() {
 		t.Errorf("IsEmpty() returned true")
 	}
 }

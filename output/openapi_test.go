@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/gofoji/foji/cfg"
-	"github.com/gofoji/foji/embed"
+	"github.com/gofoji/foji/foji"
 	"github.com/gofoji/foji/input/openapi"
 	"github.com/gofoji/foji/stringlist"
 )
@@ -51,7 +51,7 @@ func TestGetType(t *testing.T) {
 }
 
 func getContext(doc *openapi3.T) OpenAPIFileContext {
-	defaults, err := cfg.LoadYaml(embed.FojiDotYaml)
+	defaultConfig, err := cfg.LoadYaml(foji.DefaultConfig)
 	if err != nil {
 		panic(err)
 	}
@@ -59,7 +59,7 @@ func getContext(doc *openapi3.T) OpenAPIFileContext {
 	config := cfg.Config{Processes: cfg.Processes{"openAPI": cfg.Process{Maps: cfg.Maps{
 		Type: stringlist.StringMap{"Main.override_name": "typeOverride", "EmptyAlias": "myOverride", "object": "DefaultObject"},
 	}, Params: cfg.ParamMap{"Package": "local"}}}}
-	config = config.Merge(defaults)
+	config = config.Merge(defaultConfig)
 
 	ctx := OpenAPIFileContext{
 		Context: Context{

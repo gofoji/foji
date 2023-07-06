@@ -164,7 +164,7 @@ func Parse(ctx context.Context, logger zerolog.Logger, repo Repo, inGroups []inp
 
 			resultFile, err := parseFile(f, logger, p)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("parse:%q:%w", f.Name, err)
 			}
 
 			fileSet[j] = resultFile

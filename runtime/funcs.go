@@ -84,7 +84,8 @@ var Funcs = map[string]interface{}{
 	"yellow":     color.Yellow,
 }
 
-var goKeywords = map[string]string{"break": "Break", "default": "Default", "func": "Func", "interface": "Interface",
+var goKeywords = map[string]string{
+	"break": "Break", "default": "Default", "func": "Func", "interface": "Interface",
 	"select": "Select", "case": "Case", "defer": "Defer", "go": "Go", "map": "Map", "struct": "Struct", "chan": "Chan",
 	"else": "Else", "goto": "Goto", "package": "Package", "switch": "Switch", "const": "Const",
 	"fallthrough": "Fallthrough", "if": "If", "range": "Range", "type": "Type", "continue": "Continue", "for": "For",

@@ -4,8 +4,9 @@ import (
 	"context"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/gofoji/foji/input"
 	"github.com/rs/zerolog"
+
+	"github.com/gofoji/foji/input"
 )
 
 type FileGroups []FileGroup

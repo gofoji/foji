@@ -13,7 +13,7 @@ import (
 	"github.com/rs/zerolog"
 
 	"github.com/gofoji/foji/cfg"
-	"github.com/gofoji/foji/embed"
+	"github.com/gofoji/foji/foji"
 	"github.com/gofoji/foji/runtime"
 	"github.com/gofoji/foji/stringlist"
 )
@@ -181,7 +181,7 @@ func (p ProcessRunner) loadLocalOrEmbed(filename string) ([]byte, error) {
 		if os.IsNotExist(err) {
 			p.l.Debug().Str("filename", filename).Msg("loading from embed")
 
-			return embed.Get(filename)
+			return foji.Default(filename)
 		}
 
 		return nil, fmt.Errorf("error accessing file: %s: %w", filename, err)
