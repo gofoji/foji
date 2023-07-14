@@ -8,13 +8,11 @@
 
 {{- define "enum"}}
 {{- $schema := .RuntimeParams.schema }}
-{{- $description := .RuntimeParams.description }}
-{{- $name := .RuntimeParams.name }}
-{{- $enumType := $.CheckPackage ($.EnumName $name) $.PackageName -}}
 {{- if and (empty $schema.Ref) (not (empty $schema.Value.Enum)) }}
+{{- $enumType := $.GetType $.PackageName .RuntimeParams.name $schema -}}
 
 // {{$enumType}}
-{{- goDoc $description }}
+{{- goDoc .RuntimeParams.description }}
 type {{ $enumType }} int8
 
 const (
