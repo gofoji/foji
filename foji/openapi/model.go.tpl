@@ -67,7 +67,8 @@ func (e *{{ $enumType }}) UnmarshalJSON(input []byte) (err error) {
 func (e *{{ $enumType }}) MarshalJSON() ([]byte, error) {
     return json.Marshal(e.String())
 }
-{{- end -}}
+
+{{ end -}}
 {{- end -}}
 
 {{- define "typeDeclaration"}}
