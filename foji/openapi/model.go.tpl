@@ -9,7 +9,7 @@
 {{- define "enum"}}
 {{- $schema := .RuntimeParams.schema }}
 {{- if and (empty $schema.Ref) (not (empty $schema.Value.Enum)) }}
-{{- $enumType := $.GetType $.PackageName .RuntimeParams.name $schema -}}
+{{- $enumType := $.GetType $.PackageName .RuntimeParams.name $schema }}
 
 // {{$enumType}}
 {{- goDoc .RuntimeParams.description }}
@@ -183,7 +183,8 @@ func (p {{ pascal $key }}) MarshalJSON() ([]byte, error) {
         return nil, err
     }
 
-    b, err := json.Marshal(p)
+    type unvalidated {{ pascal $key }} // Skips the validation check
+    b, err := json.Marshal(unvalidated(p))
     if err != nil {
         return nil, fmt.Errorf("{{ pascal $key }}.Marshal: `%+v`: %w", p, err)
     }
