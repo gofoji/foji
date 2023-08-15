@@ -168,7 +168,7 @@ func (r Repo) Set{{$goName}}(ctx context.Context, set {{$.PackageName}}.Where, w
 		`WHERE ` +
 		where.String(&idx)
 
-	res, err := r.db.Exec(ctx, query, append([]interface{}{ set.Value }, where.Values()...)...)
+	res, err := r.db.Exec(ctx, query, append([]any{ set.Value }, where.Values()...)...)
 	if err != nil {
 		return 0, fmt.Errorf("{{$goName}}:%w", err)
 	}

@@ -12,7 +12,7 @@ import (
 	"github.com/gofoji/foji/stringlist"
 )
 
-type RuntimeParams map[string]interface{}
+type RuntimeParams map[string]any
 
 type Context struct {
 	// RuntimeParams are used for parameterized sub-templates
@@ -64,13 +64,13 @@ const (
 
 // WithParams Clones the current context and adds runtime params for each pair of key, value provided.
 // Used for executing sub templates that still need access to the context.
-func (c *Context) WithParams(values ...interface{}) (*Context, error) {
+func (c *Context) WithParams(values ...any) (*Context, error) {
 	if len(values)%2 != 0 {
 		return nil, ErrInvalidDictParams
 	}
 
 	out := *c
-	out.RuntimeParams = make(map[string]interface{}, len(values)/2) //nolint:gomnd
+	out.RuntimeParams = make(map[string]any, len(values)/2) //nolint:gomnd
 
 	for i := 0; i < len(values); i += 2 {
 		key, ok := values[i].(string)

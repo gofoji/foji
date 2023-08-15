@@ -1,17 +1,18 @@
 module github.com/gofoji/foji
 
-go 1.19
+go 1.21
+
+exclude github.com/imdario/mergo v1.0.0
 
 require (
 	github.com/Masterminds/sprig/v3 v3.2.3
-	github.com/bir/iken v0.4.16
 	github.com/codemodus/kace v0.5.1
 	github.com/getkin/kin-openapi v0.118.0
 	github.com/gofoji/plates v0.3.2
-	github.com/gofoji/plates/plush v0.3.2
-	github.com/jackc/pgx/v5 v5.4.2
+	github.com/gofoji/plates/plush v0.3.3
+	github.com/jackc/pgx/v5 v5.4.3
 	github.com/jinzhu/inflection v1.0.0
-	github.com/rs/zerolog v1.29.1
+	github.com/rs/zerolog v1.30.0
 	github.com/spf13/cobra v1.7.0
 	github.com/stretchr/testify v1.8.4
 	github.com/yoheimuta/go-protoparser/v4 v4.9.0
@@ -57,8 +58,8 @@ require (
 	github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e // indirect
 	github.com/spf13/cast v1.5.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	golang.org/x/crypto v0.11.0 // indirect
-	golang.org/x/net v0.12.0 // indirect
-	golang.org/x/sys v0.10.0 // indirect
-	golang.org/x/text v0.11.0 // indirect
+	golang.org/x/crypto v0.12.0 // indirect
+	golang.org/x/net v0.14.0 // indirect
+	golang.org/x/sys v0.11.0 // indirect
+	golang.org/x/text v0.12.0 // indirect
 )

@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"strconv"
 	"strings"
 	"unsafe"
 
-	"github.com/bir/iken/arrays"
 	"github.com/codemodus/kace"
 	"github.com/jinzhu/inflection"
 
@@ -25,7 +25,7 @@ func (e Error) Error() string {
 
 var ErrRuntime = Error("runtime")
 
-var Funcs = map[string]interface{}{
+var Funcs = map[string]any{
 	// Case
 	"camel":      kace.Camel,
 	"kebab":      kace.Kebab,
@@ -109,19 +109,19 @@ func BackQuote(in string) string {
 	return strings.ReplaceAll(in, "`", "`+\"`\"+`")
 }
 
-func CaseFuncs(name string) map[string]interface{} {
+func CaseFuncs(name string) map[string]any {
 	if name == "" {
 		name = "unchanged"
 	}
 
-	return map[string]interface{}{"case": Case(name), "cases": Cases(name)}
+	return map[string]any{"case": Case(name), "cases": Cases(name)}
 }
 
-func Case(name string) interface{} {
+func Case(name string) any {
 	return Funcs[name]
 }
 
-func Cases(name string) interface{} {
+func Cases(name string) any {
 	m, ok := Funcs[name].(stringlist.StringMapper)
 	if ok {
 		return stringlist.Mapper(m)
@@ -153,15 +153,15 @@ func Pad(s string, size int) string {
 
 // ToSlice returns the arguments as a single slice.  If all the arguments are
 // strings, they are returned as a stringlist.Strings, otherwise they're returned as
-// []interface{}.
-func ToSlice(vv ...interface{}) interface{} {
+// []any.
+func ToSlice(vv ...any) any {
 	ss := make(stringlist.Strings, len(vv))
 
 	for x := range vv {
 		if s, ok := vv[x].(string); ok {
 			ss[x] = s
 		} else {
-			// something was not a string, so just return the []interface{}
+			// something was not a string, so just return the []any
 			return vv
 		}
 	}
@@ -217,16 +217,16 @@ func NotEmpty(in string) bool {
 }
 
 // IsNil returns true if the input or referenced object is nil.
-func IsNil(i interface{}) bool {
+func IsNil(i any) bool {
 	return (*[2]uintptr)(unsafe.Pointer(&i))[1] == 0
 }
 
 // IsNotNil returns false if the input or referenced object is nil.
-func IsNotNil(i interface{}) bool {
+func IsNotNil(i any) bool {
 	return !IsNil(i)
 }
 
-func In(needle interface{}, haystack ...interface{}) (bool, error) {
+func In(needle any, haystack ...any) (bool, error) {
 	if haystack == nil {
 		return false, nil
 	}
@@ -234,7 +234,7 @@ func In(needle interface{}, haystack ...interface{}) (bool, error) {
 	tp := reflect.TypeOf(haystack).Kind()
 	switch tp {
 	case reflect.Slice, reflect.Array:
-		var item interface{}
+		var item any
 
 		l2 := reflect.ValueOf(haystack)
 
@@ -312,5 +312,5 @@ func GoComment(s string) string {
 var typeIdentifiers = []string{"bool", "byte", "complex64", "complex128", "float32", "float64", "int", "int8", "int16", "int32", "int64", "rune", "string", "uint", "uint8", "uint16", "uint32", "uint64", "uintptr"}
 
 func IsGoType(token string) bool {
-	return arrays.Contains(token, typeIdentifiers)
+	return slices.Contains(typeIdentifiers, token)
 }

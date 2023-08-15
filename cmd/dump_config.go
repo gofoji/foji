@@ -25,7 +25,7 @@ func dumpConfig(_ *cobra.Command, _ []string) {
 		l.Fatal().Err(err).Msg("Loading Config")
 	}
 
-	var out interface{} = config
+	var out any = config
 
 	if dumpWeld != "" {
 		targets, err := config.Processes.Target([]string{dumpWeld})

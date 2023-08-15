@@ -5,9 +5,9 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 
-	"github.com/bir/iken/arrays"
 	"github.com/rs/zerolog"
 
 	"github.com/gofoji/foji/input"
@@ -69,7 +69,7 @@ func (r Result) GenerateType() bool {
 }
 
 func (q Query) IsType(t ...string) bool {
-	return arrays.Contains(q.Type, t)
+	return slices.Contains(t, q.Type)
 }
 
 func (p Parser) readDescriptor(s string) Query {

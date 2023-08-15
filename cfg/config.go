@@ -9,8 +9,8 @@ import (
 
 type (
 	Error        string
-	FileHandler  func(string) error     // Used for post generation processing
-	ParamMap     map[string]interface{} // Generic bucket of params passed to templates
+	FileHandler  func(string) error // Used for post generation processing
+	ParamMap     map[string]any     // Generic bucket of params passed to templates
 	Processes    map[string]Process
 	FileInputMap map[string]FileInput
 	Output       map[string]stringlist.StringMap
