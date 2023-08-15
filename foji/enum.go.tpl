@@ -71,7 +71,7 @@ func (e {{ $type }}) Value() (driver.Value, error) {
 }
 
 // Scan satisfies the database/sql.Scanner interface for {{ $type }}.
-func (e *{{ $type }}) Scan(src interface{}) error {
+func (e *{{ $type }}) Scan(src any) error {
 	buf, ok := src.([]byte)
 	if !ok {
 		return errors.New("invalid {{ $type }}")
@@ -140,7 +140,7 @@ func (f {{$type}}Field) NotEqual(v {{$type}}) {{$.PackageName}}.Where {
 
 // In returns a {{$.PackageName}}.Where for this field.
 func (f {{$type}}Field) In(vals []{{$type}}) {{$.PackageName}}.InClause {
-	values := make([]interface{}, len(vals))
+	values := make([]any, len(vals))
 	for x := range vals {
 		values[x] = vals[x]
 	}

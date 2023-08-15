@@ -16,14 +16,14 @@ formats:
         int8: int64
         integer: int32
         integer,int64: int64
-        jsonb: interface{}
+        jsonb: any
         name: string
         number: float32
         number,double: float64
         number,float: float32
         number,int32: int32
         number,int64: int64
-        object: interface{}
+        object: any
         oid: int64
         string: string
         string,date-time: time.Time

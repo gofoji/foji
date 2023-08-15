@@ -5,9 +5,9 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strings"
 
-	"github.com/bir/iken/arrays"
 	"github.com/codemodus/kace"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/rs/zerolog"
@@ -67,7 +67,7 @@ func (o *OpenAPIFileContext) GoImports() []string {
 	return out
 }
 
-func (o *OpenAPIFileContext) WithParams(values ...interface{}) (*OpenAPIFileContext, error) {
+func (o *OpenAPIFileContext) WithParams(values ...any) (*OpenAPIFileContext, error) {
 	ctx, err := o.Context.WithParams(values...)
 	if err != nil {
 		return nil, err
@@ -96,7 +96,7 @@ func (o *OpenAPIFileContext) GetTypeName(pkg string, s *openapi3.SchemaRef) stri
 	return o.CheckPackage(ref, pkg)
 }
 
-func getExtAsString(in interface{}) string {
+func getExtAsString(in any) string {
 	bb, ok := in.(json.RawMessage)
 	if !ok {
 		return ""
@@ -360,7 +360,7 @@ func (o *OpenAPIFileContext) GetOpHappyResponse(pkg string, op *openapi3.Operati
 						t = "[]byte"
 					}
 					var goType string
-					if strings.HasPrefix(t, "[]") || strings.HasPrefix(t, "map[") || arrays.Contains(t, knownInterfaces) {
+					if strings.HasPrefix(t, "[]") || strings.HasPrefix(t, "map[") || slices.Contains(knownInterfaces, t) {
 						goType = t
 					} else {
 						goType = "*" + t

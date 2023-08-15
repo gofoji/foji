@@ -22,12 +22,14 @@ cover:
 	go tool cover -html=cp.out
 
 tidy:
-	go mod tidy -compat=1.19
+	go mod tidy -compat=1.21
 
-update:
-	go get -u all
+update: updateAll tidy
+
+updateAll:
+	go get -u ./...
 
 install:
 	go install
 
-.PHONY:	sqlRepo testSchemaList testStub testDumpConfig lint test cover tidy update install test_gen
+.PHONY:	sqlRepo testSchemaList testStub testDumpConfig lint test cover tidy update updateAll install test_gen

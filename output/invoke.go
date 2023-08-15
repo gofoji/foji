@@ -44,7 +44,7 @@ type TemplateInitializer interface {
 
 const PermPrefix = "!"
 
-func (p ProcessRunner) process(tm stringlist.StringMap, data interface{}) error {
+func (p ProcessRunner) process(tm stringlist.StringMap, data any) error {
 	f, ok := data.(FuncMapper)
 	if ok {
 		p.AddFuncs(f.Funcs())
@@ -69,7 +69,7 @@ func (p ProcessRunner) process(tm stringlist.StringMap, data interface{}) error 
 	return nil
 }
 
-func (p ProcessRunner) doInit(data interface{}) error {
+func (p ProcessRunner) doInit(data any) error {
 	init, ok := data.(Initializer)
 	if ok {
 		err := init.Init()
@@ -131,7 +131,7 @@ func NewProcessRunner(dir string, fn cfg.FileHandler, l zerolog.Logger, simulate
 	return p
 }
 
-func (p ProcessRunner) template(outputFile, templateFile string, data interface{}) error {
+func (p ProcessRunner) template(outputFile, templateFile string, data any) error {
 	permFile, outputFile := checkPermanentFlag(outputFile)
 
 	outputFile, err := p.From(outputFile).To(data)
@@ -154,7 +154,7 @@ func (p ProcessRunner) template(outputFile, templateFile string, data interface{
 	}
 
 	// Provides the current template file to the context
-	p.AddFuncs(map[string]interface{}{"templateFile": func() string { return templateFile }})
+	p.AddFuncs(map[string]any{"templateFile": func() string { return templateFile }})
 
 	err = p.FromFile(templateFile).ToFile(outputFile, data)
 	if err != nil {

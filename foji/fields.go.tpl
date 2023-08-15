@@ -17,13 +17,13 @@ import (
 )
 
 var errByteArrayCast = errors.New("type assertion .([]byte) failed")
-var errJsonbCast = errors.New("reading from DB into Jsonb, failed to convert to map[string]interface{}")
+var errJsonbCast = errors.New("reading from DB into Jsonb, failed to convert to map[string]any")
 
 // Bytea is a wrapper around byte arrays specifically for bytea column types in postgres.
 type Bytea []byte
 
-// Jsonb is a wrapper for map[string]interface{} for storing json into postgres
-type Jsonb map[string]interface{}
+// Jsonb is a wrapper for map[string]any for storing json into postgres
+type Jsonb map[string]any
 
 // Value marshals the json into the database
 func (j Jsonb) Value() (driver.Value, error) {
@@ -31,13 +31,13 @@ func (j Jsonb) Value() (driver.Value, error) {
 }
 
 // Scan Unmarshalls the bytes[] back into a Jsonb object
-func (j *Jsonb) Scan(src interface{}) error {
+func (j *Jsonb) Scan(src any) error {
 	source, ok := src.([]byte)
 	if !ok {
 		return errByteArrayCast
 	}
 
-	var i map[string]interface{}
+	var i map[string]any
 	err := json.Unmarshal(source, &i)
 	if err != nil {
 		return err
@@ -105,7 +105,7 @@ func (s SortOrder) String() string {
 // clause (not including the WHERE) for positional arguments starting at idx.
 type WhereClause interface {
 	String(idx *int) string
-	Values() []interface{}
+	Values() []any
 }
 
 // Comparison is used by WhereClauses to create valid sql.
@@ -124,7 +124,7 @@ const (
 type Where struct {
 	Field string
 	Comp  Comparison
-	Value interface{}
+	Value any
 }
 
 func (w Where) String(idx *int) string {
@@ -133,8 +133,8 @@ func (w Where) String(idx *int) string {
 	return ret
 }
 
-func (w Where) Values() []interface{} {
-	return []interface{}{w.Value}
+func (w Where) Values() []any {
+	return []any{w.Value}
 }
 
 // NullClause is a clause that checks for a column being null or not.
@@ -150,8 +150,8 @@ func (n NullClause) String(_ *int) string {
 	return n.Field + " IS NOT NULL "
 }
 
-func (n NullClause) Values() []interface{} {
-	return []interface{}{}
+func (n NullClause) Values() []any {
+	return []any{}
 }
 
 // AndClause returns a WhereClause that serializes to the AND
@@ -170,8 +170,8 @@ func (a andClause) String(idx *int) string {
 	return strings.Join(wheres, " AND ")
 }
 
-func (a andClause) Values() []interface{} {
-	vals := make([]interface{}, 0, len(a))
+func (a andClause) Values() []any {
+	vals := make([]any, 0, len(a))
 	for x := 0; x < len(a); x++ {
 		vals = append(vals, a[x].Values()...)
 	}
@@ -194,8 +194,8 @@ func (o orClause) String(idx *int) string {
 	return strings.Join(wheres, " OR ")
 }
 
-func (o orClause) Values() []interface{} {
-	vals := make([]interface{}, len(o))
+func (o orClause) Values() []any {
+	vals := make([]any, len(o))
 	for x := 0; x < len(o); x++ {
 		vals = append(vals, o[x].Values()...)
 	}
@@ -205,7 +205,7 @@ func (o orClause) Values() []interface{} {
 // InClause takes a slice of values that it matches against.
 type InClause struct {
 	Field  string
-	Vals []interface{}
+	Vals []any
 }
 
 func (in InClause) String(idx *int) string {
@@ -221,13 +221,13 @@ func (in InClause) String(idx *int) string {
 	return ret
 }
 
-func (in InClause) Values() []interface{} {
+func (in InClause) Values() []any {
 	return in.Vals
 }
 
 type PrefixMatch struct {
 	Field string
-	Value interface{}
+	Value any
 }
 
 func (w PrefixMatch) String(idx *int) string {
@@ -236,8 +236,8 @@ func (w PrefixMatch) String(idx *int) string {
 	return ret
 }
 
-func (w PrefixMatch) Values() []interface{} {
-	return []interface{}{w.Value}
+func (w PrefixMatch) Values() []any {
+	return []any{w.Value}
 }
 
 
@@ -445,7 +445,7 @@ func (f {{$fieldName}}Field) NotEqual(v {{.}}) Where {
 
 // In returns a WhereClause for this field.
 func (f {{$fieldName}}Field) In(vals ...{{.}}) InClause {
-	values := make([]interface{}, len(vals))
+	values := make([]any, len(vals))
 	for x := range vals {
 		values[x] = vals[x]
 	}
@@ -478,6 +478,6 @@ func (f {{$fieldName}}Field) IsNotNull() NullClause {
 {{end}}
 
 // InterfaceField is a component that returns a WhereClause that contains a
-// comparison based on its field and a strongly typed value.  Currently interface{} is not supported.
+// comparison based on its field and a strongly typed value.  Currently any is not supported.
 type InterfaceField string
 
