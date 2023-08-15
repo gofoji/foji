@@ -2,8 +2,6 @@ module github.com/gofoji/foji
 
 go 1.21
 
-exclude github.com/imdario/mergo v1.0.0
-
 require (
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/codemodus/kace v0.5.1
