@@ -6,8 +6,8 @@ import (
 )
 
 var (
-	paramSearch  = regexp.MustCompile(`@([[:alpha:]_][[:alnum:]_]+)(?:[\s)]|$)`)
-	paramReplace = `(@%s)([\s)]|$)`
+	paramSearch  = regexp.MustCompile(`@([[:alpha:]_][[:alnum:]_]+)(?:[\s,)]|$)`)
+	paramReplace = `(@%s)([\s,)]|$)`
 	paramFormat  = `$$%d`
 )
 
