@@ -20,25 +20,33 @@ type DB interface {
 
 type Repo struct {
 	db        DB
-	typeCache map[uint32]string
+	typeCache map[uint32]DataType
+}
+
+type DataType struct {
+	ID       uint32
+	Name     string
+	Nullable bool
 }
 
 func New(db DB) *Repo {
-	return &Repo{db: db, typeCache: map[uint32]string{}}
+	return &Repo{db: db, typeCache: map[uint32]DataType{}}
 }
 
-func (r *Repo) GetTypeNameByID(ctx context.Context, id uint32) (string, error) {
-	const qry = `select typname from pg_type where oid = $1`
-
+func (r *Repo) GetTypeNameByID(ctx context.Context, id uint32) (DataType, error) {
 	if result, ok := r.typeCache[id]; ok {
 		return result, nil
 	}
 
-	result := ""
+	const qry = `SELECT typname, NOT typnotnull AS nullable
+FROM pg_type
+WHERE oid = $1`
 
-	err := r.db.QueryRow(ctx, qry, id).Scan(&result)
+	result := DataType{ID: id}
+
+	err := r.db.QueryRow(ctx, qry, id).Scan(&result.Name, &result.Nullable)
 	if err != nil {
-		return "", fmt.Errorf("scan: %w", err)
+		return DataType{}, fmt.Errorf("GetTypeNameByID: %w", err)
 	}
 
 	r.typeCache[id] = result
@@ -69,7 +77,7 @@ func (r *Repo) DescribeQuery(ctx context.Context, q *sql.Query) error {
 			return fmt.Errorf("unable to locate data type: %d: %w", oid, err)
 		}
 
-		q.Params[i].Type = t
+		q.Params[i].Type = t.Name
 	}
 
 	q.Result.IsSingleTable = true
@@ -112,7 +120,7 @@ func (r *Repo) describeParam(ctx context.Context, q *sql.Query, f pgconn.FieldDe
 		return sql.Param{}, fmt.Errorf("unable to locate data type: %d: %w", f.DataTypeOID, err)
 	}
 
-	name := string(f.Name)
+	name := f.Name
 	if fields != nil && fields.ByName(name) != nil {
 		schema, tableName, err := r.GetTableNameByID(ctx, f.TableOID)
 		if err != nil {
@@ -129,7 +137,8 @@ func (r *Repo) describeParam(ctx context.Context, q *sql.Query, f pgconn.FieldDe
 		Ordinal:       i,
 		QueryPosition: i,
 		Name:          name,
-		Type:          t,
+		Type:          t.Name,
+		Nullable:      t.Nullable,
 		TypeID:        f.DataTypeOID,
 		Query:         q,
 	}

@@ -55,7 +55,9 @@ files:
     files:
       - "**/*.sql"
     filter:
+      - "db/schema.sql" # dbMate dump
       - "db/migrations/.*" # dbMate migrations
+      - ".*test/.*"
   api:
     files:
       - "openapi.yaml"
