@@ -2,8 +2,9 @@
     {{- $key := .RuntimeParams.key }}
     {{- $schema := .RuntimeParams.schema }}
     {{- $typeName := .RuntimeParams.typeName }}
+    {{- $isRequired := .RuntimeParams.isRequired }}
     {{- goDoc $schema.Value.Description }}
-    {{ pascal $key }} {{ $.GetType .PackageName (print $typeName " " $key) $schema }} `json:"{{$key}},omitempty"`
+    {{ pascal $key }} {{ $.GetType .PackageName (print $typeName " " $key) $schema }} `json:"{{$key}}{{- if not $isRequired }},omitempty{{- end }}"`
 {{- end -}}
 
 {{- define "enum"}}
@@ -85,8 +86,9 @@ func (e {{ $enumType }}) MarshalJSON() ([]byte, error) {
 
     {{- if in $schema.Value.Type "object" "" }}
 type {{ pascal $key }} struct {
-    {{- range $key, $schema := $.SchemaProperties $schema  false}}
-        {{- template "propertyDeclaration" ($.WithParams "key" $key "schema" $schema "typeName" $typeName)}}
+    {{- range $field, $schemaProp := $.SchemaProperties $schema false}}
+        {{- $isRequired := $.IsRequiredProperty $field $schema -}}
+        {{- template "propertyDeclaration" ($.WithParams "key" $field "schema" $schemaProp "typeName" $typeName "isRequired" $isRequired)}}
     {{- end }}
     {{- range $schema.Value.AllOf }}
         {{- if notEmpty .Ref }}
