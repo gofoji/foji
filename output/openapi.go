@@ -280,6 +280,11 @@ func (o *OpenAPIFileContext) IsDefaultEnum(name string, s *openapi3.SchemaRef) b
 	return !ok
 }
 
+// IsRequiredProperty helper that checks if a property is required.
+func (o *OpenAPIFileContext) IsRequiredProperty(name string, s *openapi3.SchemaRef) bool {
+	return slices.Contains(s.Value.Required, name)
+}
+
 func (o *OpenAPIFileContext) SchemaProperties(schema *openapi3.SchemaRef, includeRefs bool) openapi3.Schemas {
 	out := openapi3.Schemas{}
 
