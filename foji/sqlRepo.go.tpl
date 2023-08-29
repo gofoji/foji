@@ -27,17 +27,17 @@ type {{$resultType}} struct {
 {{- goDoc .Comment}}
 func (r Repo) {{ .Name }}(ctx context.Context{{if gt (len .Params) 0}}, {{end -}}
 	{{ $.Parameterize .Params.ByOrdinal "%s %s" $.PackageName }}) ({{ if .IsType "query" "arrayBasic" }}[]{{ end -}}
-	{{if not (isGoType .Result.Type)}}*{{end}}{{$resultType}}, error) {
+	{{$resultType}}, error) {
 	const query = `{{ backQuote .SQL }}`
 
 {{- if .IsType "query" }}
 
-	q, err := r.db.Query(ctx, query{{if gt (len .Params) 0}}, {{ csv (.Params.ByQuery.Names.Camel)}}{{end}})
+	q, err := r.db.QueryContext(ctx, query{{if gt (len .Params) 0}}, {{ csv (.Params.ByQuery.Names.Camel)}}{{end}})
 	if err != nil {
 		return nil, fmt.Errorf("{{.Name}}.Query:%w", err)
 	}
 
-	var out []{{if not (isGoType .Result.Type)}}*{{end}}{{$resultType}}
+	var out []{{$resultType}}
 
 	for q.Next() {
 		row := {{ $resultType }}{}
@@ -46,7 +46,7 @@ func (r Repo) {{ .Name }}(ctx context.Context{{if gt (len .Params) 0}}, {{end -}
 			return nil, fmt.Errorf("{{.Name}}.Scan:%w", err)
 		}
 
-		out = append(out, &row)
+		out = append(out, row)
 	}
 
 	return out, nil
@@ -57,7 +57,7 @@ func (r Repo) {{ .Name }}(ctx context.Context{{if gt (len .Params) 0}}, {{end -}
 		return nil, fmt.Errorf("{{.Name}}.Query:%w", err)
 	}
 
-	var out []{{if not (isGoType .Result.Type)}}*{{end}}{{$resultType}}
+	var out []{{$resultType}}
 
 	for q.Next() {
 		var row {{ $resultType }}
