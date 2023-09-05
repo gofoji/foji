@@ -32,7 +32,7 @@ func (r Repo) {{ .Name }}(ctx context.Context{{if gt (len .Params) 0}}, {{end -}
 
 {{- if .IsType "query" }}
 
-	q, err := r.db.QueryContext(ctx, query{{if gt (len .Params) 0}}, {{ csv (.Params.ByQuery.Names.Camel)}}{{end}})
+	q, err := r.db.Query(ctx, query{{if gt (len .Params) 0}}, {{ csv (.Params.ByQuery.Names.Camel)}}{{end}})
 	if err != nil {
 		return nil, fmt.Errorf("{{.Name}}.Query:%w", err)
 	}
