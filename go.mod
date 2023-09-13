@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/codemodus/kace v0.5.1
-	github.com/getkin/kin-openapi v0.119.0
+	github.com/getkin/kin-openapi v0.120.0
 	github.com/gofoji/plates v0.3.2
 	github.com/gofoji/plates/plush v0.3.3
 	github.com/jackc/pgx/v5 v5.4.3

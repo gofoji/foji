@@ -52,6 +52,8 @@
             {{- $getRequiredParamFunction = "GetInt64" -}}
         {{- else if eq $goType "time.Time" }}
             {{- $getRequiredParamFunction = "GetTime" -}}
+		{{- else if eq $goType "uuid.UUID" }}
+			{{- $getRequiredParamFunction = "GetUUID" -}}
         {{- else if $isEnum }}
             {{- $getRequiredParamFunction = "GetEnum" -}}
         {{- else }}

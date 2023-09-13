@@ -1,0 +1,136 @@
+openapi: 3.0.3
+info:
+  version: v0
+  title: Test
+tags:
+  - name: Examples
+paths:
+  /examples:
+    get:
+      operationId: getExamples
+      responses:
+        "200":
+          description: 'Examples'
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Examples"
+  /examples/key1/{k1}/key2/{k2}/key3/{k3}/key4/{key4}/key5/{key5}:
+    get:
+      operationId: getExampleParams
+      parameters:
+        - name: k1
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: k2
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: k3
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: k4
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+        - name: k5
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: 'Example'
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Example"
+  /examples/query:
+    get:
+      operationId: getExampleQuery
+      parameters:
+        - name: k1
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: k2
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: k3
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: k4
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int32
+        - name: k5
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: 'Example'
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Example"
+
+components:
+  parameters:
+    IdParam:
+      name: id
+      in: path
+      description: id
+      required: true
+      schema:
+        type: string
+        format: uuid
+    NameParam:
+      name: name
+      in: path
+      description: name
+      required: true
+      schema:
+        type: string
+  schemas:
+    Examples:
+      type: object
+      properties:
+        list:
+          type: array
+          items:
+            $ref: "#/components/schemas/Example"
+      required:
+        - list
+
+    Example:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+      required:
+        - id

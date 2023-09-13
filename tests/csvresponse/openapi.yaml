@@ -34,3 +34,16 @@ paths:
               schema:
                 type: string
                 x-go-type: io.Reader
+
+components:
+  schemas:
+    Example:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+      required:
+        - id

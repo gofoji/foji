@@ -1,0 +1,11 @@
+files:
+  api:
+    files:
+      - "tests/example/openapi.yaml"
+processes:
+  openAPI:
+    params:
+      Package: foji/tests/example
+    OpenAPIFile:
+      'tests/example/http_handler_gen.go': foji/openapi/handler.go.tpl
+      'tests/example/model_gen.go': foji/openapi/model.go.tpl

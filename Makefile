@@ -15,6 +15,7 @@ test:
 
 test_gen:
 	go run main.go weld openAPI -c tests/csvresponse/foji.yaml
+	go run main.go weld openAPI -c tests/example/foji.yaml
 	cd tests; go run tests_main.go
 
 cover:
