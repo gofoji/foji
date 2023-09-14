@@ -8,3 +8,4 @@ processes:
       Package: foji/tests/csvresponse
     OpenAPIFile:
       'tests/csvresponse/http_handler_gen.go': foji/openapi/handler.go.tpl
+      'tests/csvresponse/model_gen.go': foji/openapi/model.go.tpl
