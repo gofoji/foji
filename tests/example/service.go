@@ -17,6 +17,10 @@ func (s *Service) GetExampleParams(ctx context.Context, k1 string, k2 uuid.UUID,
 	return nil, nil
 }
 
+func (s *Service) GetExampleOptional(ctx context.Context, k1 *string, k2 *uuid.UUID, k3 *time.Time, k4 *int32, k5 *int64) (*Example, error) {
+	return nil, nil
+}
+
 func (s *Service) GetExampleQuery(ctx context.Context, k1 string, k2 uuid.UUID, k3 time.Time, k4 int32, k5 int64) (*Example, error) {
 	return nil, nil
 }

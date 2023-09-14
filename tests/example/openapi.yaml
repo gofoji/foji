@@ -95,6 +95,41 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Example"
+  /examples/optional:
+    get:
+      operationId: getExampleOptional
+      parameters:
+        - name: k1
+          in: query
+          schema:
+            type: string
+        - name: k2
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: k3
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: k4
+          in: query
+          schema:
+            type: integer
+            format: int32
+        - name: k5
+          in: query
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: 'Example'
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Example"
 
 components:
   parameters:
