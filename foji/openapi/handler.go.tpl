@@ -5,12 +5,12 @@
     {{- $package := .RuntimeParams.package -}}
     {{- if not (empty ($.OpSecurity $op)) }} user *{{ $.CheckPackage $.Params.Auth $package -}},{{- end }}
     {{- range $param := $.OpParams $path $op -}}
-		{{- $name := (print $op.OperationID " " $param.Value.Name) -}}
-        {{ goToken (camel $param.Value.Name) -}}
+		{{ $typeName := (print $op.OperationID " " $param.Value.In " " $param.Value.Name) -}}
 		{{- if notEmpty $param.Ref -}}
-			{{- $name = $param.Value.Name -}}
+			{{- $typeName = trimPrefix "#/components/parameters/" $param.Ref -}}
 		{{- end -}}
-        {{- if $.ParamIsOptionalType $param }} *{{ end }} {{ $.GetType $package $name $param.Value.Schema }},
+        {{ goToken (camel $param.Value.Name) -}}
+        {{- if $.ParamIsOptionalType $param }} *{{ end }} {{ $.GetType $package $typeName $param.Value.Schema }},
     {{- end -}}
     {{- if isNotNil $body}}
         {{- $type := $.GetType $package (print $op.OperationID "Request") $body.Schema }} body {{ $type  -}}
@@ -25,14 +25,15 @@
     {{- $op := .RuntimeParams.op }}
     {{- $param := .RuntimeParams.param }}
     {{- $package := .RuntimeParams.package }}
-    {{- $goType := $.GetType $package (print $op.OperationID " " $param.Value.Name) $param.Value.Schema }}
+	{{- $isEnum := $.ParamIsEnum $param }}
+	{{ $typeName := (print $op.OperationID " " $param.Value.In " " $param.Value.Name) -}}
 	{{- if notEmpty $param.Ref -}}
-        {{- $goType = $.GetType $package $param.Value.Name $param.Value.Schema  }}
+		{{- $typeName = trimPrefix "#/components/parameters/" $param.Ref -}}
 	{{- end -}}
+    {{- $goType := $.GetType $package $typeName $param.Value.Schema }}
     {{- $enumNew := $.EnumNew $goType }}
     {{- $required := $param.Value.Required }}
     {{- $hasDefault := isNotNil $param.Value.Schema.Value.Default }}
-    {{- $isEnum := $.ParamIsEnum $param }}
     {{- $isArrayEnum := $.ParamIsEnumArray $param }}
     {{- $getRequiredParamFunction := "" -}}
     {{- if eq $param.Value.Schema.Value.Type "array" -}}
@@ -87,8 +88,11 @@
 
 
 	{{- else if $hasDefault }}
-	{{ goToken (camel $param.Value.Name) }}, ok, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", {{ $required }}
-    {{- if $isEnum -}}, {{ $enumNew  }}{{- end -}})
+	{{- if $isEnum -}}
+		{{ goToken (camel $param.Value.Name) }}, ok, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", {{ $required }}, {{ $enumNew  }}
+	{{else -}}
+		{{ goToken (camel $param.Value.Name) }}, ok, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", {{ $required }})
+	{{- end -}})
 	if err != nil {
 		validationErrors.Add("{{ $param.Value.Name }}", err)
 	} else if !ok {

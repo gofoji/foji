@@ -84,7 +84,11 @@ func (e {{ $enumType }}) MarshalJSON() ([]byte, error) {
 //
 // OpenAPI {{$label}}: {{ $key }}
 
-    {{- if in $schema.Value.Type "object" "" }}
+    {{- if $.IsDefaultEnum $key $schema }}
+        {{- $label := .RuntimeParams.label }}
+        {{- template "enum" ($.WithParams "name" $key "schema" $schema "description" (print $label " : " $key ))}}
+
+    {{- else if in $schema.Value.Type "object" "" }}
 type {{ pascal $key }} struct {
     {{- range $field, $schemaProp := $.SchemaProperties $schema false}}
         {{- $isRequired := $.IsRequiredProperty $field $schema -}}
@@ -110,7 +114,9 @@ type {{ pascal $key }} {{ $.GetType $.PackageName (pascal (print $typeName " Ite
             {{- end -}}
         {{- else if eq $schema.Value.Type "array"}}
             {{- if empty $schema.Value.Items.Ref -}}
-                {{- if not (empty ($.SchemaProperties $schema.Value.Items false ))}}
+                {{- $isEnumItem := $.IsDefaultEnum $key $schema.Value.Items }}
+                {{- $hasProperties := not (empty ($.SchemaProperties $schema.Value.Items false )) }}
+                {{- if or $isEnumItem $hasProperties}}
                     {{- template "typeDeclaration" ($.WithParams "key" (pascal (print $typeName " " $key)) "schema" $schema.Value.Items "label" (print  $typeName " inline item " $key))}}
                 {{- end }}
             {{- end }}
@@ -119,7 +125,9 @@ type {{ pascal $key }} {{ $.GetType $.PackageName (pascal (print $typeName " Ite
         {{- /* Nested Arrays */}}
     {{- if eq $schema.Value.Type "array"}}
         {{- if empty $schema.Value.Items.Ref -}}
-            {{- if not (empty ($.SchemaProperties $schema.Value.Items false ))}}
+            {{- $isEnumItem := $.IsDefaultEnum $key $schema.Value.Items }}
+            {{- $hasProperties := not (empty ($.SchemaProperties $schema.Value.Items false )) }}
+            {{- if or $isEnumItem $hasProperties}}
                 {{- template "typeDeclaration" ($.WithParams "key" (pascal (print $typeName " Item" )) "schema" $schema.Value.Items "label" (print  $typeName " inline item " $key))}}
             {{- end }}
         {{- end }}
@@ -301,7 +309,7 @@ var ErrMissingRequiredField = errors.New("missing required field")
 // Component Parameters
 
 {{ range $key, $param := .ComponentParameters }}
-        {{- template "paramDeclaration" ($.WithParams "param" $param "name" "" "label" "Component Parameter: ")}}
+        {{- template "paramDeclaration" ($.WithParams "param" $param "name" $key "label" "Component Parameter: ")}}
 {{- end }}
 
 {{- define "paramDeclaration"}}
@@ -309,9 +317,9 @@ var ErrMissingRequiredField = errors.New("missing required field")
     {{- $name := .RuntimeParams.name }}
     {{- $label := .RuntimeParams.label }}
     {{- if empty $param.Ref -}}
-        {{- template "enum" ($.WithParams "name" (print $name " " $param.Value.Name) "schema" $param.Value.Schema "description" (print $param.Value.Description "\n" $label $param.Value.Name ))}}
+        {{- template "enum" ($.WithParams "name" $name "schema" $param.Value.Schema "description" (print $param.Value.Description "\n" $label $param.Value.Name ))}}
         {{- if eq $param.Value.Schema.Value.Type "array"}}
-            {{- template "enum" ($.WithParams "name" (print $name " " $param.Value.Name) "schema" $param.Value.Schema.Value.Items "description" (print $label $param.Value.Name " Item"))}}
+            {{- template "enum" ($.WithParams "name" $name "schema" $param.Value.Schema.Value.Items "description" (print $label $param.Value.Name " Item"))}}
         {{- end }}
     {{- end -}}
 {{- end }}
@@ -337,7 +345,7 @@ var ErrMissingRequiredField = errors.New("missing required field")
 
         {{- /* Inline Params */ -}}
         {{- range $param := $.OpParams $path $op }}
-            {{- template "paramDeclaration" ($.WithParams "param" $param "name" $op.OperationID "label" (print "Op: " $op.OperationID " Param: "))}}
+            {{- template "paramDeclaration" ($.WithParams "param" $param "name" (print $op.OperationID " " $param.Value.In " " $param.Value.Name) "label" (print "Op: " $op.OperationID " Param: "))}}
         {{- end }}
     {{- end }}
 {{- end }}

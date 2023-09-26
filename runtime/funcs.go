@@ -44,6 +44,8 @@ var Funcs = map[string]any{
 	"strIndex":     strings.Index,
 	"trimLeft":     strings.TrimLeft,
 	"trimRight":    strings.TrimRight,
+	"trimPrefix":   strings.TrimPrefix,
+	"trimSuffix":   strings.TrimSuffix,
 
 	// Inflection
 	"pluralName":       inflection.Plural,
