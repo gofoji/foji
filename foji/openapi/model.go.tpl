@@ -345,7 +345,7 @@ var ErrMissingRequiredField = errors.New("missing required field")
 
         {{- /* Inline Params */ -}}
         {{- range $param := $.OpParams $path $op }}
-            {{- template "paramDeclaration" ($.WithParams "param" $param "name" (print $op.OperationID " " $param.Value.In " " $param.Value.Name) "label" (print "Op: " $op.OperationID " Param: "))}}
+            {{- template "paramDeclaration" ($.WithParams "param" $param "name" (print $op.OperationID " " $param.Value.Name) "label" (print "Op: " $op.OperationID " Param: "))}}
         {{- end }}
     {{- end }}
 {{- end }}

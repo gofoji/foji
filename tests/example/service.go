@@ -25,6 +25,6 @@ func (s *Service) GetExampleQuery(ctx context.Context, k1 string, k2 uuid.UUID, 
 	return nil, nil
 }
 
-func (s *Service) GetTest(ctx context.Context, vehicle GetTestQueryVehicle, playerID uuid.UUID, color ColorQuery, season Season) (*Example, error) {
+func (s *Service) GetTest(ctx context.Context, vehicle GetTestVehicle, playerID uuid.UUID, color ColorQuery, season Season) (*Example, error) {
 	return nil, nil
 }

@@ -5,7 +5,7 @@
     {{- $package := .RuntimeParams.package -}}
     {{- if not (empty ($.OpSecurity $op)) }} user *{{ $.CheckPackage $.Params.Auth $package -}},{{- end }}
     {{- range $param := $.OpParams $path $op -}}
-		{{ $typeName := (print $op.OperationID " " $param.Value.In " " $param.Value.Name) -}}
+		{{ $typeName := (print $op.OperationID " " $param.Value.Name) -}}
 		{{- if notEmpty $param.Ref -}}
 			{{- $typeName = trimPrefix "#/components/parameters/" $param.Ref -}}
 		{{- end -}}
@@ -26,7 +26,7 @@
     {{- $param := .RuntimeParams.param }}
     {{- $package := .RuntimeParams.package }}
 	{{- $isEnum := $.ParamIsEnum $param }}
-	{{ $typeName := (print $op.OperationID " " $param.Value.In " " $param.Value.Name) -}}
+	{{ $typeName := (print $op.OperationID " " $param.Value.Name) -}}
 	{{- if notEmpty $param.Ref -}}
 		{{- $typeName = trimPrefix "#/components/parameters/" $param.Ref -}}
 	{{- end -}}

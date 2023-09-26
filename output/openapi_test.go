@@ -36,7 +36,7 @@ func TestGetType(t *testing.T) {
 		{"EmptyAlias", "local", "myOverride"},
 		{"Foo.bad", "local", "INVALID x-go-type: map[foo:bar]"},
 		{"Foo", "local", "Foo"},
-		{"Complex.status", "local", "ComplexStatusEnum"},
+		{"Complex.status", "local", "ComplexStatus"},
 		{"Complex.main", "local", "Main"},
 		{"Complex.nests", "local", "[]Nest"},
 		{"Complex", "local", "Complex"},
