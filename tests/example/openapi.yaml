@@ -123,6 +123,12 @@ paths:
           schema:
             type: integer
             format: int64
+        - name: k5Default
+          in: query
+          schema:
+            type: integer
+            format: int64
+            default: 1
       responses:
         "200":
           description: 'Example'
@@ -143,8 +149,19 @@ paths:
               - car
               - truck
               - bike
+        - name: vehicleDefault
+          in: query
+          required: true
+          schema:
+            type: string
+            default: car
+            enum:
+              - car
+              - truck
+              - bike
         - $ref: "#/components/parameters/PlayerIdQuery"
         - $ref: "#/components/parameters/ColorQuery"
+        - $ref: "#/components/parameters/ColorQueryDefault"
         - $ref: "#/components/parameters/SeasonQuery"
       responses:
         "200":
@@ -184,6 +201,17 @@ components:
       required: true
       schema:
         type: string
+        enum:
+          - red
+          - green
+          - blue
+    ColorQueryDefault:
+      name: colorDefault
+      in: query
+      required: true
+      schema:
+        type: string
+        default: red
         enum:
           - red
           - green
