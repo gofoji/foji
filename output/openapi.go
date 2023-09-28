@@ -188,7 +188,7 @@ func (o *OpenAPIFileContext) GetType(currentPackage, name string, s *openapi3.Sc
 
 func (o *OpenAPIFileContext) EnumName(name string) string {
 	// TODO: Support override via template
-	return o.PackageName() + "." + kace.Pascal(name) + "Enum"
+	return o.PackageName() + "." + kace.Pascal(name)
 }
 
 func (o *OpenAPIFileContext) EnumNew(name string) string {

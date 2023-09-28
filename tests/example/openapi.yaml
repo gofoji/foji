@@ -130,6 +130,29 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Example"
+  /examples/test:
+    get:
+      operationId: getTest
+      parameters:
+        - name: vehicle
+          in: query
+          required: true
+          schema:
+            type: string
+            enum:
+              - car
+              - truck
+              - bike
+        - $ref: "#/components/parameters/PlayerIdQuery"
+        - $ref: "#/components/parameters/ColorQuery"
+        - $ref: "#/components/parameters/SeasonQuery"
+      responses:
+        "200":
+          description: 'Example'
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Example"
 
 components:
   parameters:
@@ -148,6 +171,29 @@ components:
       required: true
       schema:
         type: string
+    PlayerIdQuery:
+      name: playerId
+      in: query
+      description: playerId
+      required: true
+      schema:
+        $ref: "#/components/schemas/PlayerId"
+    ColorQuery:
+      name: color
+      in: query
+      required: true
+      schema:
+        type: string
+        enum:
+          - red
+          - green
+          - blue
+    SeasonQuery:
+      name: season
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/Season"
   schemas:
     Examples:
       type: object
@@ -167,5 +213,94 @@ components:
           format: uuid
         name:
           type: string
+        playerId:
+          $ref: "#/components/schemas/PlayerId"
+
       required:
         - id
+
+    PlayerId:
+      type: string
+      format: uuid
+
+    Season:
+      type: string
+      enum:
+        - spring
+        - summer
+        - fall
+        - winter
+
+#test out nested types
+    XArrayEnum:
+      type: array
+      items:
+        type: string
+        enum:
+          - option_a
+          - option_b
+          - option_c
+
+
+    XArrayObjectEnum:
+      type: array
+      items:
+        type: object
+        properties:
+          options:
+            type: string
+            enum:
+              - option_a
+              - option_b
+              - option_c
+
+    XArrayObjectArrayEnum:
+      type: array
+      items:
+        type: object
+        properties:
+          list:
+            type: array
+            items:
+              type: string
+              enum:
+                - option_a
+                - option_b
+                - option_c
+
+    XObjectEnum:
+      type: object
+      properties:
+        options:
+          type: string
+          enum:
+            - option_a
+            - option_b
+            - option_c
+
+    XObjectArrayEnum:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: string
+            enum:
+              - option_a
+              - option_b
+              - option_c
+
+    XObjectArrayObjectEnum:
+      type: object
+      properties:
+        list:
+          type: array
+          items:
+            type: object
+            properties:
+              options:
+                type: string
+                enum:
+                  - option_a
+                  - option_b
+                  - option_c
