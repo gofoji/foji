@@ -89,10 +89,10 @@
 
 	{{- else if $hasDefault }}
 	{{- if $isEnum -}}
-		{{ goToken (camel $param.Value.Name) }}, ok, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", {{ $required }}, {{ $enumNew  }}
+		{{ goToken (camel $param.Value.Name) }}, ok, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", {{ $required }}, {{ $enumNew  }})
 	{{else -}}
 		{{ goToken (camel $param.Value.Name) }}, ok, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", {{ $required }})
-	{{- end -}})
+	{{- end }}
 	if err != nil {
 		validationErrors.Add("{{ $param.Value.Name }}", err)
 	} else if !ok {
