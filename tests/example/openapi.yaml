@@ -247,6 +247,8 @@ components:
           type: string
           format: uuid
           nullable: true
+        playerAlways:
+          $ref: "#/components/schemas/PlayerAlways"
         playerMaybe:
           $ref: "#/components/schemas/PlayerMaybe"
       required:
@@ -255,6 +257,14 @@ components:
     PlayerId:
       type: string
       format: uuid
+
+    PlayerAlways:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/PlayerId"
+      required:
+        - id
 
     PlayerMaybe:
       type: object
