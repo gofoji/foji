@@ -4,7 +4,12 @@
     {{- $typeName := .RuntimeParams.typeName }}
     {{- $isRequired := .RuntimeParams.isRequired }}
     {{- goDoc $schema.Value.Description }}
-    {{ pascal $key }} {{ $.GetType .PackageName (print $typeName " " $key) $schema }} `json:"{{$key}}{{- if not $isRequired }},omitempty{{- end }}"`
+    {{- $type := $.GetType .PackageName (print $typeName " " $key) $schema }}
+    {{- if $isRequired }}
+        {{ pascal $key }} {{ $type }} `json:"{{$key}}"`
+    {{- else }}
+        {{ pascal $key }} {{ if $schema.Value.Nullable }}*{{ end }}{{ $type }} `json:"{{$key}},omitempty"`
+    {{- end }}
 {{- end -}}
 
 {{- define "enum"}}

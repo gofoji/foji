@@ -243,13 +243,27 @@ components:
           type: string
         playerId:
           $ref: "#/components/schemas/PlayerId"
-
+        idMaybe:
+          type: string
+          format: uuid
+          nullable: true
+        playerMaybe:
+          $ref: "#/components/schemas/PlayerMaybe"
       required:
         - id
 
     PlayerId:
       type: string
       format: uuid
+
+    PlayerMaybe:
+      type: object
+      nullable: true
+      properties:
+        id:
+          $ref: "#/components/schemas/PlayerId"
+      required:
+        - id
 
     Season:
       type: string
