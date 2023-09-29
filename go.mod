@@ -10,7 +10,7 @@ require (
 	github.com/gofoji/plates/plush v0.3.3
 	github.com/jackc/pgx/v5 v5.4.3
 	github.com/jinzhu/inflection v1.0.0
-	github.com/rs/zerolog v1.30.0
+	github.com/rs/zerolog v1.31.0
 	github.com/spf13/cobra v1.7.0
 	github.com/stretchr/testify v1.8.4
 	github.com/yoheimuta/go-protoparser/v4 v4.9.0
