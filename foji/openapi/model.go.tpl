@@ -255,7 +255,7 @@ func (p {{ pascal $key }}) Validate() error {
                 {{- end }}
                 {{- if notEmpty $schema.Value.Pattern }}
 
-    if p.{{ pascal $key }} != "" && !{{ camel $typeName }}{{ pascal $key }}Pattern.MatchString( p.{{ pascal $key }})  {
+    if p.{{ pascal $key }} != {{ if $schema.Value.Nullable }}nil{{ else }}""{{ end }} && !{{ camel $typeName }}{{ pascal $key }}Pattern.MatchString({{ if $schema.Value.Nullable }}*{{ end }}p.{{ pascal $key }})  {
         _ = err.Add("{{$key}}", `must match "{{ $schema.Value.Pattern }}"`)
     }
                 {{- end }}
