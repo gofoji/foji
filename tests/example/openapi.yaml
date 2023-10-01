@@ -346,8 +346,6 @@ components:
           $ref: "#/components/schemas/State"
         subStateMaybe:
           $ref: "#/components/schemas/State"
-
-
       required:
         - stateAlways
         - subObject
@@ -365,7 +363,6 @@ components:
       nullable: true
       minLength: 2
       maxLength: 10
-
 
     SubPattern:
       nullable: true
