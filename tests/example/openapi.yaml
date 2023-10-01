@@ -263,17 +263,6 @@ components:
       properties:
         id:
           $ref: "#/components/schemas/PlayerId"
-        state:
-          pattern: (enabled|disabled)
-          type: string
-          nullable: true
-        state2:
-          pattern: (enabled|disabled)
-          type: string
-        state3:
-          type: string
-          default: completed
-          nullable: true
       required:
         - id
 
