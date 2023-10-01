@@ -77,6 +77,101 @@ func (e {{ $enumType }}) MarshalJSON() ([]byte, error) {
 {{ end -}}
 {{- end -}}
 
+{{- define "validateField"}}
+    {{- $fieldName := .RuntimeParams.fieldName }}
+    {{- $schema := .RuntimeParams.schema }}
+    {{- $typeName := .RuntimeParams.typeName }}
+    {{- $isPointer := .RuntimeParams.isPointer }}
+
+    {{- $fieldType := $.GetType $.PackageName "" $schema }}
+    {{- $pascalField := "" -}}
+    {{- $fieldDot := "p" -}}
+    {{- if notEmpty $fieldName -}}
+        {{- $fieldType = $.GetType $.PackageName $fieldName $schema }}
+        {{- $pascalField = pascal $fieldName -}}
+        {{- $fieldDot = print "p." $pascalField -}}
+    {{- end -}}
+    {{- $fieldDeref := $fieldDot -}}
+    {{- if $isPointer -}}
+        {{- $fieldDeref = print "*" $fieldDot -}}
+    {{- end -}}
+
+    {{- if or (notEmpty $schema.Ref)  (eq $schema.Value.Type "object") }}
+        {{ if $.HasValidation $schema }}
+            {{ if $isPointer }}
+                if {{$fieldDot}} != nil {
+                    if subErr := {{ $fieldDot }}.Validate(); subErr != nil {
+                        _ = err.Add("{{ $fieldName }}", subErr)
+                    }
+                }
+            {{ else }}
+                if subErr := {{ $fieldDot }}.Validate(); subErr != nil {
+                    _ = err.Add("{{ $fieldName }}", subErr)
+                }
+            {{ end }}
+        {{- end -}}
+    {{- else if eq $schema.Value.Type "array" }}
+        {{- if gt $schema.Value.MinItems 0 }}
+
+            if len({{ $fieldDeref }}) < {{ $schema.Value.MinItems }} {
+            _ = err.Add("{{$fieldName}}", "length must be >= {{ $schema.Value.MinItems }}")
+            }
+        {{- end }}
+        {{- if isNotNil $schema.Value.MaxItems }}
+
+            if len({{ $fieldDeref }}) > {{ $schema.Value.MaxItems }} {
+            _ = err.Add("{{$fieldName}}", "length must be <= {{ $schema.Value.MaxItems }}")
+            }
+        {{- end }}
+    {{- else if in $schema.Value.Type "number" "integer" }}
+        {{- if isNotNil $schema.Value.Min }}
+
+    if  {{ $fieldDeref }} <{{ if $schema.Value.ExclusiveMin }}={{end}} {{ $schema.Value.Min }} {
+        _ = err.Add("{{$fieldName}}", "must be >{{ if not $schema.Value.ExclusiveMin }}={{end}} {{ $schema.Value.Min }}")
+    }
+        {{- end }}
+        {{- if isNotNil $schema.Value.Max }}
+
+    if {{ $fieldDeref }} >{{ if $schema.Value.ExclusiveMax }}={{end}} {{ $schema.Value.Max }} {
+        _ = err.Add("{{$fieldName}}", "must be <{{ if not $schema.Value.ExclusiveMax }}={{end}} {{ $schema.Value.Max }}")
+    }
+        {{- end }}
+        {{- if isNotNil $schema.Value.MultipleOf }}
+            {{- if eq $schema.Value.Type "integer" }}
+
+    if {{ $fieldDeref }} % {{ $schema.Value.MultipleOf }} != 0 {
+        _ = err.Add("{{$fieldName}}", "must be multiple of {{ $schema.Value.MultipleOf }}")
+    }
+            {{- else }}
+
+    if math.Mod({{ if not (eq $fieldType "float64") }}float64({{ end }}{{ $fieldDeref }}{{ if not (eq $fieldType "float64") }}){{end}}, {{ $schema.Value.MultipleOf }}) != 0 {
+        _ = err.Add("{{$fieldName}}", "must be multiple of {{ $schema.Value.MultipleOf }}")
+    }
+            {{- end }}
+        {{- end }}
+    {{- else if eq $schema.Value.Type "string" }}
+        {{- if gt $schema.Value.MinLength 0 }}
+
+    if len({{ $fieldDeref }}) < {{ $schema.Value.MinLength }} {
+        _ = err.Add("{{$fieldName}}", "length must be >= {{ $schema.Value.MinLength }}")
+    }
+        {{- end }}
+        {{- if isNotNil $schema.Value.MaxLength }}
+
+    if len({{ $fieldDeref }}) > {{ $schema.Value.MaxLength }} {
+        _ = err.Add("{{$fieldName}}", "length must be <= {{ $schema.Value.MaxLength }}")
+    }
+        {{- end }}
+        {{- if notEmpty $schema.Value.Pattern }}
+
+    if {{ $fieldDeref }} != "" && !{{ camel $typeName }}{{ $pascalField }}Pattern.MatchString(string({{ $fieldDeref }}))  {
+        _ = err.Add("{{$fieldName}}", `must match "{{ $schema.Value.Pattern }}"`)
+    }
+        {{- end }}
+    {{- end }}
+{{- end -}}
+
+
 {{- define "typeDeclaration"}}
 {{ $schema := .RuntimeParams.schema }}
 {{- $key := .RuntimeParams.key }}
@@ -111,18 +206,20 @@ type {{ pascal $key }} struct {
 type {{ pascal $key }} {{ $.GetType $.PackageName (pascal (print $typeName " Item" )) $schema }}
     {{- end }}
 
+{{- $hasValidation := $.HasValidation $schema -}}
+
 {{- /* Nested Types */}}
-    {{- range $key, $schema := $.SchemaProperties $schema false }}
-        {{- if not (empty $schema.Value.Properties )}}
-            {{- if empty $schema.Ref -}}
-                {{- template "typeDeclaration" ($.WithParams "key" (pascal (print $typeName " " $key)) "schema" $schema "label" (print  $typeName " inline " $key))}}
+    {{- range $key, $schemaProp := $.SchemaProperties $schema false }}
+        {{- if not (empty $schemaProp.Value.Properties )}}
+            {{- if empty $schemaProp.Ref -}}
+                {{- template "typeDeclaration" ($.WithParams "key" (pascal (print $typeName " " $key)) "schema" $schemaProp "label" (print  $typeName " inline " $key))}}
             {{- end -}}
-        {{- else if eq $schema.Value.Type "array"}}
-            {{- if empty $schema.Value.Items.Ref -}}
-                {{- $isEnumItem := $.IsDefaultEnum $key $schema.Value.Items }}
-                {{- $hasProperties := not (empty ($.SchemaProperties $schema.Value.Items false )) }}
+        {{- else if eq $schemaProp.Value.Type "array"}}
+            {{- if empty $schemaProp.Value.Items.Ref -}}
+                {{- $isEnumItem := $.IsDefaultEnum $key $schemaProp.Value.Items }}
+                {{- $hasProperties := not (empty ($.SchemaProperties $schemaProp.Value.Items false )) }}
                 {{- if or $isEnumItem $hasProperties}}
-                    {{- template "typeDeclaration" ($.WithParams "key" (pascal (print $typeName " " $key)) "schema" $schema.Value.Items "label" (print  $typeName " inline item " $key))}}
+                    {{- template "typeDeclaration" ($.WithParams "key" (pascal (print $typeName " " $key)) "schema" $schemaProp.Value.Items "label" (print  $typeName " inline item " $key))}}
                 {{- end }}
             {{- end }}
         {{- end }}
@@ -139,18 +236,20 @@ type {{ pascal $key }} {{ $.GetType $.PackageName (pascal (print $typeName " Ite
     {{- end }}
 
 {{- /*    Regex Validation Patterns */ -}}
-    {{- range $key, $schema := $.SchemaProperties $schema false}}
-        {{- if notEmpty $schema.Value.Pattern }}
-var {{ camel $typeName }}{{ pascal $key }}Pattern = regexp.MustCompile(`{{ $schema.Value.Pattern }}`)
+    {{- range $key, $schemaProp := $.SchemaProperties $schema false}}
+        {{- if notEmpty $schemaProp.Value.Pattern }}
+var {{ camel $typeName }}{{ pascal $key }}Pattern = regexp.MustCompile(`{{ $schemaProp.Value.Pattern }}`)
         {{- end}}
     {{- end }}
+    {{- if and $hasValidation (notEmpty $schema.Value.Pattern) }}
+var {{ camel $key }}Pattern = regexp.MustCompile(`{{ $schema.Value.Pattern }}`)
+    {{ end }}
 
 {{- /*    Enums */}}
-    {{- range $key, $schema := $.SchemaEnums $schema }}
-        {{- template "enum" ($.WithParams "name" (print $typeName " " $key) "schema" $schema "description" (print $label " : " $key ))}}
+    {{- range $key, $schemaEnum := $.SchemaEnums $schema }}
+        {{- template "enum" ($.WithParams "name" (print $typeName " " $key) "schema" $schemaEnum "description" (print $label " : " $key ))}}
     {{- end -}}
 
-{{- $hasValidation := $.HasValidation $schema -}}
 {{- if or $hasValidation  $schema.Value.Required }}
 
 func (p *{{ pascal $key }}) UnmarshalJSON(b []byte) error {
@@ -209,81 +308,38 @@ func (p {{ pascal $key }}) MarshalJSON() ([]byte, error) {
     {{ end }}
 {{end}}
 
-    {{- if $.HasValidation $schema }}
+    {{- if $hasValidation }}
+        {{- if not (empty $schema.Value.Properties )}}
 func (p {{ pascal $key }}) Validate() error {
     var err validation.Errors
-        {{- range $key, $schema := $.SchemaProperties $schema true }}
-            {{- if in $schema.Value.Type "number" "integer" }}
-                {{- $fieldType := $.GetType $.PackageName $key $schema }}
-                {{- if isNotNil $schema.Value.Min }}
-
-    if p.{{ pascal $key }} <{{ if $schema.Value.ExclusiveMin }}={{end}} {{ $schema.Value.Min }} {
-        _ = err.Add("{{$key}}", "must be >{{ if not $schema.Value.ExclusiveMin }}={{end}} {{ $schema.Value.Min }}")
-    }
-                {{- end }}
-                {{- if isNotNil $schema.Value.Max }}
-
-    if p.{{ pascal $key }} >{{ if $schema.Value.ExclusiveMax }}={{end}} {{ $schema.Value.Max }} {
-        _ = err.Add("{{$key}}", "must be <{{ if not $schema.Value.ExclusiveMax }}={{end}} {{ $schema.Value.Max }}")
-    }
-                {{- end }}
-                {{- if isNotNil $schema.Value.MultipleOf }}
-                    {{- if eq $schema.Value.Type "integer" }}
-
-    if p.{{ pascal $key }} % {{ $schema.Value.MultipleOf }} != 0 {
-        _ = err.Add("{{$key}}", "must be multiple of {{ $schema.Value.MultipleOf }}")
-    }
-                    {{- else }}
-    if math.Mod({{ if not (eq $fieldType "float64") }}float64({{ end }}p.{{ pascal $key }}{{ if not (eq $fieldType "float64") }}){{end}}, {{ $schema.Value.MultipleOf }}) != 0 {
-        _ = err.Add("{{$key}}", "must be multiple of {{ $schema.Value.MultipleOf }}")
-    }
-                    {{- end }}
-                {{- end }}
-            {{- else if eq $schema.Value.Type "string" }}
-                {{- $fieldType := $.GetType $.PackageName $key $schema }}
-                {{- if gt $schema.Value.MinLength 0 }}
-
-    if len(p.{{ pascal $key }}) < {{ $schema.Value.MinLength }} {
-        _ = err.Add("{{$key}}", "length must be >= {{ $schema.Value.MinLength }}")
-    }
-                {{- end }}
-                {{- if isNotNil $schema.Value.MaxLength }}
-
-    if len(p.{{ pascal $key }}) > {{ $schema.Value.MaxLength }} {
-        _ = err.Add("{{$key}}", "length must be <= {{ $schema.Value.MaxLength }}")
-    }
-                {{- end }}
-                {{- if notEmpty $schema.Value.Pattern }}
-
-    if p.{{ pascal $key }} != {{ if $schema.Value.Nullable }}nil{{ else }}""{{ end }} && !{{ camel $typeName }}{{ pascal $key }}Pattern.MatchString({{ if $schema.Value.Nullable }}*{{ end }}p.{{ pascal $key }})  {
-        _ = err.Add("{{$key}}", `must match "{{ $schema.Value.Pattern }}"`)
-    }
-                {{- end }}
-            {{- else if eq $schema.Value.Type "array" }}
-                {{- if gt $schema.Value.MinItems 0 }}
-
-    if len(p.{{ pascal $key }}) < {{ $schema.Value.MinItems }} {
-        _ = err.Add("{{$key}}", "length must be >= {{ $schema.Value.MinItems }}")
-    }
-                {{- end }}
-                {{- if isNotNil $schema.Value.MaxItems }}
-
-    if len(p.{{ pascal $key }}) > {{ $schema.Value.MaxItems }} {
-        _ = err.Add("{{$key}}", "length must be <= {{ $schema.Value.MaxItems }}")
-    }
-                {{- end }}
-            {{- else if notEmpty $schema.Ref }}
-                {{- if $.HasValidation $schema }}
-
-    if subErr := p.{{ pascal $key }}.Validate(); subErr != nil {
-        _ = err.Add("{{ $key }}", subErr)
-    }
-                {{- end -}}
+            {{- range $fieldName, $schemaProp := $.SchemaProperties $schema true }}
+    p.Validate{{ pascal $fieldName }}(&err)
             {{- end }}
-        {{- end }}
 
     return err.GetErr()
 }
+            {{- range $fieldName, $schemaProp := $.SchemaProperties $schema true }}
+                {{- $isRequired := $.IsRequiredProperty $fieldName $schema -}}
+                {{- $isPointer := and (not $isRequired) ($schemaProp.Value.Nullable) }}
+
+func (p {{ pascal $key }}) Validate{{ pascal $fieldName }}(err *validation.Errors) {
+                {{- if $isPointer }}
+	if p.{{ pascal $fieldName }} == nil {
+		return
+	}
+
+                {{ end -}}
+                {{- template "validateField" ($.WithParams "fieldName" $fieldName "schema" $schemaProp "typeName" $key "isPointer" $isPointer ) -}}
+}
+            {{- end }}
+        {{ else -}}
+func (p {{ pascal $key }}) Validate() error {
+    var err validation.Errors
+            {{- template "validateField" ($.WithParams "fieldName" "" "schema" $schema "typeName" $key "isPointer" false )}}
+
+    return err.GetErr()
+}
+        {{- end -}}
     {{- end -}}
 {{- end -}}
 {{- end -}}

@@ -282,6 +282,8 @@ components:
           pattern: (enabled|disabled)
           type: string
           nullable: true
+          minLength: 2
+          maxLength: 10
         state2:
           pattern: (enabled|disabled)
           type: string
@@ -289,6 +291,89 @@ components:
           type: string
           default: completed
           nullable: true
+        stateAlways:
+          pattern: (enabled|disabled)
+          type: string
+          nullable: true
+        valueMaybe:
+          nullable: true
+          type: integer
+          minimum: 2
+          maximum: 10
+          multipleOf: 2
+        valueFMaybe:
+          nullable: true
+          type: number
+          minimum: 2
+          maximum: 10
+          multipleOf: 2
+        valuesMaybe:
+          nullable: true
+          type: array
+          items:
+            type: string
+          minItems: 2
+          maxItems: 10
+        value:
+          type: integer
+          minimum: 2
+          maximum: 10
+          multipleOf: 2
+        valueF:
+          type: number
+          minimum: 2
+          maximum: 10
+          multipleOf: 2
+        values:
+          type: array
+          items:
+            type: string
+          minItems: 2
+          maxItems: 10
+        subValue:
+          type: object
+          properties:
+            num:
+              type: integer
+              minimum: 2
+        subObjectMaybe:
+          $ref: "#/components/schemas/SubPattern"
+        subObject:
+          $ref: "#/components/schemas/SubPattern"
+        subInt:
+          $ref: "#/components/schemas/IntValue"
+        subState:
+          $ref: "#/components/schemas/State"
+        subStateMaybe:
+          $ref: "#/components/schemas/State"
+
+
+      required:
+        - stateAlways
+        - subObject
+        - subState
+
+    IntValue:
+      type: integer
+      minimum: 2
+      maximum: 10
+      multipleOf: 2
+
+    State:
+      pattern: (enabled|disabled)
+      type: string
+      nullable: true
+      minLength: 2
+      maxLength: 10
+
+
+    SubPattern:
+      nullable: true
+      type: object
+      properties:
+        num:
+          type: integer
+          minimum: 2
 
     Season:
       type: string
