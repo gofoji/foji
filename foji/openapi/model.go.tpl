@@ -312,25 +312,29 @@ func (p {{ pascal $key }}) MarshalJSON() ([]byte, error) {
         {{- if not (empty $schema.Value.Properties )}}
 func (p {{ pascal $key }}) Validate() error {
     var err validation.Errors
-            {{- range $fieldName, $schemaProp := $.SchemaProperties $schema true }}
+            {{ range $fieldName, $schemaProp := $.SchemaProperties $schema true }}
+                {{- if $.HasValidation $schemaProp }}
     p.Validate{{ pascal $fieldName }}(&err)
+                {{- end }}
             {{- end }}
 
     return err.GetErr()
 }
             {{- range $fieldName, $schemaProp := $.SchemaProperties $schema true }}
-                {{- $isRequired := $.IsRequiredProperty $fieldName $schema -}}
-                {{- $isPointer := and (not $isRequired) ($schemaProp.Value.Nullable) }}
+                {{- if $.HasValidation $schemaProp }}
+                    {{- $isRequired := $.IsRequiredProperty $fieldName $schema -}}
+                    {{- $isPointer := and (not $isRequired) ($schemaProp.Value.Nullable) }}
 
 func (p {{ pascal $key }}) Validate{{ pascal $fieldName }}(err *validation.Errors) {
-                {{- if $isPointer }}
+                    {{- if $isPointer }}
 	if p.{{ pascal $fieldName }} == nil {
 		return
 	}
 
-                {{ end -}}
-                {{- template "validateField" ($.WithParams "fieldName" $fieldName "schema" $schemaProp "typeName" $key "isPointer" $isPointer ) -}}
+                    {{ end -}}
+                    {{- template "validateField" ($.WithParams "fieldName" $fieldName "schema" $schemaProp "typeName" $key "isPointer" $isPointer ) -}}
 }
+                {{- end }}
             {{- end }}
         {{ else -}}
 func (p {{ pascal $key }}) Validate() error {
