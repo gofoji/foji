@@ -1,5 +1,5 @@
 package cfg
 
-const version = "0.2.2"
+const version = "0.2.3"
 
 func Version() string { return version }

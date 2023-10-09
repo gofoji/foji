@@ -260,6 +260,10 @@ func hasValidation(s *openapi3.Schema) bool {
 }
 
 func (o *OpenAPIFileContext) HasValidation(s *openapi3.SchemaRef) bool {
+	if hasValidation(s.Value) {
+		return true
+	}
+
 	for _, p := range s.Value.Properties {
 		if hasValidation(p.Value) {
 			return true
