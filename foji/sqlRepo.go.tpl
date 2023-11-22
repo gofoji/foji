@@ -71,12 +71,18 @@ func (r Repo) {{ .Name }}(ctx context.Context{{if gt (len .Params) 0}}, {{end -}
 
 	return out, nil
 {{- else }}
-	var out {{$resultType}}
-
-	err := r.db.QueryRow(ctx, query{{if gt (len .Params) 0}}, {{ csv (.Params.ByQuery.Names.Camel) }}{{end}}).Scan(&out)
+	rows, err := r.db.Query(ctx, query{{if gt (len .Params) 0}}, {{ csv (.Params.ByQuery.Names.Camel) }}{{end}})
 	if err != nil {
-		return out, fmt.Errorf("{{.Name}}:%w", err)
+		return {{ $resultType }}{}, fmt.Errorf("{{.Name}}:%w", err)
 	}
+
+	out, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[{{$resultType}}])
+	if errors.Is(pgx.ErrNoRows, err) {
+        return {{ $resultType }}{}, nil
+    }
+	if err != nil {
+	    return {{ $resultType }}{}, fmt.Errorf("{{.Name}}.RowTo:%w", err)
+    }
 
 	return out, nil
 {{- end }}
