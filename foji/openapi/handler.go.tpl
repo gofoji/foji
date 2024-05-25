@@ -62,6 +62,7 @@
         {{- end -}}
     {{- end -}}
 {{- goDoc $param.Value.Description }}
+
 	{{- if eq $param.Value.Schema.Value.Type "array" }}
 	{{ goToken (camel $param.Value.Name) }}, _, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", {{ $required }}
 		{{- if $isArrayEnum -}}, {{ $enumNew  }}{{- end -}})
@@ -89,7 +90,6 @@
 
 	{{- else if $hasDefault }}
 	{{- if $isEnum -}}
-
 		{{ goToken (camel $param.Value.Name) }}, ok, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", {{ $required }}, {{ $enumNew  }})
 	{{else -}}
 		{{ goToken (camel $param.Value.Name) }}, ok, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", {{ $required }})
