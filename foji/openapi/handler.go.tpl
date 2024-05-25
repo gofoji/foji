@@ -61,8 +61,7 @@
             {{- $getRequiredParamFunction = "GetString" -}}
         {{- end -}}
     {{- end -}}
-{{- goDoc $param.Value.Description }}
-
+{{- goDoc $param.Value.Description -}}
 	{{- if eq $param.Value.Schema.Value.Type "array" }}
 	{{ goToken (camel $param.Value.Name) }}, _, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", {{ $required }}
 		{{- if $isArrayEnum -}}, {{ $enumNew  }}{{- end -}})
