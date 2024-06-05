@@ -13,7 +13,7 @@ files:
     files:
       - "TEST.yaml"
 processes:
-  openAPIDocs:
+  openAPIStub:
     files:
       files:
         - "TEST"
@@ -31,6 +31,6 @@ processes:
     DbAll:
       stdout: foji/dbList.console.tpl
   groupTest:
-    processes: [ dbList, openAPIDocs ]
+    processes: [ dbList, openAPIStub ]
   badGroupTest:
     processes: [ dbList, foo ]

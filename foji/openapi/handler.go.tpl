@@ -36,7 +36,7 @@
     {{- $hasDefault := isNotNil $param.Value.Schema.Value.Default }}
     {{- $isArrayEnum := $.ParamIsEnumArray $param }}
     {{- $getRequiredParamFunction := "" -}}
-    {{- if eq $param.Value.Schema.Value.Type "array" -}}
+    {{- if $param.Value.Schema.Value.Type.Is "array" -}}
         {{- if eq $goType "[]int32" -}}
             {{- $getRequiredParamFunction = "GetInt32Array" -}}
         {{- else if $isArrayEnum }}
@@ -62,7 +62,7 @@
         {{- end -}}
     {{- end -}}
 {{- goDoc $param.Value.Description }}
-	{{- if eq $param.Value.Schema.Value.Type "array" }}
+	{{- if $param.Value.Schema.Value.Type.Is "array" }}
 	{{ goToken (camel $param.Value.Name) }}, _, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", {{ $required }}
 		{{- if $isArrayEnum -}}, {{ $enumNew  }}{{- end -}})
 	if err != nil {
@@ -149,7 +149,7 @@ import (
 )
 
 type Operations interface {
-{{- range $name, $path := .API.Paths }}
+{{- range $name, $path := .API.Paths.Map }}
     {{- range $verb, $op := $path.Operations }}
         {{- $opResponse := $.GetOpHappyResponse $package $op }}
 	{{ pascal $op.OperationID}}(ctx context.Context,
@@ -168,7 +168,7 @@ type OpenAPIHandlers struct {
     authorize AuthorizeFunc
 {{- end}}
 {{- end}}
-{{- range $name, $path := .API.Paths }}
+{{- range $name, $path := .API.Paths.Map }}
     {{- range $verb, $op := $path.Operations }}
         {{- if not ($.IsSimpleAuth $op) }}
 	{{ camel $op.OperationID}}Security SecurityGroups
@@ -197,7 +197,7 @@ func RegisterHTTP(ops Operations, r chi.Router
 {{- end -}}
 }
 
-{{- range $name, $path := .API.Paths }}
+{{- range $name, $path := .API.Paths.Map }}
     {{- range $verb, $op := $path.Operations }}
         {{- if not ($.IsSimpleAuth $op) }}
 
@@ -224,7 +224,7 @@ func RegisterHTTP(ops Operations, r chi.Router
     {{- end}}
 {{- end}}
 
-{{ range $name, $path := .API.Paths }}
+{{ range $name, $path := .API.Paths.Map }}
     {{- range $verb, $op := $path.Operations }}
 	r.{{pascal $verb}}("{{$name}}", http.HandlerFunc(s.{{ pascal $op.OperationID}}))
     {{- end }}
@@ -233,7 +233,7 @@ func RegisterHTTP(ops Operations, r chi.Router
 	return &s
 }
 
-{{- range $name, $path := .API.Paths }}
+{{- range $name, $path := .API.Paths.Map }}
     {{- range $verb, $op := $path.Operations }}
         {{- $opResponse := $.GetOpHappyResponse $package $op }}
         {{- $opBody := $.GetRequestBody $op }}

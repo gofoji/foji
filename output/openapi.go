@@ -148,8 +148,13 @@ func (o *OpenAPIFileContext) GetType(currentPackage, name string, s *openapi3.Sc
 		return o.CheckPackage(t, currentPackage)
 	}
 
+	schemaType := ""
+	if s.Value.Type != nil && len(*s.Value.Type) == 1 {
+		schemaType = (*s.Value.Type)[0]
+	}
+
 	if s.Value.Format != "" {
-		if t, ok := o.Maps.Type[s.Value.Type+","+s.Value.Format]; ok {
+		if t, ok := o.Maps.Type[schemaType+","+s.Value.Format]; ok {
 			return o.CheckPackage(t, currentPackage)
 		}
 	}
@@ -158,13 +163,13 @@ func (o *OpenAPIFileContext) GetType(currentPackage, name string, s *openapi3.Sc
 		return o.GetTypeName(currentPackage, s)
 	}
 
-	if s.Value.Type == "array" {
+	if s.Value.Type.Is("array") {
 		return "[]" + o.GetType(currentPackage, name, s.Value.Items)
 	}
 
-	if s.Value.Type == "object" || s.Value.Type == "" {
+	if s.Value.Type.Is("object") || s.Value.Type.Is("") || s.Value.Type == nil {
 		if len(o.SchemaProperties(s, true)) == 0 {
-			if t, ok := o.Maps.Type[s.Value.Type]; ok {
+			if t, ok := o.Maps.Type[schemaType]; ok {
 				return o.CheckPackage(t, currentPackage)
 			}
 
@@ -179,7 +184,7 @@ func (o *OpenAPIFileContext) GetType(currentPackage, name string, s *openapi3.Sc
 		return o.CheckPackage(o.EnumName(name), currentPackage)
 	}
 
-	if t, ok := o.Maps.Type[s.Value.Type]; ok {
+	if t, ok := o.Maps.Type[schemaType]; ok {
 		return o.CheckPackage(t, currentPackage)
 	}
 
@@ -354,7 +359,7 @@ func (o *OpenAPIFileContext) GetOpHappyResponse(pkg string, op *openapi3.Operati
 	supportedResponseContentTypes := []string{ApplicationJSON, ApplicationJSONL, TextPlain, TextHTML, TextCSV}
 
 	happyKey := "200"
-	for key, r := range op.Responses {
+	for key, r := range op.Responses.Map() {
 		if len(key) == 3 && key[0] == '2' {
 			happyKey = key
 
@@ -419,7 +424,7 @@ func (o *OpenAPIFileContext) ParamIsOptionalType(param *openapi3.ParameterRef) b
 		return false
 	}
 
-	if param.Value.Schema.Value.Type == "array" {
+	if param.Value.Schema.Value.Type.Is("array") {
 		return false
 	}
 
@@ -444,15 +449,15 @@ func (o *OpenAPIFileContext) SchemaIsComplex(schema *openapi3.SchemaRef) bool {
 		return false
 	}
 
-	if schema.Value.Type == "object" {
+	if schema.Value.Type.Is("object") {
 		return true
 	}
 
-	if schema.Value.Type != "array" {
+	if !schema.Value.Type.Is("array") {
 		return false
 	}
 
-	return schema.Value.Items.Ref == "" && schema.Value.Items.Value.Type == "object"
+	return schema.Value.Items.Ref == "" && schema.Value.Items.Value.Type.Is("object")
 }
 
 func (o *OpenAPIFileContext) GetOpHappyResponseKey(op *openapi3.Operation) string {
@@ -503,8 +508,9 @@ func (o *OpenAPIFileContext) HasAuthorization() bool {
 		return true
 	}
 
-	for _, p := range o.API.Paths {
-		for _, op := range p.Operations() {
+	for _, p := range o.API.Paths.InMatchingOrder() {
+		path := o.API.Paths.Value(p)
+		for _, op := range path.Operations() {
 			if op.Security != nil && hasAuthorization(*op.Security) {
 				return true
 			}
@@ -536,8 +542,9 @@ func (o *OpenAPIFileContext) IsSimpleAuth(op *openapi3.Operation) bool {
 }
 
 func (o *OpenAPIFileContext) HasComplexAuth() bool {
-	for _, p := range o.API.Paths {
-		for _, op := range p.Operations() {
+	for _, p := range o.API.Paths.InMatchingOrder() {
+		path := o.API.Paths.Value(p)
+		for _, op := range path.Operations() {
 			if !o.IsSimpleAuth(op) {
 				return true
 			}
