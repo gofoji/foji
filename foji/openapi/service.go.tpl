@@ -48,7 +48,7 @@ func New() *Service {
 type Service struct {
 }
 
-{{- range $name, $path := .File.API.Paths }}
+{{- range $name, $path := .File.API.Paths.Map }}
 	{{- range $verb, $op := $path.Operations }}
 
 {{ goDoc (pascal $op.OperationID) }}

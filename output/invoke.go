@@ -168,7 +168,7 @@ func (p ProcessRunner) template(outputFile, templateFile string, data any) error
 			return err //nolint:wrapcheck
 		}
 
-		return fmt.Errorf("executing template: %w", err)
+		return fmt.Errorf("executing template: %q: %w", templateFile, err)
 	}
 
 	l.Debug().Msg("wrote output")

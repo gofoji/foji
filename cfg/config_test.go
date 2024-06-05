@@ -41,7 +41,7 @@ func TestProcesses_Keys(t *testing.T) {
 		t.Errorf("Keys() Err = %v", err)
 	}
 	got := c.Processes.String()
-	want := "badGroupTest,dbList,groupTest,openAPIDocs"
+	want := "badGroupTest,dbList,groupTest,openAPIStub"
 	if got != want {
 		t.Errorf("Keys() = %v, want %v", got, want)
 	}
@@ -92,7 +92,7 @@ func TestParamMap_HasString(t *testing.T) {
 		t.Errorf("Keys() Err = %v", err)
 	}
 
-	pp := c.Processes["openAPIDocs"].Params
+	pp := c.Processes["openAPIStub"].Params
 
 	tests := []struct {
 		name string
@@ -129,7 +129,7 @@ func TestOutput_All(t *testing.T) {
 		name string
 		want stringlist.StringMap
 	}{
-		{"openAPIDocs", stringlist.StringMap{"!doc/handler.go": "foji/openapi/docs.go.tpl", "doc/embed_gen.go": "foji/embed.go.tpl"}},
+		{"openAPIStub", stringlist.StringMap{"!swagger.yaml": "foji/openapi/stub.yaml.tpl"}},
 		{"embed", stringlist.StringMap{}},
 		{"groupTest", stringlist.StringMap{}},
 	}
@@ -148,7 +148,7 @@ func TestFileInput_IsEmpty(t *testing.T) {
 		t.Errorf("Load() Err = %v", err)
 	}
 
-	if c.Processes["openAPIDocs"].Files.IsEmpty() {
+	if c.Processes["openAPIStub"].Files.IsEmpty() {
 		t.Errorf("IsEmpty() returned true")
 	}
 }

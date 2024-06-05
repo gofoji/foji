@@ -96,7 +96,7 @@ func (e {{ $enumType }}) MarshalJSON() ([]byte, error) {
         {{- $fieldDeref = print "*" $fieldDot -}}
     {{- end -}}
 
-    {{- if or (notEmpty $schema.Ref)  (eq $schema.Value.Type "object") }}
+    {{- if or (notEmpty $schema.Ref)  ($schema.Value.Type.Is "object") }}
         {{ if $.HasValidation $schema }}
             {{ if $isPointer }}
                 if {{$fieldDot}} != nil {
@@ -110,7 +110,7 @@ func (e {{ $enumType }}) MarshalJSON() ([]byte, error) {
                 }
             {{ end }}
         {{- end -}}
-    {{- else if eq $schema.Value.Type "array" }}
+    {{- else if $schema.Value.Type.Is "array" }}
         {{- if gt $schema.Value.MinItems 0 }}
 
             if len({{ $fieldDeref }}) < {{ $schema.Value.MinItems }} {
@@ -123,7 +123,7 @@ func (e {{ $enumType }}) MarshalJSON() ([]byte, error) {
             _ = err.Add("{{$fieldName}}", "length must be <= {{ $schema.Value.MaxItems }}")
             }
         {{- end }}
-    {{- else if in $schema.Value.Type "number" "integer" }}
+    {{- else if or ($schema.Value.Type.Is "number") ($schema.Value.Type.Is "integer") }}
         {{- if isNotNil $schema.Value.Min }}
 
     if  {{ $fieldDeref }} <{{ if $schema.Value.ExclusiveMin }}={{end}} {{ $schema.Value.Min }} {
@@ -137,7 +137,7 @@ func (e {{ $enumType }}) MarshalJSON() ([]byte, error) {
     }
         {{- end }}
         {{- if isNotNil $schema.Value.MultipleOf }}
-            {{- if eq $schema.Value.Type "integer" }}
+            {{- if $schema.Value.Type.Is "integer" }}
 
     if {{ $fieldDeref }} % {{ $schema.Value.MultipleOf }} != 0 {
         _ = err.Add("{{$fieldName}}", "must be multiple of {{ $schema.Value.MultipleOf }}")
@@ -149,7 +149,7 @@ func (e {{ $enumType }}) MarshalJSON() ([]byte, error) {
     }
             {{- end }}
         {{- end }}
-    {{- else if eq $schema.Value.Type "string" }}
+    {{- else if $schema.Value.Type.Is "string" }}
         {{- if gt $schema.Value.MinLength 0 }}
 
     if len({{ $fieldDeref }}) < {{ $schema.Value.MinLength }} {
@@ -188,7 +188,7 @@ func (e {{ $enumType }}) MarshalJSON() ([]byte, error) {
         {{- $label := .RuntimeParams.label }}
         {{- template "enum" ($.WithParams "name" $key "schema" $schema "description" (print $label " : " $key ))}}
 
-    {{- else if in $schema.Value.Type "object" "" }}
+    {{- else if $schema.Value.Type.Permits "object"}}
 type {{ pascal $key }} struct {
     {{- range $field, $schemaProp := $.SchemaProperties $schema false}}
         {{- $isRequired := $.IsRequiredProperty $field $schema -}}
@@ -214,7 +214,7 @@ type {{ pascal $key }} {{ $.GetType $.PackageName (pascal (print $typeName " Ite
             {{- if empty $schemaProp.Ref -}}
                 {{- template "typeDeclaration" ($.WithParams "key" (pascal (print $typeName " " $key)) "schema" $schemaProp "label" (print  $typeName " inline " $key))}}
             {{- end -}}
-        {{- else if eq $schemaProp.Value.Type "array"}}
+        {{- else if $schemaProp.Value.Type.Is "array"}}
             {{- if empty $schemaProp.Value.Items.Ref -}}
                 {{- $isEnumItem := $.IsDefaultEnum $key $schemaProp.Value.Items }}
                 {{- $hasProperties := not (empty ($.SchemaProperties $schemaProp.Value.Items false )) }}
@@ -225,7 +225,7 @@ type {{ pascal $key }} {{ $.GetType $.PackageName (pascal (print $typeName " Ite
         {{- end }}
     {{- end }}
         {{- /* Nested Arrays */}}
-    {{- if eq $schema.Value.Type "array"}}
+    {{- if $schema.Value.Type.Is "array"}}
         {{- if empty $schema.Value.Items.Ref -}}
             {{- $isEnumItem := $.IsDefaultEnum $key $schema.Value.Items }}
             {{- $hasProperties := not (empty ($.SchemaProperties $schema.Value.Items false )) }}
@@ -383,7 +383,7 @@ var ErrMissingRequiredField = errors.New("missing required field")
     {{- $label := .RuntimeParams.label }}
     {{- if empty $param.Ref -}}
         {{- template "enum" ($.WithParams "name" $name "schema" $param.Value.Schema "description" (print $param.Value.Description "\n" $label $param.Value.Name ))}}
-        {{- if eq $param.Value.Schema.Value.Type "array"}}
+        {{- if $param.Value.Schema.Value.Type.Is "array"}}
             {{- template "enum" ($.WithParams "name" $name "schema" $param.Value.Schema.Value.Items "description" (print $label $param.Value.Name " Item"))}}
         {{- end }}
     {{- end -}}
@@ -392,7 +392,7 @@ var ErrMissingRequiredField = errors.New("missing required field")
 // Path Operations
 
 {{/* Inline Request/Reponse Types */ -}}
-{{ range $name, $path := .API.Paths }}
+{{ range $name, $path := .API.Paths.Map }}
     {{- range $verb, $op := $path.Operations }}
         {{- /* Inline Request */ -}}
         {{- $bodySchema := $.GetRequestBodyLocal $op}}
