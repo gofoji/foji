@@ -13,7 +13,7 @@ func (s *Service) GetExamples(ctx context.Context) (*Examples, error) {
 	return nil, nil
 }
 
-func (s *Service) GetExampleParams(ctx context.Context, k1 string, k2 uuid.UUID, k3 time.Time, k4 int32, k5 int64) (*Example, error) {
+func (s *Service) GetExampleParams(ctx context.Context, k1 string, k2 uuid.UUID, k3 time.Time, k4 int32, k5 int64, enumTest GetExampleParamsEnumTest) (*Example, error) {
 	return nil, nil
 }
 

@@ -62,7 +62,7 @@
         {{- end -}}
     {{- end -}}
 {{- goDoc $param.Value.Description }}
-	{{- if $param.Value.Schema.Value.Type.Is "array" }}
+	{{ if $param.Value.Schema.Value.Type.Is "array" }}
 	{{ goToken (camel $param.Value.Name) }}, _, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", {{ $required }}
 		{{- if $isArrayEnum -}}, {{ $enumNew  }}{{- end -}})
 	if err != nil {

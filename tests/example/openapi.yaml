@@ -48,6 +48,16 @@ paths:
           schema:
             type: integer
             format: int64
+        - name: enumTest
+          in: query
+          required: false
+          description: Enum Description
+          schema:
+            type: string
+            default: valueA
+            enum:
+              - valueA
+              - valueB
       responses:
         "200":
           description: 'Example'
