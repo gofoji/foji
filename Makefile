@@ -23,7 +23,7 @@ cover:
 	go tool cover -html=cp.out
 
 tidy:
-	go mod tidy -compat=1.21
+	go mod tidy
 
 update: updateAll tidy
 

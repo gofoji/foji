@@ -140,7 +140,6 @@ import (
 	"github.com/bir/iken/logctx"
 	"github.com/bir/iken/params"
 	"github.com/bir/iken/validation"
-	"github.com/go-chi/chi/v5"
 	"{{ $.Params.Package}}"
 {{- .CheckAllTypes $package ($.Params.GetWithDefault "Auth" "") -}}
 {{- range .GoImports }}
@@ -177,7 +176,11 @@ type OpenAPIHandlers struct {
 {{- end}}
 }
 
-func RegisterHTTP(ops Operations, r chi.Router
+type Mux interface {
+    Handle(pattern string, handler http.Handler)
+}
+
+func RegisterHTTP(ops Operations, r Mux
 {{- if .HasAuthentication }}
 	{{- range $security, $value := .API.Components.SecuritySchemes -}}
     , {{ camel $security }}Auth
@@ -226,7 +229,7 @@ func RegisterHTTP(ops Operations, r chi.Router
 
 {{ range $name, $path := .API.Paths.Map }}
     {{- range $verb, $op := $path.Operations }}
-	r.{{pascal $verb}}("{{$name}}", http.HandlerFunc(s.{{ pascal $op.OperationID}}))
+	r.Handle("{{$verb}} {{$name}}", http.HandlerFunc(s.{{ pascal $op.OperationID}}))
     {{- end }}
 {{- end }}
 
