@@ -140,7 +140,6 @@ import (
 	"github.com/bir/iken/logctx"
 	"github.com/bir/iken/params"
 	"github.com/bir/iken/validation"
-	"github.com/go-chi/chi/v5"
 	"{{ $.Params.Package}}"
 {{- .CheckAllTypes $package ($.Params.GetWithDefault "Auth" "") -}}
 {{- range .GoImports }}
