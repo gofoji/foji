@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/Masterminds/sprig/v3"
+	"github.com/go-sprout/sprout"
 	"github.com/gofoji/plates"
 	"github.com/gofoji/plates/plush"
 	"github.com/rs/zerolog"
@@ -100,7 +100,7 @@ func checkPermanentFlag(outputFile string) (bool, string) {
 func templateEngine() *plates.Factory {
 	return plates.New("foji").
 		AddMatcherFunc(plates.MatchText, plates.MatchHTML, plush.Match).
-		AddFuncs(runtime.Funcs, sprig.GenericFuncMap()).
+		AddFuncs(runtime.Funcs, sprout.GenericFuncMap()).
 		DefaultFunc(plates.TextParser)
 }
 

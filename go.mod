@@ -2,12 +2,10 @@ module github.com/gofoji/foji
 
 go 1.22
 
-exclude github.com/imdario/mergo v1.0.0
-
 require (
-	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/codemodus/kace v0.5.1
 	github.com/getkin/kin-openapi v0.126.0
+	github.com/go-sprout/sprout v0.4.1
 	github.com/gofoji/plates v0.3.2
 	github.com/gofoji/plates/plush v0.3.3
 	github.com/jackc/pgx/v5 v5.6.0
@@ -20,7 +18,7 @@ require (
 )
 
 require (
-	github.com/Masterminds/goutils v1.1.1 // indirect
+	dario.cat/mergo v1.0.0 // indirect
 	github.com/Masterminds/semver/v3 v3.2.1 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -36,8 +34,6 @@ require (
 	github.com/gofrs/uuid v4.4.0+incompatible // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/css v1.0.1 // indirect
-	github.com/huandu/xstrings v1.5.0 // indirect
-	github.com/imdario/mergo v0.3.16 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/invopop/yaml v0.3.1 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
@@ -53,7 +49,6 @@ require (
 	github.com/perimeterx/marshmallow v1.1.5 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/sergi/go-diff v1.3.1 // indirect
-	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d // indirect
 	github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e // indirect
 	github.com/spf13/cast v1.6.0 // indirect
