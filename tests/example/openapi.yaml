@@ -463,3 +463,13 @@ components:
                   - option_a
                   - option_b
                   - option_c
+
+    example-kebab-case-field:
+      type: object
+      properties:
+        tier:
+          pattern: (alpha|beta|gama)
+          type: string
+        seniority:
+          pattern: (^[1-9]\d*$)
+          type: string
