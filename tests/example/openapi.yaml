@@ -180,7 +180,50 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Example"
-
+  /examples/inlinedAllOf:
+    post:
+      operationId: AddInlinedAllOf
+      requestBody:
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/Foo'
+                - type: object
+                  properties:
+                    special:
+                      type: boolean
+        required: false
+      responses:
+        "200":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FooBar'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /examples/inlinedBody:
+    post:
+      operationId: AddInlinedBody
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                special:
+                  type: boolean
+        required: false
+      responses:
+        "200":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FooBar'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
 components:
   parameters:
     IdParam:
@@ -232,7 +275,23 @@ components:
       required: true
       schema:
         $ref: "#/components/schemas/Season"
+  responses:
+    ErrorResponse:
+      description: There was an error processing the request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/errorV1'
   schemas:
+    errorV1:
+      title: Error Response
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+      description: Standard error format
     Examples:
       type: object
       properties:
@@ -473,3 +532,28 @@ components:
         seniority:
           pattern: (^[1-9]\d*$)
           type: string
+
+    NamedObject:
+      type: object
+      description: Named object
+
+    Foo:
+        type: object
+        properties:
+           foo:
+              type: string
+
+    Bar:
+      type: object
+      properties:
+        bar:
+          type: string
+
+    FooBar:
+      allOf:
+        - $ref: "#/components/schemas/Foo"
+        - $ref: "#/components/schemas/Bar"
+        - type: object
+        - properties:
+            buzz:
+              type: string

@@ -453,6 +453,10 @@ func (o *OpenAPIFileContext) SchemaIsComplex(schema *openapi3.SchemaRef) bool {
 		return true
 	}
 
+	if schema.Value.AllOf != nil && len(schema.Value.AllOf) > 0 {
+		return true
+	}
+
 	if !schema.Value.Type.Is("array") {
 		return false
 	}
