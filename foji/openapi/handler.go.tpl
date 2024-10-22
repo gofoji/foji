@@ -13,7 +13,7 @@
         {{- if $.ParamIsOptionalType $param }} *{{ end }} {{ $.GetType $package $typeName $param.Value.Schema }},
     {{- end -}}
     {{- if isNotNil $body}}
-        {{- $type := $.GetType $package (print $op.OperationID "Request") $body.Schema }} body {{ $type  -}}
+        {{- $type := $.GetType $package (print $op.OperationID " Request") $body.Schema }} body {{ $type  -}}
     {{- end -}}
 	) (
     {{- $response := $.GetOpHappyResponseType $package .RuntimeParams.op}}
@@ -305,7 +305,7 @@ func (h OpenAPIHandlers) {{ pascal $op.OperationID}}(w http.ResponseWriter, r *h
 
         {{- $hasBody := not (empty $opBody)}}
 		{{- if $hasBody }}
-			{{- $bodyType := $.GetType $package (print (pascal $op.OperationID) "Request") $opBody.Schema}}
+			{{- $bodyType := $.GetType $package (print $op.OperationID " Request") $opBody.Schema}}
 			{{- if $opBody.IsJson }}
 
 	var body {{ $bodyType }}

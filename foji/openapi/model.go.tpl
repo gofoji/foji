@@ -188,7 +188,7 @@ func (e {{ $enumType }}) MarshalJSON() ([]byte, error) {
         {{- $label := .RuntimeParams.label }}
         {{- template "enum" ($.WithParams "name" $key "schema" $schema "description" (print $label " : " $key ))}}
 
-    {{- else if $schema.Value.Type.Permits "object"}}
+    {{- else if and ($schema.Value.Type.Permits "object") (gt (len ($.SchemaProperties $schema true)) 0) }}
 type {{ pascal $key }} struct {
     {{- range $field, $schemaProp := $.SchemaProperties $schema false}}
         {{- $isRequired := $.IsRequiredProperty $field $schema -}}
@@ -397,7 +397,7 @@ var ErrMissingRequiredField = errors.New("missing required field")
         {{- /* Inline Request */ -}}
         {{- $bodySchema := $.GetRequestBodyLocal $op}}
         {{- if $.SchemaIsComplex $bodySchema -}}
-            {{- template "typeDeclaration" ($.WithParams "key" (print $op.OperationID "Request") "schema" $bodySchema "label" (print $op.OperationID " Body") )}}
+            {{- template "typeDeclaration" ($.WithParams "key" (print $op.OperationID " Request") "schema" $bodySchema "label" (print $op.OperationID " Body") )}}
         {{- end }}
 
         {{- /* Inline Response */ -}}
