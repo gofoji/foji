@@ -173,6 +173,7 @@ func (e {{ $enumType }}) MarshalJSON() ([]byte, error) {
 
 
 {{- define "typeDeclaration"}}
+{{ $mediaType := .RuntimeParams.mediaType }}
 {{ $schema := .RuntimeParams.schema }}
 {{- $key := .RuntimeParams.key }}
 {{- $label := .RuntimeParams.label }}
@@ -212,14 +213,14 @@ type {{ pascal $key }} {{ $.GetType $.PackageName (pascal (print $typeName " Ite
     {{- range $key, $schemaProp := $.SchemaProperties $schema false }}
         {{- if not (empty $schemaProp.Value.Properties )}}
             {{- if empty $schemaProp.Ref -}}
-                {{- template "typeDeclaration" ($.WithParams "key" (pascal (print $typeName " " $key)) "schema" $schemaProp "label" (print  $typeName " inline " $key))}}
+                {{- template "typeDeclaration" ($.WithParams "mediaType" "application/json" "key" (pascal (print $typeName " " $key)) "schema" $schemaProp "label" (print  $typeName " inline " $key))}}
             {{- end -}}
         {{- else if $schemaProp.Value.Type.Is "array"}}
             {{- if empty $schemaProp.Value.Items.Ref -}}
                 {{- $isEnumItem := $.IsDefaultEnum $key $schemaProp.Value.Items }}
                 {{- $hasProperties := not (empty ($.SchemaProperties $schemaProp.Value.Items false )) }}
                 {{- if or $isEnumItem $hasProperties}}
-                    {{- template "typeDeclaration" ($.WithParams "key" (pascal (print $typeName " " $key)) "schema" $schemaProp.Value.Items "label" (print  $typeName " inline item " $key))}}
+                    {{- template "typeDeclaration" ($.WithParams "mediaType" "application/json" "key" (pascal (print $typeName " " $key)) "schema" $schemaProp.Value.Items "label" (print  $typeName " inline item " $key))}}
                 {{- end }}
             {{- end }}
         {{- end }}
@@ -230,7 +231,7 @@ type {{ pascal $key }} {{ $.GetType $.PackageName (pascal (print $typeName " Ite
             {{- $isEnumItem := $.IsDefaultEnum $key $schema.Value.Items }}
             {{- $hasProperties := not (empty ($.SchemaProperties $schema.Value.Items false )) }}
             {{- if or $isEnumItem $hasProperties}}
-                {{- template "typeDeclaration" ($.WithParams "key" (pascal (print $typeName " Item" )) "schema" $schema.Value.Items "label" (print  $typeName " inline item " $key))}}
+                {{- template "typeDeclaration" ($.WithParams "mediaType" "application/json" "key" (pascal (print $typeName " Item" )) "schema" $schema.Value.Items "label" (print  $typeName " inline item " $key))}}
             {{- end }}
         {{- end }}
     {{- end }}
@@ -250,10 +251,11 @@ var {{ camel $key }}Pattern = regexp.MustCompile(`{{ $schema.Value.Pattern }}`)
         {{- template "enum" ($.WithParams "name" (print $typeName " " $key) "schema" $schemaEnum "description" (print $label " : " $key ))}}
     {{- end -}}
 
-{{- if or $hasValidation  $schema.Value.Required }}
+{{if eq $mediaType "application/json" }}
+    {{- if or $schema.Value.Required}}
 
 func (p *{{ pascal $key }}) UnmarshalJSON(b []byte) error {
-    {{- if $schema.Value.Required }}
+        {{- if $schema.Value.Required }}
     var requiredCheck map[string]any
 
     if err := json.Unmarshal(b, &requiredCheck); err != nil {
@@ -261,16 +263,16 @@ func (p *{{ pascal $key }}) UnmarshalJSON(b []byte) error {
     }
 
     var validationErrors validation.Errors
-    {{ range $field := $schema.Value.Required }}
+            {{ range $field := $schema.Value.Required }}
     if _, ok := requiredCheck["{{ $field }}"]; !ok {
         validationErrors.Add("{{ $field }}", ErrMissingRequiredField)
     }
-    {{ end }}
+            {{ end }}
 
     if validationErrors != nil {
         return validationErrors.GetErr()
     }
-    {{ end }}
+        {{ end }}
     type  {{ pascal $key }}JSON {{ pascal $key }}
     var parseObject {{ pascal $key }}JSON
 
@@ -280,22 +282,23 @@ func (p *{{ pascal $key }}) UnmarshalJSON(b []byte) error {
 
     v := {{ pascal $key }}(parseObject)
 
-{{ if $hasValidation}}
+        {{ if $hasValidation}}
     if err := v.Validate(); err != nil {
         return err
     }
-{{ end }}
+        {{ end }}
 
     *p = v
 
     return nil
 }
 
-    {{ if $hasValidation}}
 func (p {{ pascal $key }}) MarshalJSON() ([]byte, error) {
+        {{ if $hasValidation}}
     if err := p.Validate(); err != nil {
         return nil, err
     }
+        {{ end }}
 
     type unvalidated {{ pascal $key }} // Skips the validation check
     b, err := json.Marshal(unvalidated(p))
@@ -305,46 +308,137 @@ func (p {{ pascal $key }}) MarshalJSON() ([]byte, error) {
 
     return b, nil
 }
-    {{ end }}
+
+    {{end}}
 {{end}}
 
-    {{- if $hasValidation }}
-        {{- if not (empty $schema.Value.Properties )}}
+{{if or (eq $mediaType "multipart/form-data") (eq $mediaType "application/x-www-form-urlencoded")}}
+
+func ParseForm{{ pascal $key }}(r *http.Request) ({{ pascal $key }}, error) {
+	var (
+	  parseErrors validation.Errors
+	  err error
+	{{- if .SchemaPropertiesHaveDefaults $schema }}
+	  ok bool
+	{{- end }}
+      v {{ pascal $key }}
+    )
+
+    {{ range $field, $schemaProp := $.SchemaProperties $schema false}}
+        {{- $isRequired := $.IsRequiredProperty $field $schema }}
+        {{ $typeName := (print $key " " $field) -}}
+        {{- if notEmpty $schemaProp.Ref -}}
+            {{- $typeName = trimPrefix "#/components/parameters/" $schemaProp.Ref -}}
+        {{- end -}}
+        {{- $goType := $.GetType $.PackageName $typeName $schemaProp }}
+	    {{- $isEnum := $.SchemaIsEnum $schemaProp }}
+        {{- $isArray := $schemaProp.Value.Type.Is "array" }}
+        {{- $isArrayEnum := $.SchemaIsEnumArray $schemaProp }}
+        {{- $enumNew := $.EnumNew $goType }}
+        {{- $hasDefault := isNotNil $schemaProp.Value.Default }}
+
+        {{- if $isArray -}}
+            {{- if eq $goType "[]int32" -}}
+    v.{{ pascal $field }}, {{- if $hasDefault }}ok{{ else }}_{{ end -}}, err = forms.GetInt32Array(r.FormValue, "{{ $field }}", {{ $isRequired }})
+            {{- else if $isArrayEnum }}
+    v.{{ pascal $field }}, {{- if $hasDefault }}ok{{ else }}_{{ end -}}, err = forms.GetEnumArray(r.FormValue, "{{ $field }}", {{ $isRequired }}, {{ $enumNew }})
+            {{- else }}
+    v.{{ pascal $field }}, {{- if $hasDefault }}ok{{ else }}_{{ end -}}, err = forms.GetStringArray(r.FormValue, "{{ $field }}", {{ $isRequired }})
+            {{- end }}
+    if err != nil {
+        parseErrors.Add("{{ $field }}", err)
+    }
+        {{- else -}}
+            {{- if eq $goType "bool" -}}
+    v.{{ pascal $field }}, {{- if $hasDefault }}ok{{ else }}_{{ end -}}, err = forms.GetBool(r.FormValue, "{{ $field }}", {{ $isRequired }})
+            {{- else if eq $goType "int32" }}
+    v.{{ pascal $field }}, {{- if $hasDefault }}ok{{ else }}_{{ end -}}, err = forms.GetInt32(r.FormValue, "{{ $field }}", {{ $isRequired }})
+            {{- else if eq $goType "int64" }}
+    v.{{ pascal $field }}, {{- if $hasDefault }}ok{{ else }}_{{ end -}}, err = forms.GetInt64(r.FormValue, "{{ $field }}", {{ $isRequired }})
+            {{- else if eq $goType "time.Time" }}
+    v.{{ pascal $field }}, {{- if $hasDefault }}ok{{ else }}_{{ end -}}, err = forms.GetTime(r.FormValue, "{{ $field }}", {{ $isRequired }})
+            {{- else if eq $goType "uuid.UUID" }}
+    v.{{ pascal $field }}, {{- if $hasDefault }}ok{{ else }}_{{ end -}}, err = forms.GetUUID(r.FormValue, "{{ $field }}", {{ $isRequired }})
+            {{- else if $isEnum }}
+    v.{{ pascal $field }}, {{- if $hasDefault }}ok{{ else }}_{{ end -}}, err = forms.GetEnum(r.FormValue, "{{ $field }}", {{ $isRequired }}, {{ $enumNew }})
+            {{- else if eq $goType "forms.File" }}
+    v.{{ pascal $field }}, {{- if $hasDefault }}ok{{ else }}_{{ end -}}, err = forms.GetFile(r, "{{ $field }}", {{ $isRequired }})
+            {{- else }}
+    v.{{ pascal $field }}, {{- if $hasDefault }}ok{{ else }}_{{ end -}}, err = forms.GetString(r.FormValue, "{{ $field }}", {{ $isRequired }})
+            {{- end }}
+    if err != nil {
+        parseErrors.Add("{{ $field }}", err)
+            {{- if $hasDefault }}
+    } else if !ok {
+        v.{{ pascal $field }} = {{ if $isEnum -}}
+                {{- $goType}}{{ pascal (goToken (printf "%#v" $schemaProp.Value.Default)) }}
+                {{else -}}
+                    {{- if and (eq $goType "time.Time") (eq $schemaProp.Value.Default "") -}}
+                        time.Time{}
+                    {{else -}}
+                        {{ printf "%#v" $schemaProp.Value.Default }}
+                    {{- end -}}
+                {{- end -}}
+    }
+            {{else}}
+    }
+            {{end}}
+        {{- end }}
+
+    {{ end }}
+
+	if parseErrors != nil {
+		return {{ pascal $key }}{}, parseErrors.GetErr()
+	}
+
+    {{ if $hasValidation}}
+    if err := v.Validate(); err != nil {
+        return {{ pascal $key }}{}, err
+    }
+    {{ end }}
+
+    return v, nil
+}
+{{end}}
+
+
+{{- if $hasValidation }}
+    {{- if not (empty $schema.Value.Properties )}}
 func (p {{ pascal $key }}) Validate() error {
     var err validation.Errors
-            {{ range $fieldName, $schemaProp := $.SchemaProperties $schema true }}
-                {{- if $.HasValidation $schemaProp }}
+        {{ range $fieldName, $schemaProp := $.SchemaProperties $schema true }}
+            {{- if $.HasValidation $schemaProp }}
     p.Validate{{ pascal $fieldName }}(&err)
-                {{- end }}
             {{- end }}
+        {{- end }}
 
     return err.GetErr()
 }
-            {{- range $fieldName, $schemaProp := $.SchemaProperties $schema true }}
-                {{- if $.HasValidation $schemaProp }}
-                    {{- $isRequired := $.IsRequiredProperty $fieldName $schema -}}
-                    {{- $isPointer := and (not $isRequired) ($schemaProp.Value.Nullable) }}
+        {{- range $fieldName, $schemaProp := $.SchemaProperties $schema true }}
+            {{- if $.HasValidation $schemaProp }}
+                {{- $isRequired := $.IsRequiredProperty $fieldName $schema -}}
+                {{- $isPointer := and (not $isRequired) ($schemaProp.Value.Nullable) }}
 
 func (p {{ pascal $key }}) Validate{{ pascal $fieldName }}(err *validation.Errors) {
-                    {{- if $isPointer }}
+                {{- if $isPointer }}
 	if p.{{ pascal $fieldName }} == nil {
 		return
 	}
 
-                    {{ end -}}
-                    {{- template "validateField" ($.WithParams "fieldName" $fieldName "schema" $schemaProp "typeName" $key "isPointer" $isPointer ) -}}
+                {{ end -}}
+                {{- template "validateField" ($.WithParams "fieldName" $fieldName "schema" $schemaProp "typeName" $key "isPointer" $isPointer ) -}}
 }
-                {{- end }}
             {{- end }}
-        {{ else -}}
+        {{- end }}
+    {{ else -}}
 func (p {{ pascal $key }}) Validate() error {
     var err validation.Errors
-            {{- template "validateField" ($.WithParams "fieldName" "" "schema" $schema "typeName" $key "isPointer" false )}}
+        {{- template "validateField" ($.WithParams "fieldName" "" "schema" $schema "typeName" $key "isPointer" false )}}
 
     return err.GetErr()
 }
-        {{- end -}}
     {{- end -}}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 
@@ -353,6 +447,7 @@ func (p {{ pascal $key }}) Validate() error {
 package {{ .PackageName }}
 
 import (
+    "errors"
     "regexp"
 
 {{- .CheckAllTypes .PackageName -}}
@@ -360,6 +455,7 @@ import (
     "{{ . }}"
 {{- end }}
 
+    "github.com/bir/iken/forms"
     "github.com/bir/iken/validation"
 )
 
@@ -368,7 +464,7 @@ var ErrMissingRequiredField = errors.New("missing required field")
 // Component Schemas
 
 {{ range $key, $schema := .ComponentSchemas }}
-    {{- template "typeDeclaration" ($.WithParams "key" $key "schema" $schema "label" "Component Schema")}}
+    {{- template "typeDeclaration" ($.WithParams "mediaType" "application/json" "key" $key "schema" $schema "label" "Component Schema")}}
 {{- end }}
 
 // Component Parameters
@@ -395,16 +491,17 @@ var ErrMissingRequiredField = errors.New("missing required field")
 {{ range $name, $path := .API.Paths.Map }}
     {{- range $verb, $op := $path.Operations }}
         {{- /* Inline Request */ -}}
-        {{- $bodySchema := $.GetRequestBodyLocal $op}}
-        {{- if $.SchemaIsComplex $bodySchema -}}
-            {{- template "typeDeclaration" ($.WithParams "key" (print $op.OperationID " Request") "schema" $bodySchema "label" (print $op.OperationID " Body") )}}
+        {{ range $opBody := $.GetRequestBodySchemas $op }}
+            {{- if $.SchemaIsComplex $opBody.Schema -}}
+                {{- template "typeDeclaration" ($.WithParams "mediaType" $opBody.MimeType "key" (print $op.OperationID " Request") "schema" $opBody.Schema "label" (print $op.OperationID " Body") )}}
+            {{- end }}
         {{- end }}
 
         {{- /* Inline Response */ -}}
         {{- $opResponse := $.GetOpHappyResponse $.PackageName $op }}
         {{- if isNotNil $opResponse.MediaType }}
             {{- if  $.SchemaIsComplex $opResponse.MediaType.Schema -}}
-                {{- template "typeDeclaration" ($.WithParams "key" (print $op.OperationID " Response") "schema" $opResponse.MediaType.Schema "label" (print $op.OperationID " Response") )}}
+                {{- template "typeDeclaration" ($.WithParams "mediaType" "application/json" "key" (print $op.OperationID " Response") "schema" $opResponse.MediaType.Schema "label" (print $op.OperationID " Response") )}}
             {{- end }}
         {{- end }}
 
@@ -414,3 +511,4 @@ var ErrMissingRequiredField = errors.New("missing required field")
         {{- end }}
     {{- end }}
 {{- end }}
+

@@ -326,6 +326,15 @@ func (h OpenAPIHandlers) {{ pascal $op.OperationID}}(w http.ResponseWriter, r *h
 
 	body := string(b)
         	{{- end -}}
+			{{- if or $opBody.IsForm $opBody.IsMultipartForm }}
+
+	body, err := ParseForm{{ $bodyType }}(r)
+    if err != nil {
+        httputil.ErrorHandler(w, r, validation.Error{Message:"unable to parse form", Source:err})
+
+        return
+    }
+        	{{- end -}}
         {{- end -}}
 
         {{- $responseGoType := $opResponse.GoType}}

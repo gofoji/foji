@@ -167,6 +167,10 @@ func (o *OpenAPIFileContext) GetType(currentPackage, name string, s *openapi3.Sc
 		return "[]" + o.GetType(currentPackage, name, s.Value.Items)
 	}
 
+	if s.Value.Type.Is("string") && s.Value.Format == "binary" {
+		return "forms.File"
+	}
+
 	if s.Value.Type.Is("object") || s.Value.Type.Is("") || s.Value.Type == nil {
 		if len(o.SchemaProperties(s, true)) == 0 {
 			if t, ok := o.Maps.Type[schemaType]; ok {
@@ -294,6 +298,16 @@ func (o *OpenAPIFileContext) IsRequiredProperty(name string, s *openapi3.SchemaR
 	return slices.Contains(s.Value.Required, name)
 }
 
+func (o *OpenAPIFileContext) SchemaPropertiesHaveDefaults(schema *openapi3.SchemaRef) bool {
+	for _, v := range o.SchemaProperties(schema, false) {
+		if v.Value.Default != nil {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (o *OpenAPIFileContext) SchemaProperties(schema *openapi3.SchemaRef, includeRefs bool) openapi3.Schemas {
 	out := openapi3.Schemas{}
 
@@ -337,20 +351,38 @@ func (o *OpenAPIFileContext) GetRequestBody(op *openapi3.Operation) *OpBody {
 		if mediaType != nil {
 			return &OpBody{MimeType: TextPlain, Schema: mediaType.Schema}
 		}
+
+		mediaType = op.RequestBody.Value.Content.Get(ApplicationForm)
+		if mediaType != nil {
+			return &OpBody{MimeType: ApplicationForm, Schema: mediaType.Schema}
+		}
+
+		mediaType = op.RequestBody.Value.Content.Get(MultipartForm)
+		if mediaType != nil {
+			return &OpBody{MimeType: MultipartForm, Schema: mediaType.Schema}
+		}
 	}
 
 	return nil
 }
 
-func (o *OpenAPIFileContext) GetRequestBodyLocal(op *openapi3.Operation) *openapi3.SchemaRef {
-	if op.RequestBody != nil && op.RequestBody.Ref == "" && op.RequestBody.Value != nil {
-		mediaType := op.RequestBody.Value.Content.Get(ApplicationJSON)
-		if mediaType != nil && mediaType.Schema.Ref == "" {
-			return mediaType.Schema
+func (o *OpenAPIFileContext) GetRequestBodySchemas(op *openapi3.Operation) []OpBody {
+	if op == nil || op.RequestBody == nil || op.RequestBody.Value == nil {
+		return nil
+	}
+
+	var out []OpBody
+	for k, v := range op.RequestBody.Value.Content {
+		if v.Schema == nil {
+			continue
+		}
+
+		if k == ApplicationJSON || k == ApplicationForm || k == MultipartForm {
+			out = append(out, OpBody{MimeType: MimeType(k), Schema: v.Schema})
 		}
 	}
 
-	return nil
+	return out
 }
 
 var knownInterfaces = []string{"io.Reader"}
@@ -442,6 +474,14 @@ func (o *OpenAPIFileContext) ParamIsEnum(param *openapi3.ParameterRef) bool {
 
 func (o *OpenAPIFileContext) ParamIsEnumArray(param *openapi3.ParameterRef) bool {
 	return param.Value.Schema.Value.Items != nil && len(param.Value.Schema.Value.Items.Value.Enum) > 0
+}
+
+func (o *OpenAPIFileContext) SchemaIsEnum(schema *openapi3.SchemaRef) bool {
+	return len(schema.Value.Enum) > 0
+}
+
+func (o *OpenAPIFileContext) SchemaIsEnumArray(schema *openapi3.SchemaRef) bool {
+	return schema.Value.Items != nil && len(schema.Value.Items.Value.Enum) > 0
 }
 
 func (o *OpenAPIFileContext) SchemaIsComplex(schema *openapi3.SchemaRef) bool {
