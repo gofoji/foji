@@ -5,6 +5,8 @@ import "github.com/getkin/kin-openapi/openapi3"
 const (
 	ApplicationJSON  = "application/json"
 	ApplicationJSONL = "application/jsonl"
+	ApplicationForm  = "application/x-www-form-urlencoded"
+	MultipartForm    = "multipart/form-data"
 	TextPlain        = "text/plain"
 	TextHTML         = "text/html"
 	TextCSV          = "text/csv"
@@ -26,6 +28,14 @@ func (m MimeType) IsHTML() bool {
 
 func (m MimeType) IsCSV() bool {
 	return m == TextCSV
+}
+
+func (m MimeType) IsForm() bool {
+	return m == ApplicationForm
+}
+
+func (m MimeType) IsMultipartForm() bool {
+	return m == MultipartForm
 }
 
 func (m MimeType) IsLongPollingOperation() bool {

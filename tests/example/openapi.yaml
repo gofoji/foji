@@ -224,6 +224,113 @@ paths:
                 $ref: '#/components/schemas/FooBar'
         default:
           $ref: '#/components/responses/ErrorResponse'
+  /examples/form:
+    post:
+      operationId: AddForm
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - f7
+              properties:
+                f01:
+                  type: boolean
+                f02:
+                  type: integer
+                f03:
+                  type: integer
+                  format: int32
+                f04:
+                  type: integer
+                  format: int64
+                  default: 1
+                f05:
+                  type: string
+                  format: date-time
+                f06:
+                  type: string
+                  format: uuid
+                f07:
+                  type: string
+                f08:
+                  type: string
+                  default: valueA
+                  enum:
+                    - valueA
+                    - valueB
+                f09:
+                  $ref: "#/components/schemas/Season"
+                f10:
+                  type: array
+                  items:
+                      type: string
+                  minItems: 1
+                f11:
+                  type: array
+                  items:
+                    type: integer
+                    format: int32
+                f12:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/Season"
+        required: false
+      responses:
+        "200":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FooBar'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /examples/form:multipart:
+    post:
+      operationId: AddMultipartForm
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file1
+              properties:
+                f1:
+                  type: boolean
+                f2:
+                  type: integer
+                f3:
+                  type: integer
+                  format: int32
+                f4:
+                  type: integer
+                  format: int64
+                f5:
+                  type: string
+                  format: date-time
+                f6:
+                  type: string
+                  format: uuid
+                f7:
+                  type: string
+                file1:
+                  type: string
+                  format: binary
+                file2:
+                  type: string
+                  format: binary
+        required: false
+      responses:
+        "200":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FooBar'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
 components:
   parameters:
     IdParam:

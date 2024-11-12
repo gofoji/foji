@@ -13,6 +13,14 @@ func (s *Service) GetExamples(ctx context.Context) (*Examples, error) {
 	return nil, nil
 }
 
+func (s *Service) AddForm(ctx context.Context, body AddFormRequest) (*FooBar, error) {
+	return nil, nil
+}
+
+func (s *Service) AddMultipartForm(ctx context.Context, body AddMultipartFormRequest) (*FooBar, error) {
+	return nil, nil
+}
+
 func (s *Service) AddInlinedAllOf(ctx context.Context, body AddInlinedAllOfRequest) (*FooBar, error) {
 	return nil, nil
 }
