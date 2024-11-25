@@ -293,12 +293,11 @@ func (p *{{ pascal $key }}) UnmarshalJSON(b []byte) error {
     return nil
 }
 
-func (p {{ pascal $key }}) MarshalJSON() ([]byte, error) {
         {{ if $hasValidation}}
+func (p {{ pascal $key }}) MarshalJSON() ([]byte, error) {
     if err := p.Validate(); err != nil {
         return nil, err
     }
-        {{ end }}
 
     type unvalidated {{ pascal $key }} // Skips the validation check
     b, err := json.Marshal(unvalidated(p))
@@ -308,6 +307,7 @@ func (p {{ pascal $key }}) MarshalJSON() ([]byte, error) {
 
     return b, nil
 }
+        {{ end }}
 
     {{end}}
 {{end}}
