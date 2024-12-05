@@ -73,8 +73,8 @@ func {{ pascal $security }}Auth(fn {{if eq $value.Value.Scheme "basic"}}Basic{{e
 			return nil, httputil.ErrUnauthorized
 		}
         {{- else if eq $value.Value.In "cookie" }}
-		cookie := r.Cookie("{{$value.Value.Name}}")
-		if cookie == nil || len(cookie.Value) == 0 {
+		cookie, err := r.Cookie("{{$value.Value.Name}}")
+		if err != nil || cookie == nil || len(cookie.Value) == 0 {
 			return nil, httputil.ErrUnauthorized
 		}
 
