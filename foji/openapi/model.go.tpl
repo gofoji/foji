@@ -79,12 +79,12 @@ func (e {{ $enumType }}) Value() (driver.Value, error) {
 }
 
 func (e *{{ $enumType }}) Scan(src interface{}) error {
-	source, ok := src.(string)
+	s, ok := src.(string)
 	if !ok {
 		return fmt.Errorf("{{ $enumType }}.scan: scanned a %T, not []byte", src) //nolint
 	}
 
-	*e = New{{ $enumType }}(source)
+	*e = New{{ $enumType }}(s)
 
 	return nil
 }
