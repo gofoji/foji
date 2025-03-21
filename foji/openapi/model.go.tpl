@@ -86,10 +86,6 @@ func (e *{{ $enumType }}) Scan(src interface{}) error {
 
 	*e = New{{ $enumType }}(source)
 
-	if *e == Unknown{{ $enumType }} {
-		return fmt.Errorf("{{ $enumType }}.scan: scanned an unknown value: %s", source) //nolint
-	}
-
 	return nil
 }
 
