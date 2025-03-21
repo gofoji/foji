@@ -74,6 +74,21 @@ func (e {{ $enumType }}) MarshalJSON() ([]byte, error) {
     return json.Marshal(e.String())
 }
 
+func (e {{ $enumType }}) Value() (driver.Value, error) {
+	return json.Marshal(e.String())
+}
+
+func (e *{{ $enumType }}) Scan(src interface{}) error {
+	s, ok := src.(string)
+	if !ok {
+		return fmt.Errorf("{{ $enumType }}.scan: scanned a %T, not []byte", src) //nolint
+	}
+
+	*e = New{{ $enumType }}(s)
+
+	return nil
+}
+
 {{ end -}}
 {{- end -}}
 
