@@ -8,7 +8,7 @@
     {{- if $isRequired }}
         {{ pascal $key }} {{ $type }} `json:"{{$key}}"`
     {{- else }}
-        {{ pascal $key }} {{ if $schema.Value.Nullable }}*{{ end }}{{ $type }} `json:"{{$key}},omitempty"`
+        {{ pascal $key }} {{ if $schema.Value.Nullable }}*{{ end }}{{ $type }} `json:"{{$key}},omitempty{{- if $.SchemaIsObject $schema -}},omitzero{{ end }}"`
     {{- end }}
 {{- end -}}
 

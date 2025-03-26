@@ -504,6 +504,10 @@ func (o *OpenAPIFileContext) SchemaIsComplex(schema *openapi3.SchemaRef) bool {
 	return schema.Value.Items.Ref == "" && schema.Value.Items.Value.Type.Is("object")
 }
 
+func (o *OpenAPIFileContext) SchemaIsObject(schema *openapi3.SchemaRef) bool {
+	return schema.Value.Type.Is("object") || schema.Value.Type.Is("string") // to catch timestamps and uuids
+}
+
 func (o *OpenAPIFileContext) GetOpHappyResponseKey(op *openapi3.Operation) string {
 	// passing "" as pkg because here we only need the Key part for which pkg is not needed
 	opResponse := o.GetOpHappyResponse("", op)
