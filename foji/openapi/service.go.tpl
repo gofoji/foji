@@ -18,7 +18,7 @@
 	) (
     {{- $response := $.GetOpHappyResponseType $package .RuntimeParams.op}}
     {{- if notEmpty $response}}{{ $.CheckPackage $response $package}}, {{ end }}
-	{{- range ($.GetOpHappyResponseHeaders $package .RuntimeParams.op) }}string, {{ end -}}
+	{{- if gt (len ($.GetOpHappyResponseHeaders $package .RuntimeParams.op)) 0 }}http.Header, {{ end -}}
 	error)
 {{- end -}}
 
@@ -61,7 +61,7 @@ func (s *Service) {{ pascal $op.OperationID}}(ctx context.Context,
 	{{- $response := $.GetOpHappyResponseType $.PackageName $op}}
     return 
 	{{- if notEmpty $response -}}nil, {{ end -}}
-    {{- range ($.GetOpHappyResponseHeaders $.PackageName $op) -}}"", {{ end -}} 
+    {{- if gt (len ($.GetOpHappyResponseHeaders $.PackageName $op)) 0 -}}http.Header{}, {{ end -}} 
 	ErrNotImplemented
 }
 	{{- end }}

@@ -425,7 +425,7 @@ func (o *OpenAPIFileContext) GetOpHappyResponse(pkg string, op *openapi3.Operati
 
 	// No response with a supported content type found, but maybe there's a response with headers only
 	for key, r := range op.Responses.Map() {
-		if len(key) == 3 && key[0] == '2' || key[0] == '3' && r.Value.Headers != nil && len(r.Value.Headers) > 0 {
+		if len(key) == 3 && (key[0] == '2' || key[0] == '3') && len(r.Value.Headers) > 0 {
 			return OpResponse{Key: key, MimeType: "", MediaType: nil, GoType: "", Headers: slices.Collect(maps.Keys(r.Value.Headers))}
 		}
 	}

@@ -18,7 +18,7 @@
 	) (
     {{- $response := $.GetOpHappyResponseType $package .RuntimeParams.op}}
     {{- if notEmpty $response}}{{ $.CheckPackage $response $package}}, {{ end }}
-	{{- range ($.GetOpHappyResponseHeaders $package .RuntimeParams.op) }}string, {{ end -}}
+	{{- if gt (len ($.GetOpHappyResponseHeaders $package .RuntimeParams.op)) 0 }}http.Header, {{ end -}}
 	error)
 {{- end -}}
 
@@ -340,8 +340,8 @@ func (h OpenAPIHandlers) {{ pascal $op.OperationID}}(w http.ResponseWriter, r *h
         {{- end -}}
 
         {{- $responseGoType := $opResponse.GoType}}
-        {{ if notEmpty $responseGoType }}response, {{- end -}}
-        {{- range $header := $opResponse.Headers -}}{{ camel $header }}, {{- end -}}
+        {{ if notEmpty $responseGoType }}response, {{ end -}}
+        {{- if gt (len $opResponse.Headers) 0 -}}headers, {{ end -}}
 	err {{  if or (notEmpty $responseGoType) (gt (len $opResponse.Headers) 0 ) }}:{{ end }}= h.ops.{{ pascal $op.OperationID}}(r.Context(),
         {{- if not (empty $securityList) }} user,{{- end -}}
         {{- range $param := $.OpParams $path $op}} {{ goToken (camel $param.Value.Name) }},{{- end -}}
@@ -355,8 +355,8 @@ func (h OpenAPIHandlers) {{ pascal $op.OperationID}}(w http.ResponseWriter, r *h
 	}
 
 
-	{{- range $header := $opResponse.Headers }}
-	r.Header.Add("{{$header}}", {{ camel $header }})
+	{{- if gt (len $opResponse.Headers) 0 }}
+	r.Header = headers
 	{{- end -}}
 
         {{- $key := $.GetOpHappyResponseKey $op }}

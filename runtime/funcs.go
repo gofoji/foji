@@ -218,10 +218,6 @@ func NotEmpty(in string) bool {
 	return len(in) > 0
 }
 
-func Len(in []any) int {
-	return len(in)
-}
-
 // IsNil returns true if the input or referenced object is nil.
 func IsNil(i any) bool {
 	return (*[2]uintptr)(unsafe.Pointer(&i))[1] == 0
