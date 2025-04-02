@@ -38,42 +38,32 @@
     {{- $getRequiredParamFunction := "" -}}
     {{- if $param.Value.Schema.Value.Type.Is "array" -}}
         {{- if eq $goType "[]int32" -}}
-            {{- $getRequiredParamFunction = "GetInt32ArrayFrom" -}}
+            {{- $getRequiredParamFunction = "GetInt32Array" -}}
         {{- else if $isArrayEnum }}
-            {{- $getRequiredParamFunction = "GetEnumArrayFrom" -}}
+            {{- $getRequiredParamFunction = "GetEnumArray" -}}
         {{- else }}
-            {{- $getRequiredParamFunction = "GetStringArrayFrom" -}}
+            {{- $getRequiredParamFunction = "GetStringArray" -}}
         {{- end -}}
     {{- else -}}
         {{- if eq $goType "bool" -}}
-            {{- $getRequiredParamFunction = "GetBoolFrom" -}}
+            {{- $getRequiredParamFunction = "GetBool" -}}
         {{- else if eq $goType "int32" -}}
-            {{- $getRequiredParamFunction = "GetInt32From" -}}
+            {{- $getRequiredParamFunction = "GetInt32" -}}
         {{- else if eq $goType "int64" -}}
-            {{- $getRequiredParamFunction = "GetInt64From" -}}
+            {{- $getRequiredParamFunction = "GetInt64" -}}
         {{- else if eq $goType "time.Time" }}
-            {{- $getRequiredParamFunction = "GetTimeFrom" -}}
+            {{- $getRequiredParamFunction = "GetTime" -}}
 		{{- else if eq $goType "uuid.UUID" }}
-			{{- $getRequiredParamFunction = "GetUUIDFrom" -}}
+			{{- $getRequiredParamFunction = "GetUUID" -}}
         {{- else if $isEnum }}
-            {{- $getRequiredParamFunction = "GetEnumFrom" -}}
+            {{- $getRequiredParamFunction = "GetEnum" -}}
         {{- else }}
-            {{- $getRequiredParamFunction = "GetStringFrom" -}}
+            {{- $getRequiredParamFunction = "GetString" -}}
         {{- end -}}
-    {{- end -}}
-    {{- $paramSource := "" -}}
-	{{- if eq $param.Value.In "query" -}}
-		{{- $paramSource = "ParamQuery" -}}
-	{{- else if eq $param.Value.In "header" -}}
-		{{- $paramSource = "ParamHeader" -}}
-	{{- else if eq $param.Value.In "path" -}}
-		{{- $paramSource = "ParamPath" -}}
-	{{- else if eq $param.Value.In "cookie" -}}
-		{{- $paramSource = "ParamCookie" -}}
     {{- end -}}
 {{- goDoc $param.Value.Description }}
 	{{ if $param.Value.Schema.Value.Type.Is "array" }}
-	{{ goToken (camel $param.Value.Name) }}, _, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", params.{{ $paramSource }}, {{ $required }}
+	{{ goToken (camel $param.Value.Name) }}, _, err := params.{{ $getRequiredParamFunction }}{{ pascal $param.Value.In }}(r, "{{ $param.Value.Name }}", {{ $required }}
 		{{- if $isArrayEnum -}}, {{ $enumNew  }}{{- end -}})
 	if err != nil {
 		validationErrors.Add("{{ $param.Value.Name }}", err)
@@ -90,7 +80,7 @@
 
 
 	{{- else if $required }}
-	{{ goToken (camel $param.Value.Name) }}, _, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", params.{{ $paramSource }}, {{ $required }}
+	{{ goToken (camel $param.Value.Name) }}, _, err := params.{{ $getRequiredParamFunction }}{{ pascal $param.Value.In }}(r, "{{ $param.Value.Name }}", {{ $required }}
 		{{- if or $isEnum $isArrayEnum -}}, {{ $enumNew  }}{{- end -}})
 	if err != nil {
 		validationErrors.Add("{{ $param.Value.Name }}", err)
@@ -99,9 +89,9 @@
 
 	{{- else if $hasDefault }}
 	{{- if $isEnum -}}
-		{{ goToken (camel $param.Value.Name) }}, ok, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", params.{{ $paramSource }}, {{ $required }}, {{ $enumNew  }})
+		{{ goToken (camel $param.Value.Name) }}, ok, err := params.{{ $getRequiredParamFunction }}{{ pascal $param.Value.In }}(r, "{{ $param.Value.Name }}", {{ $required }}, {{ $enumNew  }})
 	{{else -}}
-		{{ goToken (camel $param.Value.Name) }}, ok, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", params.{{ $paramSource }}, {{ $required }})
+		{{ goToken (camel $param.Value.Name) }}, ok, err := params.{{ $getRequiredParamFunction }}{{ pascal $param.Value.In }}(r, "{{ $param.Value.Name }}", {{ $required }})
 	{{- end }}
 	if err != nil {
 		validationErrors.Add("{{ $param.Value.Name }}", err)
@@ -121,7 +111,7 @@
 	{{- else }}
 	var {{ goToken (camel $param.Value.Name) }} *{{$goType}}
 
-	{{ goToken (camel $param.Value.Name) }}Val, ok, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", params.{{ $paramSource }}, {{ $required }}
+	{{ goToken (camel $param.Value.Name) }}Val, ok, err := params.{{ $getRequiredParamFunction }}{{ pascal $param.Value.In }}(r, "{{ $param.Value.Name }}", {{ $required }}
     {{- if $isEnum -}}, {{ $enumNew  }}{{- end -}})
 	if err != nil {
 		validationErrors.Add("{{ $param.Value.Name }}", err)
