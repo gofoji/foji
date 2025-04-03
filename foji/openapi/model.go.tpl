@@ -288,6 +288,7 @@ func (p *{{ pascal $key }}) UnmarshalJSON(b []byte) error {
         return validationErrors.GetErr()
     }
         {{ end }}
+
     type  {{ pascal $key }}JSON {{ pascal $key }}
     var parseObject {{ pascal $key }}JSON
 
@@ -296,6 +297,31 @@ func (p *{{ pascal $key }}) UnmarshalJSON(b []byte) error {
     }
 
     v := {{ pascal $key }}(parseObject)
+
+        {{ range $field, $schemaProp := $.SchemaProperties $schema false}}
+            {{ $typeName := (print $key " " $field) -}}
+            {{- if notEmpty $schemaProp.Ref -}}
+                {{- $typeName = trimPrefix "#/components/parameters/" $schemaProp.Ref -}}
+            {{- end -}}
+            {{- $goType := $.GetType $.PackageName $typeName $schemaProp }}
+            {{- $isEnum := $.SchemaIsEnum $schemaProp }}
+            {{- $hasDefault := isNotNil $schemaProp.Value.Default }}
+
+            {{- if $hasDefault }}
+    if _, ok := requiredCheck["{{ $field }}"]; !ok {
+                {{- if $isEnum -}}
+        v.{{ pascal $field }} = {{- $goType}}{{ pascal (goToken (printf "%#v" $schemaProp.Value.Default)) }}
+                {{else -}}
+                    {{- if $schemaProp.Value.Nullable }}
+        defaultVal := {{ printf "%#v" $schemaProp.Value.Default }}
+        v.{{ pascal $field }} = &defaultVal
+                    {{ else -}}
+        v.{{ pascal $field }} = {{ printf "%#v" $schemaProp.Value.Default }}
+                    {{- end }}
+                {{- end -}}
+    }
+            {{- end -}}
+        {{end}}
 
         {{ if $hasValidation}}
     if err := v.Validate(); err != nil {

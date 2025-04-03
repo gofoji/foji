@@ -315,9 +315,54 @@ paths:
           application/json:
             schema:
               type: object
+              required:
+                - f07
+                - f10
               properties:
-                special:
+                f01:
                   type: boolean
+                f02:
+                  type: integer
+                f03:
+                  type: integer
+                  format: int32
+                f04:
+                  type: integer
+                  format: int64
+                  default: 1
+                f05:
+                  type: string
+                  format: date-time
+                f06:
+                  type: string
+                  format: uuid
+                f07:
+                  type: string
+                f08:
+                  type: string
+                  default: valueA
+                  enum:
+                    - valueA
+                    - valueB
+                f09:
+                  $ref: "#/components/schemas/Season"
+                f10:
+                  type: array
+                  items:
+                    type: string
+                  minItems: 1
+                f11:
+                  type: array
+                  items:
+                    type: integer
+                    format: int32
+                f12:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/Season"
+                f13:
+                  type: string
+                  default: someValue
         required: false
       responses:
         "200":
@@ -337,7 +382,7 @@ paths:
             schema:
               type: object
               required:
-                - f7
+                - f07
               properties:
                 f01:
                   type: boolean
