@@ -331,6 +331,18 @@ paths:
                 $ref: '#/components/schemas/FooBar'
         default:
           $ref: '#/components/responses/ErrorResponse'
+  /examples/header:
+    get:
+      operationId: HeaderResponse
+      description: Check header responses
+      responses:
+        "200":
+          description: OK
+          headers:
+            Location:
+              description: Redirect URL
+              schema:
+                type: string
 components:
   parameters:
     IdParam:

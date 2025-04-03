@@ -27,3 +27,4 @@ rest-client.private.env.json
 http-client.private.env.json
 .DS_Store
 scratch/
+tests/*/*_gen.go

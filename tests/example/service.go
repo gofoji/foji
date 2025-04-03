@@ -2,6 +2,7 @@ package example
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	"github.com/google/uuid"
@@ -42,5 +43,9 @@ func (s *Service) GetExampleQuery(ctx context.Context, k1 string, k2 uuid.UUID, 
 }
 
 func (s *Service) GetTest(ctx context.Context, vehicle GetTestVehicle, vehicleDefault GetTestVehicleDefault, playerID uuid.UUID, color ColorQuery, colorDefault ColorQueryDefault, season Season) (*Example, error) {
+	return nil, nil
+}
+
+func (s *Service) HeaderResponse(ctx context.Context) (http.Header, error) {
 	return nil, nil
 }

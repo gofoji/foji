@@ -17,7 +17,9 @@
     {{- end -}}
 	) (
     {{- $response := $.GetOpHappyResponseType $package .RuntimeParams.op}}
-    {{- if notEmpty $response}}{{ $.CheckPackage $response $package}}, {{ end }}error)
+    {{- if notEmpty $response}}{{ $.CheckPackage $response $package}}, {{ end }}
+	{{- if gt (len ($.GetOpHappyResponseHeaders $package .RuntimeParams.op)) 0 }}http.Header, {{ end -}}
+	error)
 {{- end -}}
 
 package {{ .PackageName }}
@@ -57,11 +59,10 @@ type Service struct {
 func (s *Service) {{ pascal $op.OperationID}}(ctx context.Context,
 	{{- template "methodSignature" ($.WithParams "op" $op "path" $path "package" $.PackageName) }}{
 	{{- $response := $.GetOpHappyResponseType $.PackageName $op}}
-	{{- if notEmpty $response }}
-	return nil, ErrNotImplemented
-	{{- else }}
-	return ErrNotImplemented
-	{{- end }}
+    return 
+	{{- if notEmpty $response -}}nil, {{ end -}}
+    {{- if gt (len ($.GetOpHappyResponseHeaders $.PackageName $op)) 0 -}}http.Header{}, {{ end -}} 
+	ErrNotImplemented
 }
 	{{- end }}
 {{- end }}
