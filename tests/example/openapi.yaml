@@ -149,7 +149,6 @@ paths:
   /examples/test:
     get:
       operationId: getTest
-      x-raw-request-response: true
       parameters:
         - name: vehicle
           in: query
@@ -174,6 +173,70 @@ paths:
         - $ref: "#/components/parameters/ColorQuery"
         - $ref: "#/components/parameters/ColorQueryDefault"
         - $ref: "#/components/parameters/SeasonQuery"
+      responses:
+        "200":
+          description: 'Example'
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Example"
+  /examples/rawRequest:
+    get:
+      operationId: getRawRequest
+      x-raw-request: true
+      parameters:
+        - name: vehicle
+          in: query
+          required: true
+          schema:
+            type: string
+            enum:
+              - car
+              - truck
+              - bike
+      responses:
+        "200":
+          description: 'Example'
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Example"
+  /examples/rawResponse:
+    get:
+      operationId: getRawResponse
+      x-raw-response: true
+      parameters:
+        - name: vehicle
+          in: query
+          required: true
+          schema:
+            type: string
+            enum:
+              - car
+              - truck
+              - bike
+      responses:
+        "200":
+          description: 'Example'
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Example"
+  /examples/rawRequestResponse:
+    get:
+      operationId: getRawRequestResponse
+      x-raw-request: true
+      x-raw-response: true
+      parameters:
+        - name: vehicle
+          in: query
+          required: true
+          schema:
+            type: string
+            enum:
+              - car
+              - truck
+              - bike
       responses:
         "200":
           description: 'Example'

@@ -42,6 +42,18 @@ func (s *Service) GetExampleQuery(ctx context.Context, k1 string, k2 uuid.UUID, 
 	return nil, nil
 }
 
+func (s *Service) GetRawRequest(ctx context.Context, r *http.Request, vehicle GetRawRequestVehicle) (*Example, error) {
+	return nil, nil
+}
+
+func (s *Service) GetRawResponse(ctx context.Context, w http.ResponseWriter, vehicle GetRawResponseVehicle) (*Example, error) {
+	return nil, nil
+}
+
+func (s *Service) GetRawRequestResponse(ctx context.Context, w http.ResponseWriter, r *http.Request, vehicle GetRawRequestResponseVehicle) (*Example, error) {
+	return nil, nil
+}
+
 func (s *Service) GetTest(ctx context.Context, w http.ResponseWriter, r *http.Request, vehicle GetTestVehicle, vehicleDefault GetTestVehicleDefault, playerID uuid.UUID, color ColorQuery, colorDefault ColorQueryDefault, season Season) (*Example, error) {
 	return nil, nil
 }
