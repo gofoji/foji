@@ -341,11 +341,12 @@ func (h OpenAPIHandlers) {{ pascal $op.OperationID}}(w http.ResponseWriter, r *h
         {{- $responseGoType := $opResponse.GoType}}
         {{- if notEmpty $responseGoType }}
 
-	response, err := h.ops.{{ pascal $op.OperationID}}(r.Context(), {{- if ($.OpHasExtension $op "x-raw-request-response" )}} w, r, {{ end }}
+	response, err := h.ops.{{ pascal $op.OperationID}}(r.Context(),
         {{- else}}
 
-	err = h.ops.{{ pascal $op.OperationID}}(r.Context(), {{- if ($.OpHasExtension $op "x-raw-request-response" )}} w, r, {{ end }}
+	err = h.ops.{{ pascal $op.OperationID}}(r.Context(),
         {{- end}}
+        {{- if ($.OpHasExtension $op "x-raw-request-response" )}} w, r, {{ end }}
         {{- if not (empty $securityList) }} user,{{- end -}}
         {{- range $param := $.OpParams $path $op}} {{ goToken (camel $param.Value.Name) }},{{- end -}}
         {{- if $hasBody }} body{{- end -}}
