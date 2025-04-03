@@ -182,6 +182,34 @@ type Mux interface {
     Handle(pattern string, handler http.Handler)
 }
 
+type writeOnce struct {
+	http.ResponseWriter
+	hasCode bool
+	hasBody bool
+}
+
+func newWriteOnce(w http.ResponseWriter) *writeOnce {
+	return &writeOnce{ResponseWriter: w}
+}
+
+func (w *writeOnce) WriteHeader(statusCode int) {
+	if w.hasCode {
+		return
+	}
+
+	w.hasCode = true
+	w.ResponseWriter.WriteHeader(statusCode)
+}
+
+func (w *writeOnce) Write(b []byte) (int, error) {
+	if w.hasBody {
+		return 0, nil
+	}
+
+	w.hasBody = true
+	return w.ResponseWriter.Write(b)
+}
+
 func RegisterHTTP(ops Operations, r Mux
 {{- if .HasAuthentication }}
 	{{- range $security, $value := .API.Components.SecuritySchemes -}}
@@ -340,6 +368,8 @@ func (h OpenAPIHandlers) {{ pascal $op.OperationID}}(w http.ResponseWriter, r *h
         {{- end -}}
 
         {{- $responseGoType := $opResponse.GoType}}
+
+    {{ if ($.OpHasExtension $op "x-raw-response" )}}w = newWriteOnce(w){{ end }}
 
 	{{ if empty $responseGoType }}err ={{ else }}response, err :={{ end }} h.ops.{{ pascal $op.OperationID}}(
         {{- if ($.OpHasExtension $op "x-raw-request" )}}r, {{ else }}r.Context(), {{ end }}
