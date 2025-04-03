@@ -239,7 +239,7 @@ func (t Table) toDB(schema *db.Schema) db.Table {
 		Comment:  t.Comment,
 		Columns:  nil,
 		Indexes:  nil,
-		ReadOnly: !(t.CanInsert && t.CanUpdate && t.CanDelete), //nolint:staticcheck
+		ReadOnly: !t.CanInsert && !t.CanUpdate && !t.CanDelete,
 	}
 }
 
