@@ -355,9 +355,14 @@ func (h OpenAPIHandlers) {{ pascal $op.OperationID}}(w http.ResponseWriter, r *h
 	}
 
 
-	{{- if gt (len $opResponse.Headers) 0 }}
-	r.Header = headers
-	{{- end -}}
+	{{- range $header := $opResponse.Headers }}
+	{{ camel $header }} := headers.Values("{{ $header }}")
+	for _, v := range {{ camel $header }} {
+		if v != "" {
+			w.Header().Add("{{ $header }}", v)
+		}
+	}
+	{{- end }}
 
         {{- $key := $.GetOpHappyResponseKey $op }}
         {{- if notEmpty $responseGoType }}
