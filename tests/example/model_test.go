@@ -19,12 +19,12 @@ func TestAddInlinedBodyRequest(t *testing.T) {
 		{
 			Name:     "minimal",
 			Raw:      `{"f07": "test", "f10": ["a"]}`,
-			Expected: AddInlinedBodyRequest{F04: 1, F07: "test", F08: AddInlinedBodyRequestF08ValueA, F10: []string{"a"}},
+			Expected: AddInlinedBodyRequest{F04: 1, F07: "test", F08: AddInlinedBodyRequestF08ValueA, F10: []string{"a"}, F13: "someValue"},
 		},
 		{
 			Name: "maximal",
 			Raw: `{"f01": true, "f02": 2, "f03": 3, "f04": 4, "f05": "2025-01-01T12:00:00Z", "f06": "b043c679-354a-4170-a061-dfe2271b3c77", 
-"f07": "f7Test", "f08": "valueB", "f09": "summer", "f10": ["a", "b"], "f11": [4, 5], "f12": ["fall", "spring"]}`,
+"f07": "f7Test", "f08": "valueB", "f09": "summer", "f10": ["a", "b"], "f11": [4, 5], "f12": ["fall", "spring"], "f13": "f13Test"}`,
 			Expected: AddInlinedBodyRequest{
 				F01: true,
 				F02: 2,
@@ -38,6 +38,7 @@ func TestAddInlinedBodyRequest(t *testing.T) {
 				F10: []string{"a", "b"},
 				F11: []int32{4, 5},
 				F12: []Season{SeasonFall, SeasonSpring},
+				F13: "f13Test",
 			},
 		},
 	}

@@ -360,6 +360,9 @@ paths:
                   type: array
                   items:
                     $ref: "#/components/schemas/Season"
+                f13:
+                  type: string
+                  default: someValue
         required: false
       responses:
         "200":
