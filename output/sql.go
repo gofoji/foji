@@ -77,6 +77,7 @@ func SQL(p cfg.Process, fn cfg.FileHandler, l zerolog.Logger, fileGroups sql.Fil
 	return nil
 }
 
+//nolint:recvcheck
 type SQLContext struct {
 	Context
 	sql.FileGroups
@@ -193,6 +194,7 @@ func (q *SQLFileContext) Init(p *plates.Factory) error {
 
 	if strings.Contains(name, "{{") {
 		var err error
+
 		name, err = p.From(name).To(q)
 		if err != nil {
 			return fmt.Errorf("mapping Package name:%w", err)
@@ -201,7 +203,7 @@ func (q *SQLFileContext) Init(p *plates.Factory) error {
 		q.Params["Package"] = name
 	}
 
-	for _, qry := range q.File.Queries {
+	for _, qry := range q.Queries {
 		q.CheckPackage(qry.Result.Type, name)
 
 		for _, p := range qry.Params {
@@ -218,7 +220,7 @@ func (q *SQLQueryContext) Init() error {
 		return errMissingParam
 	}
 
-	for _, p := range q.Query.Params {
+	for _, p := range q.Params {
 		q.CheckPackage(p.Type, name)
 	}
 

@@ -8,7 +8,10 @@ linters:
     - exhaustive
     - exhaustruct
     - gochecknoglobals
+    - godot
+    - lll
     - nlreturn
+    - varnamelen
     - wrapcheck
   settings:
     cyclop:

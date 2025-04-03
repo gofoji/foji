@@ -70,7 +70,7 @@ func (c *Context) WithParams(values ...any) (*Context, error) {
 	}
 
 	out := *c
-	out.RuntimeParams = make(map[string]any, len(values)/2) //nolint:gomnd
+	out.RuntimeParams = make(map[string]any, len(values)/2) //nolint:mnd
 
 	for i := 0; i < len(values); i += 2 {
 		key, ok := values[i].(string)
@@ -127,6 +127,7 @@ func (ii *Imports) CheckPackage(t, currentPackage string) string {
 
 	prefix := ""
 	typePkg := strings.Join(tt[0:len(tt)-1], ".")
+
 	if len(typePkg) > 0 && typePkg[0] == '*' {
 		prefix = "*"
 		typePkg = typePkg[1:]
