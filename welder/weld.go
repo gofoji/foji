@@ -30,7 +30,7 @@ type Welder struct {
 	config  cfg.Config
 	targets []cfg.Process
 
-	ctx       context.Context
+	ctx       context.Context //nolint:containedctx
 	conn      *pgx.Conn
 	resources map[string]InputFiles
 }

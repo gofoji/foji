@@ -3,7 +3,6 @@ package output
 import (
 	"bytes"
 	"encoding/csv"
-	"encoding/json"
 	"fmt"
 	"maps"
 	"slices"
@@ -41,6 +40,7 @@ func OpenAPI(p cfg.Process, fn cfg.FileHandler, l zerolog.Logger, groups openapi
 				if len(ctx.RuntimeParams) > 0 {
 					return fmt.Errorf("%w:%v", err, ctx.RuntimeParams)
 				}
+
 				return err
 			}
 		}
@@ -56,12 +56,13 @@ type OpenAPIFileContext struct {
 }
 
 func (o *OpenAPIFileContext) GoImports() []string {
-	var out []string
+	var out []string //nolint:prealloc
 
 	for _, i := range o.Imports {
 		if i == o.PackageName() {
 			continue
 		}
+
 		out = append(out, i)
 	}
 
@@ -95,20 +96,6 @@ func (o *OpenAPIFileContext) GetTypeName(pkg string, s *openapi3.SchemaRef) stri
 	}
 
 	return o.CheckPackage(ref, pkg)
-}
-
-func getExtAsString(in any) string {
-	bb, ok := in.(json.RawMessage)
-	if !ok {
-		return ""
-	}
-
-	var s string
-	if err := json.Unmarshal(bb, &s); err != nil {
-		return ""
-	}
-
-	return s
 }
 
 func (o *OpenAPIFileContext) TypeOnly(name string) string {
@@ -149,6 +136,7 @@ func (o *OpenAPIFileContext) HasExtension(s *openapi3.SchemaRef, ext string) boo
 	return ok
 }
 
+//nolint:cyclop
 func (o *OpenAPIFileContext) GetType(currentPackage, name string, s *openapi3.SchemaRef) string {
 	if s == nil {
 		return ""
@@ -195,6 +183,7 @@ func (o *OpenAPIFileContext) GetType(currentPackage, name string, s *openapi3.Sc
 		}
 
 		name = o.PackageName() + "." + kace.Pascal(name)
+
 		return o.CheckPackage(name, currentPackage)
 	}
 
@@ -215,10 +204,10 @@ func (o *OpenAPIFileContext) EnumName(name string) string {
 }
 
 func (o *OpenAPIFileContext) EnumNew(name string) string {
-	if strings.HasPrefix(name, "[]") {
-		name = name[2:]
-	}
+	name = strings.TrimPrefix(name, "[]")
+
 	pos := strings.Index(name, ".") + 1
+
 	return name[:pos] + "New" + name[pos:]
 }
 
@@ -386,6 +375,7 @@ func (o *OpenAPIFileContext) GetRequestBodySchemas(op *openapi3.Operation) []OpB
 	}
 
 	var out []OpBody
+
 	for k, v := range op.RequestBody.Value.Content {
 		if v.Schema == nil {
 			continue
@@ -401,12 +391,22 @@ func (o *OpenAPIFileContext) GetRequestBodySchemas(op *openapi3.Operation) []OpB
 
 var knownInterfaces = []string{"io.Reader"}
 
+func happyStatusCode(key string) bool {
+	if len(key) != 3 { //nolint:mnd
+		return false
+	}
+
+	return key[0] == '2' || key[0] == '3'
+}
+
+//nolint:gocognit
 func (o *OpenAPIFileContext) GetOpHappyResponse(pkg string, op *openapi3.Operation) OpResponse {
 	supportedResponseContentTypes := []string{ApplicationJSON, ApplicationJSONL, TextPlain, TextHTML, TextCSV}
 
 	happyKey := "200"
+
 	for key, r := range op.Responses.Map() {
-		if len(key) == 3 && key[0] == '2' || key[0] == '3' {
+		if happyStatusCode(key) { //nolint:nestif
 			happyKey = key
 
 			for _, mimeType := range supportedResponseContentTypes {
@@ -419,7 +419,9 @@ func (o *OpenAPIFileContext) GetOpHappyResponse(pkg string, op *openapi3.Operati
 						// Unknown type, use []byte by default
 						t = "[]byte"
 					}
+
 					var goType string
+
 					if strings.HasPrefix(t, "[]") || strings.HasPrefix(t, "map[") || slices.Contains(knownInterfaces, t) {
 						goType = t
 					} else {
@@ -438,7 +440,7 @@ func (o *OpenAPIFileContext) GetOpHappyResponse(pkg string, op *openapi3.Operati
 
 	// No response with a supported content type found, but maybe there's a response with headers only
 	for key, r := range op.Responses.Map() {
-		if len(key) == 3 && (key[0] == '2' || key[0] == '3') && len(r.Value.Headers) > 0 {
+		if happyStatusCode(key) && len(r.Value.Headers) > 0 {
 			return OpResponse{Key: key, MimeType: "", MediaType: nil, GoType: "", Headers: slices.Collect(maps.Keys(r.Value.Headers))}
 		}
 	}
@@ -464,6 +466,7 @@ func (o *OpenAPIFileContext) DefaultValues(val string) []string {
 	}
 
 	csvReader := csv.NewReader(bytes.NewReader([]byte(val[1 : len(val)-1])))
+
 	records, err := csvReader.ReadAll()
 	if err != nil {
 		o.Logger.Err(err).Str("val", val).Msg("error reading csv for default")
@@ -518,7 +521,7 @@ func (o *OpenAPIFileContext) SchemaIsComplex(schema *openapi3.SchemaRef) bool {
 		return true
 	}
 
-	if schema.Value.AllOf != nil && len(schema.Value.AllOf) > 0 {
+	if len(schema.Value.AllOf) > 0 {
 		return true
 	}
 
@@ -542,7 +545,7 @@ func (o *OpenAPIFileContext) GetOpHappyResponseKey(op *openapi3.Operation) strin
 func (o *OpenAPIFileContext) GetOpHappyResponseMimeType(op *openapi3.Operation) string {
 	// passing "" as pkg because here we only need the MimeType part for which pkg is not needed
 	opResponse := o.GetOpHappyResponse("", op)
-	return opResponse.MimeType.String()
+	return opResponse.String()
 }
 
 func (o *OpenAPIFileContext) GetOpHappyResponseType(pkg string, op *openapi3.Operation) string {
@@ -562,7 +565,7 @@ func (o *OpenAPIFileContext) OpSecurity(op *openapi3.Operation) openapi3.Securit
 		return *op.Security
 	}
 
-	return o.File.API.Security
+	return o.API.Security
 }
 
 func hasAuthorization(security openapi3.SecurityRequirements) bool {

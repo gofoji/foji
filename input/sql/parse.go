@@ -26,7 +26,7 @@ type Repo interface {
 type Parser struct {
 	repo   Repo
 	logger zerolog.Logger
-	ctx    context.Context
+	ctx    context.Context //nolint:containedctx
 }
 
 type File struct {
@@ -162,7 +162,7 @@ func Parse(ctx context.Context, logger zerolog.Logger, repo Repo, inGroups []inp
 		for j, f := range source.Files {
 			logger.Debug().Str("filename", f.Name).Msg("SQL Parsing")
 
-			resultFile, err := parseFile(f, logger, p)
+			resultFile, err := parseFile(ctx, f, logger, p)
 			if err != nil {
 				return nil, fmt.Errorf("parse:%q:%w", f.Name, err)
 			}
@@ -176,7 +176,7 @@ func Parse(ctx context.Context, logger zerolog.Logger, repo Repo, inGroups []inp
 	return result, nil
 }
 
-func parseFile(f input.File, logger zerolog.Logger, p Parser) (File, error) {
+func parseFile(ctx context.Context, f input.File, logger zerolog.Logger, p Parser) (File, error) {
 	resultFile := File{File: f}
 
 	statements := bytes.Split(f.Content, []byte(";"))
@@ -211,7 +211,7 @@ func parseFile(f input.File, logger zerolog.Logger, p Parser) (File, error) {
 
 		q.SQL = s
 
-		err := p.repo.DescribeQuery(context.Background(), &q)
+		err := p.repo.DescribeQuery(ctx, &q)
 		if err != nil {
 			return resultFile, fmt.Errorf("DescribeQuery: %w", err)
 		}

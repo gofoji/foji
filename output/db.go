@@ -86,7 +86,7 @@ func DB(p cfg.Process, fn cfg.FileHandler, logger zerolog.Logger, schemas db.DB,
 	return nil
 }
 
-type SchemasContext struct {
+type SchemasContext struct { //nolint:recvcheck
 	Context
 	Imports
 	db.DB

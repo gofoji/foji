@@ -1,7 +1,6 @@
 package output
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/rs/zerolog"
@@ -133,5 +132,5 @@ func (q ProtoContext) GetType(f proto.Field, pkg string) string {
 		return f.Type
 	}
 
-	return fmt.Sprintf("*%s", f.Type)
+	return "*" + f.Type
 }

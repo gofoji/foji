@@ -43,7 +43,7 @@ func Expand(globs []string) ([]string, error) {
 			}
 
 			for _, path := range paths {
-				err = filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+				err = filepath.Walk(path, func(path string, _ os.FileInfo, err error) error {
 					if err != nil {
 						return err
 					}
@@ -52,6 +52,7 @@ func Expand(globs []string) ([]string, error) {
 						hits = append(hits, path)
 						hitMap[path] = true
 					}
+
 					return nil
 				})
 				if err != nil {
