@@ -139,7 +139,7 @@ func (o *OpenAPIFileContext) OpHasExtension(op *openapi3.Operation, ext string) 
 		return b
 	}
 
-	return ok
+	return true
 }
 
 func (o *OpenAPIFileContext) HasExtension(s *openapi3.SchemaRef, ext string) bool {
