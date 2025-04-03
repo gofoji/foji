@@ -152,6 +152,7 @@ type Operations interface {
     {{- range $verb, $op := $path.Operations }}
         {{- $opResponse := $.GetOpHappyResponse $package $op }}
 	{{ pascal $op.OperationID}}(ctx context.Context,
+		{{- if ($.OpHasExtension $op "x-raw-request-response" )}} w http.ResponseWriter, r *http.Request, {{ end }}
         {{- template "methodSignature" ($.WithParams "op" $op "package" $package "path" $path) }}
     {{- end }}
 {{- end }}
@@ -340,10 +341,10 @@ func (h OpenAPIHandlers) {{ pascal $op.OperationID}}(w http.ResponseWriter, r *h
         {{- $responseGoType := $opResponse.GoType}}
         {{- if notEmpty $responseGoType }}
 
-	response, err := h.ops.{{ pascal $op.OperationID}}(r.Context(),
+	response, err := h.ops.{{ pascal $op.OperationID}}(r.Context(), {{- if ($.OpHasExtension $op "x-raw-request-response" )}} w, r, {{ end }}
         {{- else}}
 
-	err = h.ops.{{ pascal $op.OperationID}}(r.Context(),
+	err = h.ops.{{ pascal $op.OperationID}}(r.Context(), {{- if ($.OpHasExtension $op "x-raw-request-response" )}} w, r, {{ end }}
         {{- end}}
         {{- if not (empty $securityList) }} user,{{- end -}}
         {{- range $param := $.OpParams $path $op}} {{ goToken (camel $param.Value.Name) }},{{- end -}}

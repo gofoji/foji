@@ -149,6 +149,7 @@ paths:
   /examples/test:
     get:
       operationId: getTest
+      x-raw-request-response: true
       parameters:
         - name: vehicle
           in: query
