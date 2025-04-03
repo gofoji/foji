@@ -1,54 +1,58 @@
+version: "2"
 run:
-  deadline: 10m
-  skip-dirs:
-    - temp
-  skip-files:
-    - ".*_gen.go$"
   tests: false
-  sort-results: true
 linters:
-  enable-all: true
+  default: all
   disable:
-    - exhaustivestruct
-    - gochecknoglobals
-    - nlreturn
-    - scopelint
-    - maligned
-    - interfacer
-    - wrapcheck
-    - golint
+    - depguard
     - exhaustive
     - exhaustruct
-    - nosnakecase
-    - deadcode
-    - varcheck
-    - structcheck
-    - ifshort
-    - depguard
-linters-settings:
-  godox:
-    keywords:
-      - NOTE
-      - HACK
-      - TEMP
-      - FIX
-      - FIXME
-  cyclop:
-    max-complexity: 15
-  varnamelen:
-    ignore-type-assert-ok: true
-    ignore-map-index-ok: true
-    ignore-decls:
-      - p Process
-      - l zerolog.Logger
-      - b []byte
-    ignore-names:
-      - ss
-      - id
-      - to
-    max-distance: 10
-  gci:
-    sections:
-      - standard
-      - default
-      - prefix(github.com/gofoji/foji)
+    - gochecknoglobals
+    - nlreturn
+    - wrapcheck
+  settings:
+    cyclop:
+      max-complexity: 15
+    godox:
+      keywords:
+        - NOTE
+        - HACK
+        - TEMP
+        - FIX
+        - FIXME
+    varnamelen:
+      max-distance: 10
+      ignore-names:
+        - ss
+        - id
+        - to
+      ignore-type-assert-ok: true
+      ignore-map-index-ok: true
+      ignore-decls:
+        - p Process
+        - l zerolog.Logger
+        - b []byte
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - .*_gen.go$
+      - temp
+formatters:
+  enable:
+    - goimports
+    - gci
+    - gofumpt
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - localmodule
+      custom-order: true
+  exclusions:
+    generated: disable

@@ -1,14 +1,11 @@
-MODULE := $(shell go list -m -f {{.Path}})
-
 sqlRepo:
 	go run main.go weld sqlRepo
 
 fmt:
-	gofumpt -l -w .
-	gci write . -s standard -s default -s "prefix($(MODULE))"
+	golangci-lint fmt
 
 lint:
-	golangci-lint run --sort-results
+	golangci-lint run
 
 test:
 	go test ./...
@@ -34,4 +31,8 @@ updateAll:
 install:
 	go install
 
-.PHONY:	sqlRepo testSchemaList testStub testDumpConfig lint test cover tidy update updateAll install test_gen
+tools:
+	go install golang.org/x/tools/cmd/goimports@latest
+	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
+
+.PHONY:	sqlRepo testSchemaList testStub testDumpConfig lint test test_gen cover tidy update updateAll install tools
