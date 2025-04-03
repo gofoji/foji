@@ -49,6 +49,7 @@ type OpResponse struct {
 	MimeType
 	MediaType *openapi3.MediaType
 	GoType    string
+	Headers   []string
 }
 
 type OpBody struct {

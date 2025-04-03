@@ -5,6 +5,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 
@@ -405,7 +406,7 @@ func (o *OpenAPIFileContext) GetOpHappyResponse(pkg string, op *openapi3.Operati
 
 	happyKey := "200"
 	for key, r := range op.Responses.Map() {
-		if len(key) == 3 && key[0] == '2' {
+		if len(key) == 3 && key[0] == '2' || key[0] == '3' {
 			happyKey = key
 
 			for _, mimeType := range supportedResponseContentTypes {
@@ -425,9 +426,20 @@ func (o *OpenAPIFileContext) GetOpHappyResponse(pkg string, op *openapi3.Operati
 						goType = "*" + t
 					}
 
-					return OpResponse{Key: key, MimeType: mime, MediaType: mediaType, GoType: goType}
+					if r.Value.Headers != nil {
+						return OpResponse{Key: key, MimeType: mime, MediaType: mediaType, GoType: goType, Headers: slices.Collect(maps.Keys(r.Value.Headers))}
+					}
+
+					return OpResponse{Key: key, MimeType: mime, MediaType: mediaType, GoType: goType, Headers: []string{}}
 				}
 			}
+		}
+	}
+
+	// No response with a supported content type found, but maybe there's a response with headers only
+	for key, r := range op.Responses.Map() {
+		if len(key) == 3 && (key[0] == '2' || key[0] == '3') && len(r.Value.Headers) > 0 {
+			return OpResponse{Key: key, MimeType: "", MediaType: nil, GoType: "", Headers: slices.Collect(maps.Keys(r.Value.Headers))}
 		}
 	}
 
@@ -536,6 +548,11 @@ func (o *OpenAPIFileContext) GetOpHappyResponseMimeType(op *openapi3.Operation) 
 func (o *OpenAPIFileContext) GetOpHappyResponseType(pkg string, op *openapi3.Operation) string {
 	opResponse := o.GetOpHappyResponse(pkg, op)
 	return opResponse.GoType
+}
+
+func (o *OpenAPIFileContext) GetOpHappyResponseHeaders(pkg string, op *openapi3.Operation) []string {
+	opResponse := o.GetOpHappyResponse(pkg, op)
+	return opResponse.Headers
 }
 
 /* Auth Focused Helpers */

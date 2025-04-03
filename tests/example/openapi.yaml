@@ -244,6 +244,33 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Example"
+  /examples/rawRequestResponseAndHeaders:
+    get:
+      operationId: getRawRequestResponseAndHeaders
+      x-raw-request: true
+      x-raw-response: true
+      parameters:
+        - name: vehicle
+          in: query
+          required: true
+          schema:
+            type: string
+            enum:
+              - car
+              - truck
+              - bike
+      responses:
+        "200":
+          description: 'Example'
+          headers:
+            Location:
+              description: Redirect URL
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Example"
   /examples/noResponse:
     post:
       operationId: noResponse
@@ -408,6 +435,18 @@ paths:
                 $ref: '#/components/schemas/FooBar'
         default:
           $ref: '#/components/responses/ErrorResponse'
+  /examples/header:
+    get:
+      operationId: HeaderResponse
+      description: Check header responses
+      responses:
+        "200":
+          description: OK
+          headers:
+            Location:
+              description: Redirect URL
+              schema:
+                type: string
 components:
   parameters:
     IdParam:

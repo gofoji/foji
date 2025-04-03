@@ -54,10 +54,18 @@ func (s *Service) GetRawRequestResponse(r *http.Request, w http.ResponseWriter, 
 	return nil, nil
 }
 
+func (s *Service) GetRawRequestResponseAndHeaders(r *http.Request, w http.ResponseWriter, vehicle GetRawRequestResponseAndHeadersVehicle) (*Example, http.Header, error) {
+	return nil, nil, nil
+}
+
 func (s *Service) GetTest(ctx context.Context, vehicle GetTestVehicle, vehicleDefault GetTestVehicleDefault, playerID uuid.UUID, color ColorQuery, colorDefault ColorQueryDefault, season Season) (*Example, error) {
 	return nil, nil
 }
 
 func (s *Service) NoResponse(ctx context.Context, body Foo) error {
 	return nil
+}
+
+func (s *Service) HeaderResponse(ctx context.Context) (http.Header, error) {
+	return nil, nil
 }

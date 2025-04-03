@@ -17,7 +17,9 @@
     {{- end -}}
 	) (
     {{- $response := $.GetOpHappyResponseType $package .RuntimeParams.op}}
-    {{- if notEmpty $response}}{{ $.CheckPackage $response $package}}, {{ end }}error)
+    {{- if notEmpty $response}}{{ $.CheckPackage $response $package}}, {{ end }}
+	{{- if gt (len ($.GetOpHappyResponseHeaders $package .RuntimeParams.op)) 0 }}http.Header, {{ end -}}
+	error)
 {{- end -}}
 
 
@@ -63,7 +65,7 @@
     {{- end -}}
 {{- goDoc $param.Value.Description }}
 	{{ if $param.Value.Schema.Value.Type.Is "array" }}
-	{{ goToken (camel $param.Value.Name) }}, _, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", {{ $required }}
+	{{ goToken (camel $param.Value.Name) }}, _, err := params.{{ $getRequiredParamFunction }}{{ pascal $param.Value.In }}(r, "{{ $param.Value.Name }}", {{ $required }}
 		{{- if $isArrayEnum -}}, {{ $enumNew  }}{{- end -}})
 	if err != nil {
 		validationErrors.Add("{{ $param.Value.Name }}", err)
@@ -80,7 +82,7 @@
 
 
 	{{- else if $required }}
-	{{ goToken (camel $param.Value.Name) }}, _, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", {{ $required }}
+	{{ goToken (camel $param.Value.Name) }}, _, err := params.{{ $getRequiredParamFunction }}{{ pascal $param.Value.In }}(r, "{{ $param.Value.Name }}", {{ $required }}
 		{{- if or $isEnum $isArrayEnum -}}, {{ $enumNew  }}{{- end -}})
 	if err != nil {
 		validationErrors.Add("{{ $param.Value.Name }}", err)
@@ -89,9 +91,9 @@
 
 	{{- else if $hasDefault }}
 	{{- if $isEnum -}}
-		{{ goToken (camel $param.Value.Name) }}, ok, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", {{ $required }}, {{ $enumNew  }})
+		{{ goToken (camel $param.Value.Name) }}, ok, err := params.{{ $getRequiredParamFunction }}{{ pascal $param.Value.In }}(r, "{{ $param.Value.Name }}", {{ $required }}, {{ $enumNew  }})
 	{{else -}}
-		{{ goToken (camel $param.Value.Name) }}, ok, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", {{ $required }})
+		{{ goToken (camel $param.Value.Name) }}, ok, err := params.{{ $getRequiredParamFunction }}{{ pascal $param.Value.In }}(r, "{{ $param.Value.Name }}", {{ $required }})
 	{{- end }}
 	if err != nil {
 		validationErrors.Add("{{ $param.Value.Name }}", err)
@@ -111,7 +113,7 @@
 	{{- else }}
 	var {{ goToken (camel $param.Value.Name) }} *{{$goType}}
 
-	{{ goToken (camel $param.Value.Name) }}Val, ok, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", {{ $required }}
+	{{ goToken (camel $param.Value.Name) }}Val, ok, err := params.{{ $getRequiredParamFunction }}{{ pascal $param.Value.In }}(r, "{{ $param.Value.Name }}", {{ $required }}
     {{- if $isEnum -}}, {{ $enumNew  }}{{- end -}})
 	if err != nil {
 		validationErrors.Add("{{ $param.Value.Name }}", err)
@@ -345,7 +347,10 @@ func (h OpenAPIHandlers) {{ pascal $op.OperationID}}(w http.ResponseWriter, r *h
         {{ end }}
 
         {{- $responseGoType := $opResponse.GoType}}
-	{{ if empty $responseGoType }}err ={{ else }}response, err :={{ end }} h.ops.{{ pascal $op.OperationID}}(
+
+        {{ if notEmpty $responseGoType }}response, {{ end -}}
+        {{- if gt (len $opResponse.Headers) 0 -}}headers, {{ end -}}
+	err {{  if or (notEmpty $responseGoType) (gt (len $opResponse.Headers) 0 ) }}:{{ end }}= h.ops.{{ pascal $op.OperationID}}(
         {{- if ($.OpHasExtension $op "x-raw-request" )}}r, {{ else }}r.Context(), {{ end }}
         {{- if ($.OpHasExtension $op "x-raw-response" )}} w, {{ end }}
         {{- if not (empty $securityList) }} user,{{- end -}}
@@ -359,12 +364,20 @@ func (h OpenAPIHandlers) {{ pascal $op.OperationID}}(w http.ResponseWriter, r *h
 		return
 	}
 
+	    {{ range $header := $opResponse.Headers }}
+	    {{ camel $header }} := headers.Values("{{ $header }}")
+	for _, v := range {{ camel $header }} {
+		if v != "" {
+			w.Header().Add("{{ $header }}", v)
+		}
+	}
+	    {{ end }}
+
         {{ if ($.OpHasExtension $op "x-raw-response" )}}
 	if ww.Status() > 0 {
 		return
 	}
         {{ end }}
-
 
         {{- $key := $.GetOpHappyResponseKey $op }}
         {{- if notEmpty $responseGoType }}
