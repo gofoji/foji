@@ -18,6 +18,8 @@ jobs:
 
       - name: Build
         run: go build -v ./...
+      - name: Test Gen
+        run: make test_gen
       - name: Test
         run: go test -v ./...  -coverprofile=coverage.txt -covermode=count
       - name: Coverage Report
