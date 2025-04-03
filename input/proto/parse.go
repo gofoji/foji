@@ -205,3 +205,11 @@ func (d *PBFile) VisitService(_ *parser.Service) (next bool) {
 func (d *PBFile) VisitSyntax(_ *parser.Syntax) (next bool) {
 	return true
 }
+
+func (d *PBFile) VisitDeclaration(*parser.Declaration) (next bool) {
+	return true
+}
+
+func (d *PBFile) VisitEdition(*parser.Edition) (next bool) {
+	return true
+}
