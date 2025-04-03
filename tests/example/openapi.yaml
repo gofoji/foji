@@ -180,6 +180,110 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Example"
+  /examples/rawRequest:
+    get:
+      operationId: getRawRequest
+      x-raw-request: true
+      parameters:
+        - name: vehicle
+          in: query
+          required: true
+          schema:
+            type: string
+            enum:
+              - car
+              - truck
+              - bike
+      responses:
+        "200":
+          description: 'Example'
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Example"
+  /examples/rawResponse:
+    get:
+      operationId: getRawResponse
+      x-raw-response: true
+      parameters:
+        - name: vehicle
+          in: query
+          required: true
+          schema:
+            type: string
+            enum:
+              - car
+              - truck
+              - bike
+      responses:
+        "200":
+          description: 'Example'
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Example"
+  /examples/rawRequestResponse:
+    get:
+      operationId: getRawRequestResponse
+      x-raw-request: true
+      x-raw-response: true
+      parameters:
+        - name: vehicle
+          in: query
+          required: true
+          schema:
+            type: string
+            enum:
+              - car
+              - truck
+              - bike
+      responses:
+        "200":
+          description: 'Example'
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Example"
+  /examples/rawRequestResponseAndHeaders:
+    get:
+      operationId: getRawRequestResponseAndHeaders
+      x-raw-request: true
+      x-raw-response: true
+      parameters:
+        - name: vehicle
+          in: query
+          required: true
+          schema:
+            type: string
+            enum:
+              - car
+              - truck
+              - bike
+      responses:
+        "200":
+          description: 'Example'
+          headers:
+            Location:
+              description: Redirect URL
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Example"
+  /examples/noResponse:
+    post:
+      operationId: noResponse
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Foo'
+      responses:
+        "201":
+          description: Created
+        default:
+          $ref: '#/components/responses/ErrorResponse'
   /examples/inlinedAllOf:
     post:
       operationId: AddInlinedAllOf
