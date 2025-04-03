@@ -63,7 +63,7 @@
     {{- end -}}
 {{- goDoc $param.Value.Description }}
 	{{ if $param.Value.Schema.Value.Type.Is "array" }}
-	{{ goToken (camel $param.Value.Name) }}, _, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", {{ $required }}
+	{{ goToken (camel $param.Value.Name) }}, _, err := params.{{ $getRequiredParamFunction }}{{ pascal $param.Value.In }}(r, "{{ $param.Value.Name }}", {{ $required }}
 		{{- if $isArrayEnum -}}, {{ $enumNew  }}{{- end -}})
 	if err != nil {
 		validationErrors.Add("{{ $param.Value.Name }}", err)
@@ -80,7 +80,7 @@
 
 
 	{{- else if $required }}
-	{{ goToken (camel $param.Value.Name) }}, _, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", {{ $required }}
+	{{ goToken (camel $param.Value.Name) }}, _, err := params.{{ $getRequiredParamFunction }}{{ pascal $param.Value.In }}(r, "{{ $param.Value.Name }}", {{ $required }}
 		{{- if or $isEnum $isArrayEnum -}}, {{ $enumNew  }}{{- end -}})
 	if err != nil {
 		validationErrors.Add("{{ $param.Value.Name }}", err)
@@ -89,9 +89,9 @@
 
 	{{- else if $hasDefault }}
 	{{- if $isEnum -}}
-		{{ goToken (camel $param.Value.Name) }}, ok, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", {{ $required }}, {{ $enumNew  }})
+		{{ goToken (camel $param.Value.Name) }}, ok, err := params.{{ $getRequiredParamFunction }}{{ pascal $param.Value.In }}(r, "{{ $param.Value.Name }}", {{ $required }}, {{ $enumNew  }})
 	{{else -}}
-		{{ goToken (camel $param.Value.Name) }}, ok, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", {{ $required }})
+		{{ goToken (camel $param.Value.Name) }}, ok, err := params.{{ $getRequiredParamFunction }}{{ pascal $param.Value.In }}(r, "{{ $param.Value.Name }}", {{ $required }})
 	{{- end }}
 	if err != nil {
 		validationErrors.Add("{{ $param.Value.Name }}", err)
@@ -111,7 +111,7 @@
 	{{- else }}
 	var {{ goToken (camel $param.Value.Name) }} *{{$goType}}
 
-	{{ goToken (camel $param.Value.Name) }}Val, ok, err := params.{{ $getRequiredParamFunction }}(r, "{{ $param.Value.Name }}", {{ $required }}
+	{{ goToken (camel $param.Value.Name) }}Val, ok, err := params.{{ $getRequiredParamFunction }}{{ pascal $param.Value.In }}(r, "{{ $param.Value.Name }}", {{ $required }}
     {{- if $isEnum -}}, {{ $enumNew  }}{{- end -}})
 	if err != nil {
 		validationErrors.Add("{{ $param.Value.Name }}", err)
