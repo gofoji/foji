@@ -244,6 +244,19 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Example"
+  /examples/noResponse:
+    post:
+      operationId: noResponse
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Foo'
+      responses:
+        "201":
+          description: Created
+        default:
+          $ref: '#/components/responses/ErrorResponse'
   /examples/inlinedAllOf:
     post:
       operationId: AddInlinedAllOf

@@ -340,13 +340,8 @@ func (h OpenAPIHandlers) {{ pascal $op.OperationID}}(w http.ResponseWriter, r *h
         {{- end -}}
 
         {{- $responseGoType := $opResponse.GoType}}
-        {{- if notEmpty $responseGoType }}
 
-	response, err := h.ops.{{ pascal $op.OperationID}}(
-        {{- else}}
-
-	err = h.ops.{{ pascal $op.OperationID}}(
-        {{- end}}
+	{{ if empty $responseGoType }}err ={{ else }}response, err :={{ end }} h.ops.{{ pascal $op.OperationID}}(
         {{- if ($.OpHasExtension $op "x-raw-request" )}}r, {{ else }}r.Context(), {{ end }}
         {{- if ($.OpHasExtension $op "x-raw-response" )}} w, {{ end }}
         {{- if not (empty $securityList) }} user,{{- end -}}

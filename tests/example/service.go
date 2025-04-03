@@ -57,3 +57,7 @@ func (s *Service) GetRawRequestResponse(r *http.Request, w http.ResponseWriter, 
 func (s *Service) GetTest(ctx context.Context, vehicle GetTestVehicle, vehicleDefault GetTestVehicleDefault, playerID uuid.UUID, color ColorQuery, colorDefault ColorQueryDefault, season Season) (*Example, error) {
 	return nil, nil
 }
+
+func (s *Service) NoResponse(ctx context.Context, body Foo) error {
+	return nil
+}
