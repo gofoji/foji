@@ -9,6 +9,7 @@ func Version() string {
 	if !ok {
 		panic("Failed to read build info")
 	}
+
 	if info.Main.Version != "" {
 		return info.Main.Version
 	}

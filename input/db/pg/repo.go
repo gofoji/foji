@@ -13,9 +13,9 @@ import (
 
 // DB is the common interface for database operations.
 type DB interface {
-	Exec(context.Context, string, ...any) (pgconn.CommandTag, error)
-	Query(context.Context, string, ...any) (pgx.Rows, error)
-	QueryRow(context.Context, string, ...any) pgx.Row
+	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
 }
 
 type Repo struct {
@@ -239,7 +239,7 @@ func (t Table) toDB(schema *db.Schema) db.Table {
 		Comment:  t.Comment,
 		Columns:  nil,
 		Indexes:  nil,
-		ReadOnly: !(t.CanInsert && t.CanUpdate && t.CanDelete),
+		ReadOnly: !t.CanInsert && !t.CanUpdate && !t.CanDelete,
 	}
 }
 

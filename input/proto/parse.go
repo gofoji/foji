@@ -117,7 +117,7 @@ func Parse(_ context.Context, logger zerolog.Logger, inGroups []input.FileGroup)
 	return result, nil
 }
 
-func (d *PBFile) VisitEnum(n *parser.Enum) (next bool) {
+func (d *PBFile) VisitEnum(n *parser.Enum) bool {
 	e := &Enum{Enum: n}
 	d.Enums = append(d.Enums, e)
 	d.lastEnum = e
@@ -125,21 +125,21 @@ func (d *PBFile) VisitEnum(n *parser.Enum) (next bool) {
 	return true
 }
 
-func (d *PBFile) VisitEnumField(n *parser.EnumField) (next bool) {
+func (d *PBFile) VisitEnumField(n *parser.EnumField) bool {
 	e := &EnumField{n}
 	d.lastEnum.Fields = append(d.lastEnum.Fields, e)
 
 	return true
 }
 
-func (d *PBFile) VisitField(n *parser.Field) (next bool) {
+func (d *PBFile) VisitField(n *parser.Field) bool {
 	f := &Field{Field: n}
 	d.lastMessage.Fields = append(d.lastMessage.Fields, f)
 
 	return true
 }
 
-func (d *PBFile) VisitMessage(n *parser.Message) (next bool) {
+func (d *PBFile) VisitMessage(n *parser.Message) bool {
 	m := &Message{Message: n}
 	d.Messages = append(d.Messages, m)
 	d.lastMessage = m
@@ -148,68 +148,68 @@ func (d *PBFile) VisitMessage(n *parser.Message) (next bool) {
 }
 
 // The rest of these are required by the visitor interface.
-func (d *PBFile) VisitExtend(_ *parser.Extend) (next bool) {
+func (d *PBFile) VisitExtend(_ *parser.Extend) bool {
 	return true
 }
 
-func (d *PBFile) VisitExtensions(_ *parser.Extensions) (next bool) {
+func (d *PBFile) VisitExtensions(_ *parser.Extensions) bool {
 	return true
 }
 
-func (d *PBFile) VisitGroupField(_ *parser.GroupField) (next bool) {
+func (d *PBFile) VisitGroupField(_ *parser.GroupField) bool {
 	return true
 }
 
-func (d *PBFile) VisitImport(_ *parser.Import) (next bool) {
+func (d *PBFile) VisitImport(_ *parser.Import) bool {
 	return true
 }
 
-func (d *PBFile) VisitMapField(_ *parser.MapField) (next bool) {
+func (d *PBFile) VisitMapField(_ *parser.MapField) bool {
 	return true
 }
 
 func (d *PBFile) VisitComment(_ *parser.Comment) {}
 
-func (d *PBFile) VisitEmptyStatement(_ *parser.EmptyStatement) (next bool) {
+func (d *PBFile) VisitEmptyStatement(_ *parser.EmptyStatement) bool {
 	return true
 }
 
-func (d *PBFile) VisitOneof(_ *parser.Oneof) (next bool) {
+func (d *PBFile) VisitOneof(_ *parser.Oneof) bool {
 	return true
 }
 
-func (d *PBFile) VisitOneofField(_ *parser.OneofField) (next bool) {
+func (d *PBFile) VisitOneofField(_ *parser.OneofField) bool {
 	return true
 }
 
-func (d *PBFile) VisitOption(_ *parser.Option) (next bool) {
+func (d *PBFile) VisitOption(_ *parser.Option) bool {
 	return true
 }
 
-func (d *PBFile) VisitPackage(_ *parser.Package) (next bool) {
+func (d *PBFile) VisitPackage(_ *parser.Package) bool {
 	return true
 }
 
-func (d *PBFile) VisitReserved(_ *parser.Reserved) (next bool) {
+func (d *PBFile) VisitReserved(_ *parser.Reserved) bool {
 	return true
 }
 
-func (d *PBFile) VisitRPC(_ *parser.RPC) (next bool) {
+func (d *PBFile) VisitRPC(_ *parser.RPC) bool {
 	return true
 }
 
-func (d *PBFile) VisitService(_ *parser.Service) (next bool) {
+func (d *PBFile) VisitService(_ *parser.Service) bool {
 	return true
 }
 
-func (d *PBFile) VisitSyntax(_ *parser.Syntax) (next bool) {
+func (d *PBFile) VisitSyntax(_ *parser.Syntax) bool {
 	return true
 }
 
-func (d *PBFile) VisitDeclaration(*parser.Declaration) (next bool) {
+func (d *PBFile) VisitDeclaration(*parser.Declaration) bool {
 	return true
 }
 
-func (d *PBFile) VisitEdition(*parser.Edition) (next bool) {
+func (d *PBFile) VisitEdition(*parser.Edition) bool {
 	return true
 }

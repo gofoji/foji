@@ -97,7 +97,7 @@ func (s Strings) Contains(v string) bool {
 	return contains(s, v)
 }
 
-// ContainsAny returns true if any of the the params exists in the Strings.
+// ContainsAny returns true if any of the params exists in the Strings.
 func (s Strings) ContainsAny(v Strings) bool {
 	for _, x := range v {
 		if s.Contains(x) {
@@ -108,7 +108,7 @@ func (s Strings) ContainsAny(v Strings) bool {
 	return false
 }
 
-// ContainsAll returns true if all of the the params exists in the Strings.
+// ContainsAll returns true if all the params exists in the Strings.
 func (s Strings) ContainsAll(v Strings) bool {
 	for _, x := range v {
 		if !s.Contains(x) {

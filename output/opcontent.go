@@ -14,6 +14,7 @@ const (
 
 type MimeType string
 
+//nolint:revive
 func (m MimeType) IsJson() bool {
 	return m == ApplicationJSON
 }

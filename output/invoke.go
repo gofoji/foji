@@ -3,7 +3,6 @@ package output
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -39,7 +38,7 @@ type Initializer interface {
 }
 
 type TemplateInitializer interface {
-	Init(*plates.Factory) error
+	Init(p *plates.Factory) error
 }
 
 const PermPrefix = "!"
@@ -199,7 +198,7 @@ func (p ProcessRunner) loadLocalOrEmbed(filename string) ([]byte, error) {
 		return nil, fmt.Errorf("error accessing file: %s: %w", filename, err)
 	}
 
-	return ioutil.ReadFile(filename)
+	return os.ReadFile(filename)
 }
 
 func hasAnyOutput(o cfg.Output, outputs ...string) bool {
