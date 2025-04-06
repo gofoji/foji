@@ -1,6 +1,7 @@
 package cfg
 
 import (
+	"regexp"
 	"runtime/debug"
 )
 
@@ -11,8 +12,11 @@ func Version() string {
 	}
 
 	if info.Main.Version != "" {
-		return info.Main.Version
+		return versionRegex.ReplaceAllString(info.Main.Version, "")
 	}
 
-	return "(devel)"
+	return "(dev build)"
 }
+
+// Ignore timestamp and git hash
+var versionRegex = regexp.MustCompile(`-0\.\d{14}-[0-9a-f]+(\+dirty)?`)
