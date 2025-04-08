@@ -389,7 +389,7 @@ func (o *OpenAPIFileContext) GetRequestBodySchemas(op *openapi3.Operation) []OpB
 	return out
 }
 
-var knownInterfaces = []string{"io.Reader"}
+var knownInterfaces = []string{"string", "io.Reader"}
 
 func happyStatusCode(key string) bool {
 	if len(key) != 3 { //nolint:mnd

@@ -386,7 +386,7 @@ func (h OpenAPIHandlers) {{ pascal $op.OperationID}}(w http.ResponseWriter, r *h
 	httputil.JSONWrite(w, r, {{$key}}, response)
 			{{- else if $opResponse.IsHTML }}
 
-	httputil.HTMLWrite(w, r, {{$key}}, *response)
+	httputil.HTMLWrite(w, r, {{$key}}, response)
             {{- else if eq $responseGoType "[]byte" }}
 
 	httputil.Write(w, r, "{{$opResponse.MimeType}}",  {{$key}}, response)
@@ -395,7 +395,7 @@ func (h OpenAPIHandlers) {{ pascal $op.OperationID}}(w http.ResponseWriter, r *h
 	httputil.ReaderWrite(w, r, "{{$opResponse.MimeType}}",  {{$key}}, response)
 			{{- else }}
 
-	httputil.Write(w, r, "{{$opResponse.MimeType}}",  {{$key}}, []byte(*response))
+	httputil.Write(w, r, "{{$opResponse.MimeType}}",  {{$key}}, []byte(response))
 			{{- end -}}
         {{- else }}
 
