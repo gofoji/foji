@@ -947,3 +947,19 @@ components:
         - properties:
             buzz:
               type: string
+
+    DefaultWithoutRequired:
+      type: object
+      properties:
+        f1:
+          type: string
+          default: "surprise!"
+
+    NotRequiredWithValidation:
+      type: object
+      properties:
+        f1:
+          minItems: 2
+          type: array
+          items:
+            type: string

@@ -267,10 +267,10 @@ var {{ camel $key }}Pattern = regexp.MustCompile(`{{ $schema.Value.Pattern }}`)
     {{- end -}}
 
 {{if eq $mediaType "application/json" }}
-    {{- if or $hasValidation $schema.Value.Required}}
+    {{- if or $hasValidation $schema.Value.Required (.SchemaPropertiesHaveDefaults $schema)}}
 
 func (p *{{ pascal $key }}) UnmarshalJSON(b []byte) error {
-        {{- if $schema.Value.Required }}
+        {{- if or $schema.Value.Required (.SchemaPropertiesHaveDefaults $schema) }}
     var requiredCheck map[string]any
 
     if err := json.Unmarshal(b, &requiredCheck); err != nil {

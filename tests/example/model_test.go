@@ -197,3 +197,53 @@ func TestAddFormRequest(t *testing.T) {
 		})
 	}
 }
+
+func TestDefaultsWithoutRequiredFields(t *testing.T) {
+	testCases := []struct {
+		Name     string
+		Raw      string
+		Expected DefaultWithoutRequired
+	}{
+		{Name: "minimal", Raw: `{}`, Expected: DefaultWithoutRequired{F1: "surprise!"}},
+		{Name: "maximal", Raw: `{"f1": "BOO!"}`, Expected: DefaultWithoutRequired{F1: "BOO!"}},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			var actual DefaultWithoutRequired
+			err := json.Unmarshal([]byte(tc.Raw), &actual)
+			assert.NoError(t, err)
+
+			assert.Equal(t, tc.Expected, actual)
+		})
+	}
+}
+
+func TestNotRequiredWithValidation(t *testing.T) {
+	testCases := []struct {
+		Name     string
+		Raw      string
+		Expected NotRequiredWithValidation
+		ErrorMsg string
+	}{
+		//{Name: "minimal", Raw: `{}`, Expected: NotRequiredWithValidation{}}, //TODO: skip validation of optional fields
+		{Name: "maximal", Raw: `{"f1": ["a", "b"]}`, Expected: NotRequiredWithValidation{F1: []string{"a", "b"}}},
+		//{Name: "not enough items", Raw: `{"f1": ["a"]}`, ErrorMsg: "f1: length must be >= 2"}, // TODO: skip validation of optional fields
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			var actual NotRequiredWithValidation
+			err := json.Unmarshal([]byte(tc.Raw), &actual)
+			if tc.ErrorMsg != "" {
+				assert.Error(t, err)
+				assert.ErrorContains(t, err, tc.ErrorMsg)
+				return
+			}
+
+			assert.NoError(t, err)
+
+			assert.Equal(t, tc.Expected, actual)
+		})
+	}
+}
