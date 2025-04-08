@@ -321,22 +321,55 @@ paths:
               properties:
                 f01:
                   type: boolean
+                f01Null:
+                  nullable: true
+                  type: boolean
+                f01b:
+                  type: boolean
+                  default: true
+                f01bNull:
+                  nullable: true
+                  default: true
+                  type: boolean
                 f02:
                   type: integer
+                f02Null:
+                  nullable: true
+                  type: integer
                 f03:
+                  type: integer
+                  format: int32
+                f03Null:
+                  nullable: true
                   type: integer
                   format: int32
                 f04:
                   type: integer
                   format: int64
                   default: 1
+                f04Null:
+                  nullable: true
+                  type: integer
+                  format: int64
+                  default: 2
                 f05:
+                  type: string
+                  format: date-time
+                f05Null:
+                  nullable: true
                   type: string
                   format: date-time
                 f06:
                   type: string
                   format: uuid
+                f06Null:
+                  nullable: true
+                  type: string
+                  format: uuid
                 f07:
+                  type: string
+                f07Null:
+                  nullable: true
                   type: string
                 f08:
                   type: string
@@ -344,8 +377,19 @@ paths:
                   enum:
                     - valueA
                     - valueB
+                    - valueC
+                f08Null:
+                  nullable: true
+                  type: string
+                  default: valueB
+                  enum:
+                    - valueA
+                    - valueB
+                    - valueC
                 f09:
                   $ref: "#/components/schemas/Season"
+                f09Null:
+                  $ref: "#/components/schemas/SeasonNullable"
                 f10:
                   type: array
                   items:
@@ -363,6 +407,10 @@ paths:
                 f13:
                   type: string
                   default: someValue
+                f13Null:
+                  nullable: true
+                  type: string
+                  default: someValue2
         required: false
       responses:
         "200":
@@ -386,22 +434,55 @@ paths:
               properties:
                 f01:
                   type: boolean
+                f01Null:
+                  nullable: true
+                  type: boolean
+                f01b:
+                  type: boolean
+                  default: true
+                f01bNull:
+                  nullable: true
+                  default: true
+                  type: boolean
                 f02:
                   type: integer
+                f02Null:
+                  nullable: true
+                  type: integer
                 f03:
+                  type: integer
+                  format: int32
+                f03Null:
+                  nullable: true
                   type: integer
                   format: int32
                 f04:
                   type: integer
                   format: int64
                   default: 1
+                f04Null:
+                  nullable: true
+                  type: integer
+                  format: int64
+                  default: 2
                 f05:
+                  type: string
+                  format: date-time
+                f05Null:
+                  nullable: true
                   type: string
                   format: date-time
                 f06:
                   type: string
                   format: uuid
+                f06Null:
+                  nullable: true
+                  type: string
+                  format: uuid
                 f07:
+                  type: string
+                f07Null:
+                  nullable: true
                   type: string
                 f08:
                   type: string
@@ -409,8 +490,19 @@ paths:
                   enum:
                     - valueA
                     - valueB
+                    - valueC
+                f08Null:
+                  nullable: true
+                  type: string
+                  default: valueB
+                  enum:
+                    - valueA
+                    - valueB
+                    - valueC
                 f09:
                   $ref: "#/components/schemas/Season"
+                f09Null:
+                  $ref: "#/components/schemas/SeasonNullable"
                 f10:
                   type: array
                   items:
@@ -425,6 +517,13 @@ paths:
                   type: array
                   items:
                     $ref: "#/components/schemas/Season"
+                f13:
+                  type: string
+                  default: someValue
+                f13Null:
+                  nullable: true
+                  type: string
+                  default: someValue2
         required: false
       responses:
         "200":
@@ -724,6 +823,15 @@ components:
           minimum: 2
 
     Season:
+      type: string
+      enum:
+        - spring
+        - summer
+        - fall
+        - winter
+
+    SeasonNullable:
+      nullable: true
       type: string
       enum:
         - spring

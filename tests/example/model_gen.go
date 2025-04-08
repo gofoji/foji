@@ -322,7 +322,7 @@ func (p *Patterns) UnmarshalJSON(b []byte) error {
 	v := Patterns(parseObject)
 
 	if _, ok := requiredCheck["state3"]; !ok {
-		defaultVal := "completed"
+		var defaultVal string = "completed"
 		v.State3 = &defaultVal
 	}
 
@@ -696,6 +696,88 @@ func (e *Season) Scan(src interface{}) error {
 	}
 
 	*e = NewSeason(s)
+
+	return nil
+}
+
+// SeasonNullable
+//
+// OpenAPI Component Schema: SeasonNullable
+
+// SeasonNullable
+// Component Schema : SeasonNullable
+type SeasonNullable int8
+
+const (
+	UnknownSeasonNullable SeasonNullable = iota
+	SeasonNullableSpring
+	SeasonNullableSummer
+	SeasonNullableFall
+	SeasonNullableWinter
+)
+
+func NewSeasonNullable(name string) SeasonNullable {
+	switch name {
+	case "spring":
+		return SeasonNullableSpring
+	case "summer":
+		return SeasonNullableSummer
+	case "fall":
+		return SeasonNullableFall
+	case "winter":
+		return SeasonNullableWinter
+	}
+
+	return SeasonNullable(0)
+}
+
+var SeasonNullableString = map[SeasonNullable]string{
+	SeasonNullableSpring: "spring",
+	SeasonNullableSummer: "summer",
+	SeasonNullableFall:   "fall",
+	SeasonNullableWinter: "winter",
+}
+
+func (e SeasonNullable) String() string {
+	return SeasonNullableString[e]
+}
+
+func (e *SeasonNullable) UnmarshalJSON(input []byte) (err error) {
+	var i int8
+
+	err = json.Unmarshal(input, &i)
+	if err == nil {
+		*e = SeasonNullable(i)
+		return nil
+	}
+
+	var s string
+
+	err = json.Unmarshal(input, &s)
+	if err != nil {
+		return err
+	}
+
+	*e = NewSeasonNullable(s)
+
+	return nil
+}
+
+func (e SeasonNullable) MarshalJSON() ([]byte, error) {
+	return json.Marshal(e.String())
+}
+
+func (e SeasonNullable) Value() (driver.Value, error) {
+	return json.Marshal(e.String())
+}
+
+func (e *SeasonNullable) Scan(src interface{}) error {
+	s, ok := src.(string)
+	if !ok {
+		return fmt.Errorf("SeasonNullable.scan: scanned a %T, not []byte", src) //nolint
+	}
+
+	*e = NewSeasonNullable(s)
 
 	return nil
 }
@@ -1557,18 +1639,31 @@ func (e *ColorQueryDefault) Scan(src interface{}) error {
 //
 // OpenAPI AddForm Body: AddForm Request
 type AddFormRequest struct {
-	F01 bool              `json:"f01,omitempty"`
-	F02 int32             `json:"f02,omitempty"`
-	F03 int32             `json:"f03,omitempty"`
-	F04 int64             `json:"f04,omitempty"`
-	F05 time.Time         `json:"f05,omitempty,omitzero"`
-	F06 uuid.UUID         `json:"f06,omitempty,omitzero"`
-	F07 string            `json:"f07"`
-	F08 AddFormRequestF08 `json:"f08,omitempty,omitzero"`
-	F09 Season            `json:"f09,omitempty,omitzero"`
-	F10 []string          `json:"f10,omitempty"`
-	F11 []int32           `json:"f11,omitempty"`
-	F12 []Season          `json:"f12,omitempty"`
+	F01      bool                   `json:"f01,omitempty"`
+	F01Null  *bool                  `json:"f01Null,omitempty"`
+	F01B     bool                   `json:"f01b,omitempty"`
+	F01BNull *bool                  `json:"f01bNull,omitempty"`
+	F02      int32                  `json:"f02,omitempty"`
+	F02Null  *int32                 `json:"f02Null,omitempty"`
+	F03      int32                  `json:"f03,omitempty"`
+	F03Null  *int32                 `json:"f03Null,omitempty"`
+	F04      int64                  `json:"f04,omitempty"`
+	F04Null  *int64                 `json:"f04Null,omitempty"`
+	F05      time.Time              `json:"f05,omitempty,omitzero"`
+	F05Null  *time.Time             `json:"f05Null,omitempty,omitzero"`
+	F06      uuid.UUID              `json:"f06,omitempty,omitzero"`
+	F06Null  *uuid.UUID             `json:"f06Null,omitempty,omitzero"`
+	F07      string                 `json:"f07"`
+	F07Null  *string                `json:"f07Null,omitempty,omitzero"`
+	F08      AddFormRequestF08      `json:"f08,omitempty,omitzero"`
+	F08Null  *AddFormRequestF08Null `json:"f08Null,omitempty,omitzero"`
+	F09      Season                 `json:"f09,omitempty,omitzero"`
+	F09Null  *SeasonNullable        `json:"f09Null,omitempty,omitzero"`
+	F10      []string               `json:"f10,omitempty"`
+	F11      []int32                `json:"f11,omitempty"`
+	F12      []Season               `json:"f12,omitempty"`
+	F13      string                 `json:"f13,omitempty,omitzero"`
+	F13Null  *string                `json:"f13Null,omitempty,omitzero"`
 }
 
 // AddFormRequestF08
@@ -1579,6 +1674,7 @@ const (
 	UnknownAddFormRequestF08 AddFormRequestF08 = iota
 	AddFormRequestF08ValueA
 	AddFormRequestF08ValueB
+	AddFormRequestF08ValueC
 )
 
 func NewAddFormRequestF08(name string) AddFormRequestF08 {
@@ -1587,6 +1683,8 @@ func NewAddFormRequestF08(name string) AddFormRequestF08 {
 		return AddFormRequestF08ValueA
 	case "valueB":
 		return AddFormRequestF08ValueB
+	case "valueC":
+		return AddFormRequestF08ValueC
 	}
 
 	return AddFormRequestF08(0)
@@ -1595,6 +1693,7 @@ func NewAddFormRequestF08(name string) AddFormRequestF08 {
 var AddFormRequestF08String = map[AddFormRequestF08]string{
 	AddFormRequestF08ValueA: "valueA",
 	AddFormRequestF08ValueB: "valueB",
+	AddFormRequestF08ValueC: "valueC",
 }
 
 func (e AddFormRequestF08) String() string {
@@ -1641,61 +1740,237 @@ func (e *AddFormRequestF08) Scan(src interface{}) error {
 	return nil
 }
 
+// AddFormRequestF08Null
+// AddForm Body : f08Null
+type AddFormRequestF08Null int8
+
+const (
+	UnknownAddFormRequestF08Null AddFormRequestF08Null = iota
+	AddFormRequestF08NullValueA
+	AddFormRequestF08NullValueB
+	AddFormRequestF08NullValueC
+)
+
+func NewAddFormRequestF08Null(name string) AddFormRequestF08Null {
+	switch name {
+	case "valueA":
+		return AddFormRequestF08NullValueA
+	case "valueB":
+		return AddFormRequestF08NullValueB
+	case "valueC":
+		return AddFormRequestF08NullValueC
+	}
+
+	return AddFormRequestF08Null(0)
+}
+
+var AddFormRequestF08NullString = map[AddFormRequestF08Null]string{
+	AddFormRequestF08NullValueA: "valueA",
+	AddFormRequestF08NullValueB: "valueB",
+	AddFormRequestF08NullValueC: "valueC",
+}
+
+func (e AddFormRequestF08Null) String() string {
+	return AddFormRequestF08NullString[e]
+}
+
+func (e *AddFormRequestF08Null) UnmarshalJSON(input []byte) (err error) {
+	var i int8
+
+	err = json.Unmarshal(input, &i)
+	if err == nil {
+		*e = AddFormRequestF08Null(i)
+		return nil
+	}
+
+	var s string
+
+	err = json.Unmarshal(input, &s)
+	if err != nil {
+		return err
+	}
+
+	*e = NewAddFormRequestF08Null(s)
+
+	return nil
+}
+
+func (e AddFormRequestF08Null) MarshalJSON() ([]byte, error) {
+	return json.Marshal(e.String())
+}
+
+func (e AddFormRequestF08Null) Value() (driver.Value, error) {
+	return json.Marshal(e.String())
+}
+
+func (e *AddFormRequestF08Null) Scan(src interface{}) error {
+	s, ok := src.(string)
+	if !ok {
+		return fmt.Errorf("AddFormRequestF08Null.scan: scanned a %T, not []byte", src) //nolint
+	}
+
+	*e = NewAddFormRequestF08Null(s)
+
+	return nil
+}
+
 func ParseFormAddFormRequest(r *http.Request) (AddFormRequest, error) {
 	var (
 		parseErrors validation.Errors
 		err         error
-		ok          bool
 		v           AddFormRequest
 	)
 
-	v.F01, _, err = forms.GetBool(r.FormValue, "f01", false)
+	paramF01, ok, err := forms.GetBool(r.FormValue, "f01", false)
 	if err != nil {
 		parseErrors.Add("f01", err)
+	} else if ok {
+		v.F01 = paramF01
 	}
 
-	v.F02, _, err = forms.GetInt32(r.FormValue, "f02", false)
+	paramF01Null, ok, err := forms.GetBool(r.FormValue, "f01Null", false)
+	if err != nil {
+		parseErrors.Add("f01Null", err)
+	} else if ok {
+		v.F01Null = &paramF01Null
+	}
+
+	paramF01B, ok, err := forms.GetBool(r.FormValue, "f01b", false)
+	if err != nil {
+		parseErrors.Add("f01b", err)
+	} else if !ok {
+		paramF01B = true
+	}
+
+	v.F01B = paramF01B
+
+	paramF01BNull, ok, err := forms.GetBool(r.FormValue, "f01bNull", false)
+	if err != nil {
+		parseErrors.Add("f01bNull", err)
+	} else if !ok {
+		paramF01BNull = true
+	}
+
+	v.F01BNull = &paramF01BNull
+
+	paramF02, ok, err := forms.GetInt32(r.FormValue, "f02", false)
 	if err != nil {
 		parseErrors.Add("f02", err)
+	} else if ok {
+		v.F02 = paramF02
 	}
 
-	v.F03, _, err = forms.GetInt32(r.FormValue, "f03", false)
+	paramF02Null, ok, err := forms.GetInt32(r.FormValue, "f02Null", false)
+	if err != nil {
+		parseErrors.Add("f02Null", err)
+	} else if ok {
+		v.F02Null = &paramF02Null
+	}
+
+	paramF03, ok, err := forms.GetInt32(r.FormValue, "f03", false)
 	if err != nil {
 		parseErrors.Add("f03", err)
+	} else if ok {
+		v.F03 = paramF03
 	}
 
-	v.F04, ok, err = forms.GetInt64(r.FormValue, "f04", false)
+	paramF03Null, ok, err := forms.GetInt32(r.FormValue, "f03Null", false)
+	if err != nil {
+		parseErrors.Add("f03Null", err)
+	} else if ok {
+		v.F03Null = &paramF03Null
+	}
+
+	paramF04, ok, err := forms.GetInt64(r.FormValue, "f04", false)
 	if err != nil {
 		parseErrors.Add("f04", err)
 	} else if !ok {
-		v.F04 = 1
+		paramF04 = 1
 	}
 
-	v.F05, _, err = forms.GetTime(r.FormValue, "f05", false)
+	v.F04 = paramF04
+
+	paramF04Null, ok, err := forms.GetInt64(r.FormValue, "f04Null", false)
+	if err != nil {
+		parseErrors.Add("f04Null", err)
+	} else if !ok {
+		paramF04Null = 2
+	}
+
+	v.F04Null = &paramF04Null
+
+	paramF05, ok, err := forms.GetTime(r.FormValue, "f05", false)
 	if err != nil {
 		parseErrors.Add("f05", err)
+	} else if ok {
+		v.F05 = paramF05
 	}
 
-	v.F06, _, err = forms.GetUUID(r.FormValue, "f06", false)
+	paramF05Null, ok, err := forms.GetTime(r.FormValue, "f05Null", false)
+	if err != nil {
+		parseErrors.Add("f05Null", err)
+	} else if ok {
+		v.F05Null = &paramF05Null
+	}
+
+	paramF06, ok, err := forms.GetUUID(r.FormValue, "f06", false)
 	if err != nil {
 		parseErrors.Add("f06", err)
+	} else if ok {
+		v.F06 = paramF06
 	}
 
-	v.F07, _, err = forms.GetString(r.FormValue, "f07", true)
+	paramF06Null, ok, err := forms.GetUUID(r.FormValue, "f06Null", false)
+	if err != nil {
+		parseErrors.Add("f06Null", err)
+	} else if ok {
+		v.F06Null = &paramF06Null
+	}
+
+	paramF07, ok, err := forms.GetString(r.FormValue, "f07", true)
 	if err != nil {
 		parseErrors.Add("f07", err)
+	} else if ok {
+		v.F07 = paramF07
 	}
 
-	v.F08, ok, err = forms.GetEnum(r.FormValue, "f08", false, NewAddFormRequestF08)
+	paramF07Null, ok, err := forms.GetString(r.FormValue, "f07Null", false)
+	if err != nil {
+		parseErrors.Add("f07Null", err)
+	} else if ok {
+		v.F07Null = &paramF07Null
+	}
+
+	paramF08, ok, err := forms.GetEnum(r.FormValue, "f08", false, NewAddFormRequestF08)
 	if err != nil {
 		parseErrors.Add("f08", err)
 	} else if !ok {
-		v.F08 = AddFormRequestF08ValueA
+		paramF08 = AddFormRequestF08ValueA
 	}
 
-	v.F09, _, err = forms.GetEnum(r.FormValue, "f09", false, NewSeason)
+	v.F08 = paramF08
+
+	paramF08Null, ok, err := forms.GetEnum(r.FormValue, "f08Null", false, NewAddFormRequestF08Null)
+	if err != nil {
+		parseErrors.Add("f08Null", err)
+	} else if !ok {
+		paramF08Null = AddFormRequestF08NullValueB
+	}
+
+	v.F08Null = &paramF08Null
+
+	paramF09, ok, err := forms.GetEnum(r.FormValue, "f09", false, NewSeason)
 	if err != nil {
 		parseErrors.Add("f09", err)
+	} else if ok {
+		v.F09 = paramF09
+	}
+
+	paramF09Null, ok, err := forms.GetEnum(r.FormValue, "f09Null", false, NewSeasonNullable)
+	if err != nil {
+		parseErrors.Add("f09Null", err)
+	} else if ok {
+		v.F09Null = &paramF09Null
 	}
 
 	v.F10, _, err = forms.GetStringArray(r.FormValue, "f10", false)
@@ -1712,6 +1987,24 @@ func ParseFormAddFormRequest(r *http.Request) (AddFormRequest, error) {
 	if err != nil {
 		parseErrors.Add("f12", err)
 	}
+
+	paramF13, ok, err := forms.GetString(r.FormValue, "f13", false)
+	if err != nil {
+		parseErrors.Add("f13", err)
+	} else if !ok {
+		paramF13 = "someValue"
+	}
+
+	v.F13 = paramF13
+
+	paramF13Null, ok, err := forms.GetString(r.FormValue, "f13Null", false)
+	if err != nil {
+		parseErrors.Add("f13Null", err)
+	} else if !ok {
+		paramF13Null = "someValue2"
+	}
+
+	v.F13Null = &paramF13Null
 
 	if parseErrors != nil {
 		return AddFormRequest{}, parseErrors.GetErr()
@@ -1760,49 +2053,67 @@ func ParseFormAddMultipartFormRequest(r *http.Request) (AddMultipartFormRequest,
 		v           AddMultipartFormRequest
 	)
 
-	v.F1, _, err = forms.GetBool(r.FormValue, "f1", false)
+	paramF1, ok, err := forms.GetBool(r.FormValue, "f1", false)
 	if err != nil {
 		parseErrors.Add("f1", err)
+	} else if ok {
+		v.F1 = paramF1
 	}
 
-	v.F2, _, err = forms.GetInt32(r.FormValue, "f2", false)
+	paramF2, ok, err := forms.GetInt32(r.FormValue, "f2", false)
 	if err != nil {
 		parseErrors.Add("f2", err)
+	} else if ok {
+		v.F2 = paramF2
 	}
 
-	v.F3, _, err = forms.GetInt32(r.FormValue, "f3", false)
+	paramF3, ok, err := forms.GetInt32(r.FormValue, "f3", false)
 	if err != nil {
 		parseErrors.Add("f3", err)
+	} else if ok {
+		v.F3 = paramF3
 	}
 
-	v.F4, _, err = forms.GetInt64(r.FormValue, "f4", false)
+	paramF4, ok, err := forms.GetInt64(r.FormValue, "f4", false)
 	if err != nil {
 		parseErrors.Add("f4", err)
+	} else if ok {
+		v.F4 = paramF4
 	}
 
-	v.F5, _, err = forms.GetTime(r.FormValue, "f5", false)
+	paramF5, ok, err := forms.GetTime(r.FormValue, "f5", false)
 	if err != nil {
 		parseErrors.Add("f5", err)
+	} else if ok {
+		v.F5 = paramF5
 	}
 
-	v.F6, _, err = forms.GetUUID(r.FormValue, "f6", false)
+	paramF6, ok, err := forms.GetUUID(r.FormValue, "f6", false)
 	if err != nil {
 		parseErrors.Add("f6", err)
+	} else if ok {
+		v.F6 = paramF6
 	}
 
-	v.F7, _, err = forms.GetString(r.FormValue, "f7", false)
+	paramF7, ok, err := forms.GetString(r.FormValue, "f7", false)
 	if err != nil {
 		parseErrors.Add("f7", err)
+	} else if ok {
+		v.F7 = paramF7
 	}
 
-	v.File1, _, err = forms.GetFile(r, "file1", true)
+	paramFile1, ok, err := forms.GetFile(r, "file1", true)
 	if err != nil {
 		parseErrors.Add("file1", err)
+	} else if ok {
+		v.File1 = paramFile1
 	}
 
-	v.File2, _, err = forms.GetFile(r, "file2", false)
+	paramFile2, ok, err := forms.GetFile(r, "file2", false)
 	if err != nil {
 		parseErrors.Add("file2", err)
+	} else if ok {
+		v.File2 = paramFile2
 	}
 
 	if parseErrors != nil {
@@ -1826,19 +2137,31 @@ type AddInlinedAllOfRequest struct {
 //
 // OpenAPI AddInlinedBody Body: AddInlinedBody Request
 type AddInlinedBodyRequest struct {
-	F01 bool                     `json:"f01,omitempty"`
-	F02 int32                    `json:"f02,omitempty"`
-	F03 int32                    `json:"f03,omitempty"`
-	F04 int64                    `json:"f04,omitempty"`
-	F05 time.Time                `json:"f05,omitempty,omitzero"`
-	F06 uuid.UUID                `json:"f06,omitempty,omitzero"`
-	F07 string                   `json:"f07"`
-	F08 AddInlinedBodyRequestF08 `json:"f08,omitempty,omitzero"`
-	F09 Season                   `json:"f09,omitempty,omitzero"`
-	F10 []string                 `json:"f10"`
-	F11 []int32                  `json:"f11,omitempty"`
-	F12 []Season                 `json:"f12,omitempty"`
-	F13 string                   `json:"f13,omitempty,omitzero"`
+	F01      bool                          `json:"f01,omitempty"`
+	F01Null  *bool                         `json:"f01Null,omitempty"`
+	F01B     bool                          `json:"f01b,omitempty"`
+	F01BNull *bool                         `json:"f01bNull,omitempty"`
+	F02      int32                         `json:"f02,omitempty"`
+	F02Null  *int32                        `json:"f02Null,omitempty"`
+	F03      int32                         `json:"f03,omitempty"`
+	F03Null  *int32                        `json:"f03Null,omitempty"`
+	F04      int64                         `json:"f04,omitempty"`
+	F04Null  *int64                        `json:"f04Null,omitempty"`
+	F05      time.Time                     `json:"f05,omitempty,omitzero"`
+	F05Null  *time.Time                    `json:"f05Null,omitempty,omitzero"`
+	F06      uuid.UUID                     `json:"f06,omitempty,omitzero"`
+	F06Null  *uuid.UUID                    `json:"f06Null,omitempty,omitzero"`
+	F07      string                        `json:"f07"`
+	F07Null  *string                       `json:"f07Null,omitempty,omitzero"`
+	F08      AddInlinedBodyRequestF08      `json:"f08,omitempty,omitzero"`
+	F08Null  *AddInlinedBodyRequestF08Null `json:"f08Null,omitempty,omitzero"`
+	F09      Season                        `json:"f09,omitempty,omitzero"`
+	F09Null  *SeasonNullable               `json:"f09Null,omitempty,omitzero"`
+	F10      []string                      `json:"f10"`
+	F11      []int32                       `json:"f11,omitempty"`
+	F12      []Season                      `json:"f12,omitempty"`
+	F13      string                        `json:"f13,omitempty,omitzero"`
+	F13Null  *string                       `json:"f13Null,omitempty,omitzero"`
 }
 
 // AddInlinedBodyRequestF08
@@ -1849,6 +2172,7 @@ const (
 	UnknownAddInlinedBodyRequestF08 AddInlinedBodyRequestF08 = iota
 	AddInlinedBodyRequestF08ValueA
 	AddInlinedBodyRequestF08ValueB
+	AddInlinedBodyRequestF08ValueC
 )
 
 func NewAddInlinedBodyRequestF08(name string) AddInlinedBodyRequestF08 {
@@ -1857,6 +2181,8 @@ func NewAddInlinedBodyRequestF08(name string) AddInlinedBodyRequestF08 {
 		return AddInlinedBodyRequestF08ValueA
 	case "valueB":
 		return AddInlinedBodyRequestF08ValueB
+	case "valueC":
+		return AddInlinedBodyRequestF08ValueC
 	}
 
 	return AddInlinedBodyRequestF08(0)
@@ -1865,6 +2191,7 @@ func NewAddInlinedBodyRequestF08(name string) AddInlinedBodyRequestF08 {
 var AddInlinedBodyRequestF08String = map[AddInlinedBodyRequestF08]string{
 	AddInlinedBodyRequestF08ValueA: "valueA",
 	AddInlinedBodyRequestF08ValueB: "valueB",
+	AddInlinedBodyRequestF08ValueC: "valueC",
 }
 
 func (e AddInlinedBodyRequestF08) String() string {
@@ -1911,6 +2238,80 @@ func (e *AddInlinedBodyRequestF08) Scan(src interface{}) error {
 	return nil
 }
 
+// AddInlinedBodyRequestF08Null
+// AddInlinedBody Body : f08Null
+type AddInlinedBodyRequestF08Null int8
+
+const (
+	UnknownAddInlinedBodyRequestF08Null AddInlinedBodyRequestF08Null = iota
+	AddInlinedBodyRequestF08NullValueA
+	AddInlinedBodyRequestF08NullValueB
+	AddInlinedBodyRequestF08NullValueC
+)
+
+func NewAddInlinedBodyRequestF08Null(name string) AddInlinedBodyRequestF08Null {
+	switch name {
+	case "valueA":
+		return AddInlinedBodyRequestF08NullValueA
+	case "valueB":
+		return AddInlinedBodyRequestF08NullValueB
+	case "valueC":
+		return AddInlinedBodyRequestF08NullValueC
+	}
+
+	return AddInlinedBodyRequestF08Null(0)
+}
+
+var AddInlinedBodyRequestF08NullString = map[AddInlinedBodyRequestF08Null]string{
+	AddInlinedBodyRequestF08NullValueA: "valueA",
+	AddInlinedBodyRequestF08NullValueB: "valueB",
+	AddInlinedBodyRequestF08NullValueC: "valueC",
+}
+
+func (e AddInlinedBodyRequestF08Null) String() string {
+	return AddInlinedBodyRequestF08NullString[e]
+}
+
+func (e *AddInlinedBodyRequestF08Null) UnmarshalJSON(input []byte) (err error) {
+	var i int8
+
+	err = json.Unmarshal(input, &i)
+	if err == nil {
+		*e = AddInlinedBodyRequestF08Null(i)
+		return nil
+	}
+
+	var s string
+
+	err = json.Unmarshal(input, &s)
+	if err != nil {
+		return err
+	}
+
+	*e = NewAddInlinedBodyRequestF08Null(s)
+
+	return nil
+}
+
+func (e AddInlinedBodyRequestF08Null) MarshalJSON() ([]byte, error) {
+	return json.Marshal(e.String())
+}
+
+func (e AddInlinedBodyRequestF08Null) Value() (driver.Value, error) {
+	return json.Marshal(e.String())
+}
+
+func (e *AddInlinedBodyRequestF08Null) Scan(src interface{}) error {
+	s, ok := src.(string)
+	if !ok {
+		return fmt.Errorf("AddInlinedBodyRequestF08Null.scan: scanned a %T, not []byte", src) //nolint
+	}
+
+	*e = NewAddInlinedBodyRequestF08Null(s)
+
+	return nil
+}
+
 func (p *AddInlinedBodyRequest) UnmarshalJSON(b []byte) error {
 	var requiredCheck map[string]any
 
@@ -1941,16 +2342,40 @@ func (p *AddInlinedBodyRequest) UnmarshalJSON(b []byte) error {
 
 	v := AddInlinedBodyRequest(parseObject)
 
+	if _, ok := requiredCheck["f01b"]; !ok {
+		v.F01B = true
+	}
+
+	if _, ok := requiredCheck["f01bNull"]; !ok {
+		var defaultVal bool = true
+		v.F01BNull = &defaultVal
+	}
+
 	if _, ok := requiredCheck["f04"]; !ok {
 		v.F04 = 1
+	}
+
+	if _, ok := requiredCheck["f04Null"]; !ok {
+		var defaultVal int64 = 2
+		v.F04Null = &defaultVal
 	}
 
 	if _, ok := requiredCheck["f08"]; !ok {
 		v.F08 = AddInlinedBodyRequestF08ValueA
 	}
 
+	if _, ok := requiredCheck["f08Null"]; !ok {
+		defaultVal := AddInlinedBodyRequestF08NullValueB
+		v.F08Null = &defaultVal
+	}
+
 	if _, ok := requiredCheck["f13"]; !ok {
 		v.F13 = "someValue"
+	}
+
+	if _, ok := requiredCheck["f13Null"]; !ok {
+		var defaultVal string = "someValue2"
+		v.F13Null = &defaultVal
 	}
 
 	if err := v.Validate(); err != nil {

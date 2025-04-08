@@ -310,10 +310,15 @@ func (p *{{ pascal $key }}) UnmarshalJSON(b []byte) error {
             {{- if $hasDefault }}
     if _, ok := requiredCheck["{{ $field }}"]; !ok {
                 {{- if $isEnum -}}
+                    {{- if $schemaProp.Value.Nullable }}
+        defaultVal := {{- $goType}}{{ pascal (goToken (printf "%#v" $schemaProp.Value.Default)) }}
+        v.{{ pascal $field }} = &defaultVal
+                    {{- else -}}
         v.{{ pascal $field }} = {{- $goType}}{{ pascal (goToken (printf "%#v" $schemaProp.Value.Default)) }}
+                    {{- end }}
                 {{else -}}
                     {{- if $schemaProp.Value.Nullable }}
-        defaultVal := {{ printf "%#v" $schemaProp.Value.Default }}
+        var defaultVal {{ $goType }} = {{ printf "%#v" $schemaProp.Value.Default }}
         v.{{ pascal $field }} = &defaultVal
                     {{ else -}}
         v.{{ pascal $field }} = {{ printf "%#v" $schemaProp.Value.Default }}
@@ -359,9 +364,6 @@ func ParseForm{{ pascal $key }}(r *http.Request) ({{ pascal $key }}, error) {
 	var (
 	  parseErrors validation.Errors
 	  err error
-	{{- if .SchemaPropertiesHaveDefaults $schema }}
-	  ok bool
-	{{- end }}
       v {{ pascal $key }}
     )
 
@@ -390,42 +392,45 @@ func ParseForm{{ pascal $key }}(r *http.Request) ({{ pascal $key }}, error) {
         parseErrors.Add("{{ $field }}", err)
     }
         {{- else -}}
-            {{- if eq $goType "bool" -}}
-    v.{{ pascal $field }}, {{- if $hasDefault }}ok{{ else }}_{{ end -}}, err = forms.GetBool(r.FormValue, "{{ $field }}", {{ $isRequired }})
+            {{ if eq $goType "bool" -}}
+    param{{ pascal $field }}, ok, err := forms.GetBool(r.FormValue, "{{ $field }}", {{ $isRequired }})
             {{- else if eq $goType "int32" }}
-    v.{{ pascal $field }}, {{- if $hasDefault }}ok{{ else }}_{{ end -}}, err = forms.GetInt32(r.FormValue, "{{ $field }}", {{ $isRequired }})
+    param{{ pascal $field }}, ok, err := forms.GetInt32(r.FormValue, "{{ $field }}", {{ $isRequired }})
             {{- else if eq $goType "int64" }}
-    v.{{ pascal $field }}, {{- if $hasDefault }}ok{{ else }}_{{ end -}}, err = forms.GetInt64(r.FormValue, "{{ $field }}", {{ $isRequired }})
+    param{{ pascal $field }}, ok, err := forms.GetInt64(r.FormValue, "{{ $field }}", {{ $isRequired }})
             {{- else if eq $goType "time.Time" }}
-    v.{{ pascal $field }}, {{- if $hasDefault }}ok{{ else }}_{{ end -}}, err = forms.GetTime(r.FormValue, "{{ $field }}", {{ $isRequired }})
+    param{{ pascal $field }}, ok, err := forms.GetTime(r.FormValue, "{{ $field }}", {{ $isRequired }})
             {{- else if eq $goType "uuid.UUID" }}
-    v.{{ pascal $field }}, {{- if $hasDefault }}ok{{ else }}_{{ end -}}, err = forms.GetUUID(r.FormValue, "{{ $field }}", {{ $isRequired }})
+    param{{ pascal $field }}, ok, err := forms.GetUUID(r.FormValue, "{{ $field }}", {{ $isRequired }})
             {{- else if $isEnum }}
-    v.{{ pascal $field }}, {{- if $hasDefault }}ok{{ else }}_{{ end -}}, err = forms.GetEnum(r.FormValue, "{{ $field }}", {{ $isRequired }}, {{ $enumNew }})
+    param{{ pascal $field }}, ok, err := forms.GetEnum(r.FormValue, "{{ $field }}", {{ $isRequired }}, {{ $enumNew }})
             {{- else if eq $goType "forms.File" }}
-    v.{{ pascal $field }}, {{- if $hasDefault }}ok{{ else }}_{{ end -}}, err = forms.GetFile(r, "{{ $field }}", {{ $isRequired }})
+    param{{ pascal $field }}, ok, err := forms.GetFile(r, "{{ $field }}", {{ $isRequired }})
             {{- else }}
-    v.{{ pascal $field }}, {{- if $hasDefault }}ok{{ else }}_{{ end -}}, err = forms.GetString(r.FormValue, "{{ $field }}", {{ $isRequired }})
+    param{{ pascal $field }}, ok, err := forms.GetString(r.FormValue, "{{ $field }}", {{ $isRequired }})
             {{- end }}
     if err != nil {
         parseErrors.Add("{{ $field }}", err)
             {{- if $hasDefault }}
     } else if !ok {
-        v.{{ pascal $field }} = {{ if $isEnum -}}
-                {{- $goType}}{{ pascal (goToken (printf "%#v" $schemaProp.Value.Default)) }}
-                {{else -}}
+        param{{ pascal $field }} = {{- if $isEnum -}}
+                    {{- $goType}}{{- pascal (goToken (printf "%#v" $schemaProp.Value.Default)) -}}
+                {{- else -}}
                     {{- if and (eq $goType "time.Time") (eq $schemaProp.Value.Default "") -}}
                         time.Time{}
-                    {{else -}}
+                    {{- else -}}
                         {{ printf "%#v" $schemaProp.Value.Default }}
                     {{- end -}}
                 {{- end -}}
     }
-            {{else}}
-    }
-            {{end}}
-        {{- end }}
 
+    v.{{ pascal $field }} = {{- if $schemaProp.Value.Nullable }}&{{ end }}param{{ pascal $field }}
+            {{else }}
+    } else if ok {
+        v.{{ pascal $field }} = {{- if $schemaProp.Value.Nullable }}&{{ end }}param{{ pascal $field }}
+    }
+            {{ end }}
+        {{- end }}
     {{ end }}
 
 	if parseErrors != nil {
