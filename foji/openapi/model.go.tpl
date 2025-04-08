@@ -364,9 +364,6 @@ func ParseForm{{ pascal $key }}(r *http.Request) ({{ pascal $key }}, error) {
 	var (
 	  parseErrors validation.Errors
 	  err error
-	{{- if or (.SchemaPropertiesHaveDefaults $schema) }}
-	  ok bool
-	{{- end }}
       v {{ pascal $key }}
     )
 
@@ -394,7 +391,7 @@ func ParseForm{{ pascal $key }}(r *http.Request) ({{ pascal $key }}, error) {
     if err != nil {
         parseErrors.Add("{{ $field }}", err)
     }
-        {{- else if $schemaProp.Value.Nullable -}}
+        {{- else -}}
             {{ if eq $goType "bool" -}}
     param{{ pascal $field }}, ok, err := forms.GetBool(r.FormValue, "{{ $field }}", {{ $isRequired }})
             {{- else if eq $goType "int32" }}
@@ -430,43 +427,9 @@ func ParseForm{{ pascal $key }}(r *http.Request) ({{ pascal $key }}, error) {
     v.{{ pascal $field }} = {{- if $schemaProp.Value.Nullable }}&{{ end }}param{{ pascal $field }}
             {{else }}
     } else if ok {
-        v.{{ pascal $field }} = &param{{ pascal $field }}
+        v.{{ pascal $field }} = {{- if $schemaProp.Value.Nullable }}&{{ end }}param{{ pascal $field }}
     }
             {{ end }}
-        {{- else -}}
-
-            {{ if eq $goType "bool" -}}
-    v.{{ pascal $field }}, {{- if $hasDefault }}ok{{ else }}_{{ end -}}, err = forms.GetBool(r.FormValue, "{{ $field }}", {{ $isRequired }})
-            {{- else if eq $goType "int32" }}
-    v.{{ pascal $field }}, {{- if $hasDefault }}ok{{ else }}_{{ end -}}, err = forms.GetInt32(r.FormValue, "{{ $field }}", {{ $isRequired }})
-            {{- else if eq $goType "int64" }}
-    v.{{ pascal $field }}, {{- if $hasDefault }}ok{{ else }}_{{ end -}}, err = forms.GetInt64(r.FormValue, "{{ $field }}", {{ $isRequired }})
-            {{- else if eq $goType "time.Time" }}
-    v.{{ pascal $field }}, {{- if $hasDefault }}ok{{ else }}_{{ end -}}, err = forms.GetTime(r.FormValue, "{{ $field }}", {{ $isRequired }})
-            {{- else if eq $goType "uuid.UUID" }}
-    v.{{ pascal $field }}, {{- if $hasDefault }}ok{{ else }}_{{ end -}}, err = forms.GetUUID(r.FormValue, "{{ $field }}", {{ $isRequired }})
-            {{- else if $isEnum }}
-    v.{{ pascal $field }}, {{- if $hasDefault }}ok{{ else }}_{{ end -}}, err = forms.GetEnum(r.FormValue, "{{ $field }}", {{ $isRequired }}, {{ $enumNew }})
-            {{- else if eq $goType "forms.File" }}
-    v.{{ pascal $field }}, {{- if $hasDefault }}ok{{ else }}_{{ end -}}, err = forms.GetFile(r, "{{ $field }}", {{ $isRequired }})
-            {{- else }}
-    v.{{ pascal $field }}, {{- if $hasDefault }}ok{{ else }}_{{ end -}}, err = forms.GetString(r.FormValue, "{{ $field }}", {{ $isRequired }})
-            {{- end }}
-    if err != nil {
-        parseErrors.Add("{{ $field }}", err)
-            {{- if $hasDefault }}
-    } else if !ok {
-        v.{{ pascal $field }} = {{ if $isEnum -}}
-                    {{- $goType}}{{ pascal (goToken (printf "%#v" $schemaProp.Value.Default)) }}
-                {{else -}}
-                    {{- if and (eq $goType "time.Time") (eq $schemaProp.Value.Default "") -}}
-                        time.Time{}
-                    {{else -}}
-                        {{ printf "%#v" $schemaProp.Value.Default }}
-                    {{- end -}}
-                {{- end -}}
-            {{ end }}
-    }
         {{- end }}
     {{ end }}
 

@@ -1818,13 +1818,14 @@ func ParseFormAddFormRequest(r *http.Request) (AddFormRequest, error) {
 	var (
 		parseErrors validation.Errors
 		err         error
-		ok          bool
 		v           AddFormRequest
 	)
 
-	v.F01, _, err = forms.GetBool(r.FormValue, "f01", false)
+	paramF01, ok, err := forms.GetBool(r.FormValue, "f01", false)
 	if err != nil {
 		parseErrors.Add("f01", err)
+	} else if ok {
+		v.F01 = paramF01
 	}
 
 	paramF01Null, ok, err := forms.GetBool(r.FormValue, "f01Null", false)
@@ -1834,12 +1835,14 @@ func ParseFormAddFormRequest(r *http.Request) (AddFormRequest, error) {
 		v.F01Null = &paramF01Null
 	}
 
-	v.F01B, ok, err = forms.GetBool(r.FormValue, "f01b", false)
+	paramF01B, ok, err := forms.GetBool(r.FormValue, "f01b", false)
 	if err != nil {
 		parseErrors.Add("f01b", err)
 	} else if !ok {
-		v.F01B = true
+		paramF01B = true
 	}
+
+	v.F01B = paramF01B
 
 	paramF01BNull, ok, err := forms.GetBool(r.FormValue, "f01bNull", false)
 	if err != nil {
@@ -1850,9 +1853,11 @@ func ParseFormAddFormRequest(r *http.Request) (AddFormRequest, error) {
 
 	v.F01BNull = &paramF01BNull
 
-	v.F02, _, err = forms.GetInt32(r.FormValue, "f02", false)
+	paramF02, ok, err := forms.GetInt32(r.FormValue, "f02", false)
 	if err != nil {
 		parseErrors.Add("f02", err)
+	} else if ok {
+		v.F02 = paramF02
 	}
 
 	paramF02Null, ok, err := forms.GetInt32(r.FormValue, "f02Null", false)
@@ -1862,9 +1867,11 @@ func ParseFormAddFormRequest(r *http.Request) (AddFormRequest, error) {
 		v.F02Null = &paramF02Null
 	}
 
-	v.F03, _, err = forms.GetInt32(r.FormValue, "f03", false)
+	paramF03, ok, err := forms.GetInt32(r.FormValue, "f03", false)
 	if err != nil {
 		parseErrors.Add("f03", err)
+	} else if ok {
+		v.F03 = paramF03
 	}
 
 	paramF03Null, ok, err := forms.GetInt32(r.FormValue, "f03Null", false)
@@ -1874,12 +1881,14 @@ func ParseFormAddFormRequest(r *http.Request) (AddFormRequest, error) {
 		v.F03Null = &paramF03Null
 	}
 
-	v.F04, ok, err = forms.GetInt64(r.FormValue, "f04", false)
+	paramF04, ok, err := forms.GetInt64(r.FormValue, "f04", false)
 	if err != nil {
 		parseErrors.Add("f04", err)
 	} else if !ok {
-		v.F04 = 1
+		paramF04 = 1
 	}
+
+	v.F04 = paramF04
 
 	paramF04Null, ok, err := forms.GetInt64(r.FormValue, "f04Null", false)
 	if err != nil {
@@ -1890,9 +1899,11 @@ func ParseFormAddFormRequest(r *http.Request) (AddFormRequest, error) {
 
 	v.F04Null = &paramF04Null
 
-	v.F05, _, err = forms.GetTime(r.FormValue, "f05", false)
+	paramF05, ok, err := forms.GetTime(r.FormValue, "f05", false)
 	if err != nil {
 		parseErrors.Add("f05", err)
+	} else if ok {
+		v.F05 = paramF05
 	}
 
 	paramF05Null, ok, err := forms.GetTime(r.FormValue, "f05Null", false)
@@ -1902,9 +1913,11 @@ func ParseFormAddFormRequest(r *http.Request) (AddFormRequest, error) {
 		v.F05Null = &paramF05Null
 	}
 
-	v.F06, _, err = forms.GetUUID(r.FormValue, "f06", false)
+	paramF06, ok, err := forms.GetUUID(r.FormValue, "f06", false)
 	if err != nil {
 		parseErrors.Add("f06", err)
+	} else if ok {
+		v.F06 = paramF06
 	}
 
 	paramF06Null, ok, err := forms.GetUUID(r.FormValue, "f06Null", false)
@@ -1914,9 +1927,11 @@ func ParseFormAddFormRequest(r *http.Request) (AddFormRequest, error) {
 		v.F06Null = &paramF06Null
 	}
 
-	v.F07, _, err = forms.GetString(r.FormValue, "f07", true)
+	paramF07, ok, err := forms.GetString(r.FormValue, "f07", true)
 	if err != nil {
 		parseErrors.Add("f07", err)
+	} else if ok {
+		v.F07 = paramF07
 	}
 
 	paramF07Null, ok, err := forms.GetString(r.FormValue, "f07Null", false)
@@ -1926,12 +1941,14 @@ func ParseFormAddFormRequest(r *http.Request) (AddFormRequest, error) {
 		v.F07Null = &paramF07Null
 	}
 
-	v.F08, ok, err = forms.GetEnum(r.FormValue, "f08", false, NewAddFormRequestF08)
+	paramF08, ok, err := forms.GetEnum(r.FormValue, "f08", false, NewAddFormRequestF08)
 	if err != nil {
 		parseErrors.Add("f08", err)
 	} else if !ok {
-		v.F08 = AddFormRequestF08ValueA
+		paramF08 = AddFormRequestF08ValueA
 	}
+
+	v.F08 = paramF08
 
 	paramF08Null, ok, err := forms.GetEnum(r.FormValue, "f08Null", false, NewAddFormRequestF08Null)
 	if err != nil {
@@ -1942,9 +1959,11 @@ func ParseFormAddFormRequest(r *http.Request) (AddFormRequest, error) {
 
 	v.F08Null = &paramF08Null
 
-	v.F09, _, err = forms.GetEnum(r.FormValue, "f09", false, NewSeason)
+	paramF09, ok, err := forms.GetEnum(r.FormValue, "f09", false, NewSeason)
 	if err != nil {
 		parseErrors.Add("f09", err)
+	} else if ok {
+		v.F09 = paramF09
 	}
 
 	paramF09Null, ok, err := forms.GetEnum(r.FormValue, "f09Null", false, NewSeasonNullable)
@@ -1969,12 +1988,14 @@ func ParseFormAddFormRequest(r *http.Request) (AddFormRequest, error) {
 		parseErrors.Add("f12", err)
 	}
 
-	v.F13, ok, err = forms.GetString(r.FormValue, "f13", false)
+	paramF13, ok, err := forms.GetString(r.FormValue, "f13", false)
 	if err != nil {
 		parseErrors.Add("f13", err)
 	} else if !ok {
-		v.F13 = "someValue"
+		paramF13 = "someValue"
 	}
+
+	v.F13 = paramF13
 
 	paramF13Null, ok, err := forms.GetString(r.FormValue, "f13Null", false)
 	if err != nil {
@@ -2032,49 +2053,67 @@ func ParseFormAddMultipartFormRequest(r *http.Request) (AddMultipartFormRequest,
 		v           AddMultipartFormRequest
 	)
 
-	v.F1, _, err = forms.GetBool(r.FormValue, "f1", false)
+	paramF1, ok, err := forms.GetBool(r.FormValue, "f1", false)
 	if err != nil {
 		parseErrors.Add("f1", err)
+	} else if ok {
+		v.F1 = paramF1
 	}
 
-	v.F2, _, err = forms.GetInt32(r.FormValue, "f2", false)
+	paramF2, ok, err := forms.GetInt32(r.FormValue, "f2", false)
 	if err != nil {
 		parseErrors.Add("f2", err)
+	} else if ok {
+		v.F2 = paramF2
 	}
 
-	v.F3, _, err = forms.GetInt32(r.FormValue, "f3", false)
+	paramF3, ok, err := forms.GetInt32(r.FormValue, "f3", false)
 	if err != nil {
 		parseErrors.Add("f3", err)
+	} else if ok {
+		v.F3 = paramF3
 	}
 
-	v.F4, _, err = forms.GetInt64(r.FormValue, "f4", false)
+	paramF4, ok, err := forms.GetInt64(r.FormValue, "f4", false)
 	if err != nil {
 		parseErrors.Add("f4", err)
+	} else if ok {
+		v.F4 = paramF4
 	}
 
-	v.F5, _, err = forms.GetTime(r.FormValue, "f5", false)
+	paramF5, ok, err := forms.GetTime(r.FormValue, "f5", false)
 	if err != nil {
 		parseErrors.Add("f5", err)
+	} else if ok {
+		v.F5 = paramF5
 	}
 
-	v.F6, _, err = forms.GetUUID(r.FormValue, "f6", false)
+	paramF6, ok, err := forms.GetUUID(r.FormValue, "f6", false)
 	if err != nil {
 		parseErrors.Add("f6", err)
+	} else if ok {
+		v.F6 = paramF6
 	}
 
-	v.F7, _, err = forms.GetString(r.FormValue, "f7", false)
+	paramF7, ok, err := forms.GetString(r.FormValue, "f7", false)
 	if err != nil {
 		parseErrors.Add("f7", err)
+	} else if ok {
+		v.F7 = paramF7
 	}
 
-	v.File1, _, err = forms.GetFile(r, "file1", true)
+	paramFile1, ok, err := forms.GetFile(r, "file1", true)
 	if err != nil {
 		parseErrors.Add("file1", err)
+	} else if ok {
+		v.File1 = paramFile1
 	}
 
-	v.File2, _, err = forms.GetFile(r, "file2", false)
+	paramFile2, ok, err := forms.GetFile(r, "file2", false)
 	if err != nil {
 		parseErrors.Add("file2", err)
+	} else if ok {
+		v.File2 = paramFile2
 	}
 
 	if parseErrors != nil {
