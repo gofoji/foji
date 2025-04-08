@@ -15,6 +15,7 @@ test_gen:
 	go run main.go weld openAPI -c tests/example/foji.yaml
 	cd tests; go run tests_main.go
 	cd tests; go test ./...
+	golangci-lint fmt
 
 cover:
 	go test	-coverprofile cp.out ./...
