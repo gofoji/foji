@@ -14,7 +14,7 @@ import (
 type Operations interface {
 	GetByteCsv(ctx context.Context) ([]byte, error)
 	GetReaderCsv(ctx context.Context) (io.Reader, error)
-	GetStringCsv(ctx context.Context) (*string, error)
+	GetStringCsv(ctx context.Context) (string, error)
 }
 
 type OpenAPIHandlers struct {
@@ -80,5 +80,5 @@ func (h OpenAPIHandlers) GetStringCsv(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputil.Write(w, r, "text/csv", 200, []byte(*response))
+	httputil.Write(w, r, "text/csv", 200, []byte(response))
 }
