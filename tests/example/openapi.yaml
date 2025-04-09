@@ -4,6 +4,8 @@ info:
   title: Test
 tags:
   - name: Examples
+
+security: []
 paths:
   /examples:
     get:
@@ -591,7 +593,72 @@ paths:
               description: Redirect URL
               schema:
                 type: string
+  /examples/auth/simple:
+    get:
+      operationId: getAuthSimple
+      security:
+        - HeaderAuth: []
+      responses:
+        "200":
+          description: OK
+  /examples/auth/simple/maybe:
+    get:
+      operationId: getAuthSimpleMaybe
+      security:
+        - HeaderAuth: []
+        - {}
+      responses:
+        "200":
+          description: OK
+  /examples/auth/simple2:
+    get:
+      operationId: getAuthSimple2
+      security:
+        - HeaderAuth: ["foo"]
+        - HeaderAuth: ["bar"]
+      responses:
+        "200":
+          description: OK
+  /examples/auth/simple2/maybe:
+    get:
+      operationId: getAuthSimple2Maybe
+      security:
+        - HeaderAuth: ["foo"]
+        - HeaderAuth: ["bar"]
+        - {}
+      responses:
+        "200":
+          description: OK
+  /examples/auth/complex:
+    get:
+      operationId: getAuthComplex
+      security:
+        - HeaderAuth: ["foo"]
+        - HeaderAuth: ["bar"]
+        - Jwt: []
+      responses:
+        "200":
+          description: OK
+  /examples/complexAuthMaybe:
+    get:
+      operationId: getAuthComplexMaybe
+      security:
+        - HeaderAuth: []
+        - Jwt: []
+        - {}
+      responses:
+        "200":
+          description: OK
 components:
+  securitySchemes:
+    HeaderAuth:
+      type: apiKey
+      name: Authorization
+      in: header
+    Jwt:
+      type: apiKey
+      name: jwt
+      in: query
   parameters:
     IdParam:
       name: id

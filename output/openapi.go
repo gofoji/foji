@@ -607,13 +607,26 @@ func (o *OpenAPIFileContext) IsSimpleAuth(op *openapi3.Operation) bool {
 		return true
 	}
 
-	authName := ""
+	var authName *string
+
+	isDifferentAuth := func(key string) bool {
+		if authName == nil {
+			authName = &key
+			return false
+		}
+
+		return *authName != key
+	}
 
 	for _, group := range s {
+		if len(group) == 0 {
+			if isDifferentAuth("") {
+				return false
+			}
+		}
+
 		for key := range group {
-			if authName == "" {
-				authName = key
-			} else if authName != key {
+			if isDifferentAuth(key) {
 				return false
 			}
 		}
@@ -662,10 +675,8 @@ func (o *OpenAPIFileContext) HasAnyAuth(op *openapi3.Operation) bool {
 	}
 
 	for _, group := range s {
-		for key := range group {
-			if key != "" {
-				return true
-			}
+		for range group {
+			return true
 		}
 	}
 

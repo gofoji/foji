@@ -8,10 +8,36 @@ import (
 	"github.com/google/uuid"
 )
 
+type ExampleAuth struct{}
+
 type Service struct{}
 
 func (s *Service) GetExamples(ctx context.Context) (*Examples, error) {
 	return nil, nil
+}
+
+func (s *Service) GetAuthComplex(ctx context.Context, user *ExampleAuth) error {
+	return nil
+}
+
+func (s *Service) GetAuthSimple(ctx context.Context, user *ExampleAuth) error {
+	return nil
+}
+
+func (s *Service) GetAuthSimpleMaybe(ctx context.Context, user *ExampleAuth) error {
+	return nil
+}
+
+func (s *Service) GetAuthSimple2(ctx context.Context, user *ExampleAuth) error {
+	return nil
+}
+
+func (s *Service) GetAuthSimple2Maybe(ctx context.Context, user *ExampleAuth) error {
+	return nil
+}
+
+func (s *Service) GetAuthComplexMaybe(ctx context.Context, user *ExampleAuth) error {
+	return nil
 }
 
 func (s *Service) AddForm(ctx context.Context, body AddFormRequest) (*FooBar, error) {

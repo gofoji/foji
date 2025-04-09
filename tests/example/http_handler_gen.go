@@ -16,6 +16,12 @@ import (
 
 type Operations interface {
 	GetExamples(ctx context.Context) (*Examples, error)
+	GetAuthComplex(ctx context.Context, user *ExampleAuth) error
+	GetAuthSimple(ctx context.Context, user *ExampleAuth) error
+	GetAuthSimpleMaybe(ctx context.Context, user *ExampleAuth) error
+	GetAuthSimple2(ctx context.Context, user *ExampleAuth) error
+	GetAuthSimple2Maybe(ctx context.Context, user *ExampleAuth) error
+	GetAuthComplexMaybe(ctx context.Context, user *ExampleAuth) error
 	AddForm(ctx context.Context, body AddFormRequest) (*FooBar, error)
 	AddMultipartForm(ctx context.Context, body AddMultipartFormRequest) (*FooBar, error)
 	HeaderResponse(ctx context.Context) (http.Header, error)
@@ -33,17 +39,53 @@ type Operations interface {
 }
 
 type OpenAPIHandlers struct {
-	ops Operations
+	ops                         Operations
+	headerAuthAuth              AuthenticateFunc
+	jwtAuth                     AuthenticateFunc
+	authorize                   AuthorizeFunc
+	getAuthComplexSecurity      SecurityGroups
+	getAuthSimpleMaybeSecurity  SecurityGroups
+	getAuthSimple2MaybeSecurity SecurityGroups
+	getAuthComplexMaybeSecurity SecurityGroups
 }
 
 type Mux interface {
 	Handle(pattern string, handler http.Handler)
 }
 
-func RegisterHTTP(ops Operations, r Mux) *OpenAPIHandlers {
-	s := OpenAPIHandlers{ops: ops}
+func RegisterHTTP(ops Operations, r Mux, headerAuthAuth, jwtAuth AuthenticateFunc, authorize AuthorizeFunc) *OpenAPIHandlers {
+	s := OpenAPIHandlers{ops: ops, headerAuthAuth: headerAuthAuth, jwtAuth: jwtAuth, authorize: authorize}
+
+	s.getAuthComplexSecurity = SecurityGroups{
+		SecurityGroup{httputil.NewAuthCheck(headerAuthAuth, authorize, "foo")},
+		SecurityGroup{httputil.NewAuthCheck(headerAuthAuth, authorize, "bar")},
+		SecurityGroup{httputil.NewAuthCheck(jwtAuth, nil)},
+	}
+
+	s.getAuthSimpleMaybeSecurity = SecurityGroups{
+		SecurityGroup{httputil.NewAuthCheck(headerAuthAuth, nil)},
+		SecurityGroup{},
+	}
+
+	s.getAuthSimple2MaybeSecurity = SecurityGroups{
+		SecurityGroup{httputil.NewAuthCheck(headerAuthAuth, authorize, "foo")},
+		SecurityGroup{httputil.NewAuthCheck(headerAuthAuth, authorize, "bar")},
+		SecurityGroup{},
+	}
+
+	s.getAuthComplexMaybeSecurity = SecurityGroups{
+		SecurityGroup{httputil.NewAuthCheck(headerAuthAuth, nil)},
+		SecurityGroup{httputil.NewAuthCheck(jwtAuth, nil)},
+		SecurityGroup{},
+	}
 
 	r.Handle("GET /examples", http.HandlerFunc(s.GetExamples))
+	r.Handle("GET /examples/auth/complex", http.HandlerFunc(s.GetAuthComplex))
+	r.Handle("GET /examples/auth/simple", http.HandlerFunc(s.GetAuthSimple))
+	r.Handle("GET /examples/auth/simple/maybe", http.HandlerFunc(s.GetAuthSimpleMaybe))
+	r.Handle("GET /examples/auth/simple2", http.HandlerFunc(s.GetAuthSimple2))
+	r.Handle("GET /examples/auth/simple2/maybe", http.HandlerFunc(s.GetAuthSimple2Maybe))
+	r.Handle("GET /examples/complexAuthMaybe", http.HandlerFunc(s.GetAuthComplexMaybe))
 	r.Handle("POST /examples/form", http.HandlerFunc(s.AddForm))
 	r.Handle("POST /examples/form:multipart", http.HandlerFunc(s.AddMultipartForm))
 	r.Handle("GET /examples/header", http.HandlerFunc(s.HeaderResponse))
@@ -76,6 +118,151 @@ func (h OpenAPIHandlers) GetExamples(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httputil.JSONWrite(w, r, 200, response)
+}
+
+// GetAuthComplex
+func (h OpenAPIHandlers) GetAuthComplex(w http.ResponseWriter, r *http.Request) {
+	var err error
+
+	logctx.AddStrToContext(r.Context(), "op", "getAuthComplex")
+
+	user, err := h.getAuthComplexSecurity.Auth(r)
+	if err != nil {
+		httputil.ErrorHandler(w, r, err)
+
+		return
+	}
+
+	err = h.ops.GetAuthComplex(r.Context(), user)
+	if err != nil {
+		httputil.ErrorHandler(w, r, err)
+
+		return
+	}
+
+	w.WriteHeader(200)
+}
+
+// GetAuthSimple
+func (h OpenAPIHandlers) GetAuthSimple(w http.ResponseWriter, r *http.Request) {
+	var err error
+
+	logctx.AddStrToContext(r.Context(), "op", "getAuthSimple")
+
+	user, err := h.headerAuthAuth(r)
+	if err != nil {
+		httputil.ErrorHandler(w, r, err)
+
+		return
+	}
+
+	err = h.ops.GetAuthSimple(r.Context(), user)
+	if err != nil {
+		httputil.ErrorHandler(w, r, err)
+
+		return
+	}
+
+	w.WriteHeader(200)
+}
+
+// GetAuthSimpleMaybe
+func (h OpenAPIHandlers) GetAuthSimpleMaybe(w http.ResponseWriter, r *http.Request) {
+	var err error
+
+	logctx.AddStrToContext(r.Context(), "op", "getAuthSimpleMaybe")
+
+	user, err := h.getAuthSimpleMaybeSecurity.Auth(r)
+	if err != nil {
+		httputil.ErrorHandler(w, r, err)
+
+		return
+	}
+
+	err = h.ops.GetAuthSimpleMaybe(r.Context(), user)
+	if err != nil {
+		httputil.ErrorHandler(w, r, err)
+
+		return
+	}
+
+	w.WriteHeader(200)
+}
+
+// GetAuthSimple2
+func (h OpenAPIHandlers) GetAuthSimple2(w http.ResponseWriter, r *http.Request) {
+	var err error
+
+	logctx.AddStrToContext(r.Context(), "op", "getAuthSimple2")
+
+	user, err := h.headerAuthAuth(r)
+	if err == nil {
+		err = h.authorize(r.Context(), user, []string{"foo"})
+		if err != nil {
+			err = h.authorize(r.Context(), user, []string{"bar"})
+		}
+	}
+
+	if err != nil {
+		httputil.ErrorHandler(w, r, err)
+
+		return
+	}
+
+	err = h.ops.GetAuthSimple2(r.Context(), user)
+	if err != nil {
+		httputil.ErrorHandler(w, r, err)
+
+		return
+	}
+
+	w.WriteHeader(200)
+}
+
+// GetAuthSimple2Maybe
+func (h OpenAPIHandlers) GetAuthSimple2Maybe(w http.ResponseWriter, r *http.Request) {
+	var err error
+
+	logctx.AddStrToContext(r.Context(), "op", "getAuthSimple2Maybe")
+
+	user, err := h.getAuthSimple2MaybeSecurity.Auth(r)
+	if err != nil {
+		httputil.ErrorHandler(w, r, err)
+
+		return
+	}
+
+	err = h.ops.GetAuthSimple2Maybe(r.Context(), user)
+	if err != nil {
+		httputil.ErrorHandler(w, r, err)
+
+		return
+	}
+
+	w.WriteHeader(200)
+}
+
+// GetAuthComplexMaybe
+func (h OpenAPIHandlers) GetAuthComplexMaybe(w http.ResponseWriter, r *http.Request) {
+	var err error
+
+	logctx.AddStrToContext(r.Context(), "op", "getAuthComplexMaybe")
+
+	user, err := h.getAuthComplexMaybeSecurity.Auth(r)
+	if err != nil {
+		httputil.ErrorHandler(w, r, err)
+
+		return
+	}
+
+	err = h.ops.GetAuthComplexMaybe(r.Context(), user)
+	if err != nil {
+		httputil.ErrorHandler(w, r, err)
+
+		return
+	}
+
+	w.WriteHeader(200)
 }
 
 // AddForm
