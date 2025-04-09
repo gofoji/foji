@@ -6,6 +6,8 @@ processes:
   openAPI:
     params:
       Package: foji/tests/example
+      Auth: ExampleAuth
     OpenAPIFile:
-      'tests/example/http_handler_gen.go': foji/openapi/handler.go.tpl
-      'tests/example/model_gen.go': foji/openapi/model.go.tpl
+      tests/example/auth_gen.go: foji/openapi/auth.go.tpl
+      tests/example/http_handler_gen.go: foji/openapi/handler.go.tpl
+      tests/example/model_gen.go: foji/openapi/model.go.tpl
