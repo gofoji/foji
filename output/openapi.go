@@ -675,7 +675,7 @@ func (o *OpenAPIFileContext) HasAnyAuth(op *openapi3.Operation) bool {
 	}
 
 	for _, group := range s {
-		if len(group) > 1 {
+		if len(group) > 0 {
 			return true
 		}
 	}
