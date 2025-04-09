@@ -28,6 +28,44 @@ type Bar struct {
 	Bar string `json:"bar,omitempty,omitzero"`
 }
 
+// DefaultWithoutRequired
+//
+// OpenAPI Component Schema: DefaultWithoutRequired
+type DefaultWithoutRequired struct {
+	F1 string `json:"f1,omitempty,omitzero"`
+}
+
+func (p *DefaultWithoutRequired) UnmarshalJSON(b []byte) error {
+	var requiredCheck map[string]any
+
+	if err := json.Unmarshal(b, &requiredCheck); err != nil {
+		return validation.Error{err.Error(), fmt.Errorf("DefaultWithoutRequired.UnmarshalJSON Required: `%v`: %w", string(b), err)}
+	}
+
+	var validationErrors validation.Errors
+
+	if validationErrors != nil {
+		return validationErrors.GetErr()
+	}
+
+	type DefaultWithoutRequiredJSON DefaultWithoutRequired
+	var parseObject DefaultWithoutRequiredJSON
+
+	if err := json.Unmarshal(b, &parseObject); err != nil {
+		return validation.Error{err.Error(), fmt.Errorf("DefaultWithoutRequired.UnmarshalJSON: `%v`: %w", string(b), err)}
+	}
+
+	v := DefaultWithoutRequired(parseObject)
+
+	if _, ok := requiredCheck["f1"]; !ok {
+		v.F1 = "surprise!"
+	}
+
+	*p = v
+
+	return nil
+}
+
 // Example
 //
 // OpenAPI Component Schema: Example
@@ -190,6 +228,60 @@ func (p IntValue) Validate() error {
 //
 // OpenAPI Component Schema: NamedObject
 type NamedObject any
+
+// NotRequiredWithValidation
+//
+// OpenAPI Component Schema: NotRequiredWithValidation
+type NotRequiredWithValidation struct {
+	F1 []string `json:"f1,omitempty"`
+}
+
+func (p *NotRequiredWithValidation) UnmarshalJSON(b []byte) error {
+	type NotRequiredWithValidationJSON NotRequiredWithValidation
+	var parseObject NotRequiredWithValidationJSON
+
+	if err := json.Unmarshal(b, &parseObject); err != nil {
+		return validation.Error{err.Error(), fmt.Errorf("NotRequiredWithValidation.UnmarshalJSON: `%v`: %w", string(b), err)}
+	}
+
+	v := NotRequiredWithValidation(parseObject)
+
+	if err := v.Validate(); err != nil {
+		return err
+	}
+
+	*p = v
+
+	return nil
+}
+
+func (p NotRequiredWithValidation) MarshalJSON() ([]byte, error) {
+	if err := p.Validate(); err != nil {
+		return nil, err
+	}
+
+	type unvalidated NotRequiredWithValidation // Skips the validation check
+	b, err := json.Marshal(unvalidated(p))
+	if err != nil {
+		return nil, fmt.Errorf("NotRequiredWithValidation.Marshal: `%+v`: %w", p, err)
+	}
+
+	return b, nil
+}
+
+func (p NotRequiredWithValidation) Validate() error {
+	var err validation.Errors
+
+	p.ValidateF1(&err)
+
+	return err.GetErr()
+}
+
+func (p NotRequiredWithValidation) ValidateF1(err *validation.Errors) {
+	if len(p.F1) < 2 {
+		_ = err.Add("f1", "length must be >= 2")
+	}
+}
 
 // Patterns
 //
