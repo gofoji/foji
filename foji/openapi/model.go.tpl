@@ -266,7 +266,7 @@ var {{ camel $key }}Pattern = regexp.MustCompile(`{{ $schema.Value.Pattern }}`)
     {{- end -}}
 
 {{if eq $mediaType "application/json" }}
-    {{- if or $hasValidation $schema.Value.Required (.SchemaPropertiesHaveDefaults $schema) }}
+    {{- if or $hasValidation $schema.Value.Required (.SchemaPropertiesHaveDefaults $schema)}}
 
 func (p *{{ pascal $key }}) UnmarshalJSON(b []byte) error {
         {{- if or $schema.Value.Required (.SchemaPropertiesHaveDefaults $schema) }}
@@ -338,7 +338,7 @@ func (p *{{ pascal $key }}) UnmarshalJSON(b []byte) error {
     return nil
 }
 
-        {{ if or $hasValidation }}
+        {{ if $hasValidation}}
 func (p {{ pascal $key }}) MarshalJSON() ([]byte, error) {
     if err := p.Validate(); err != nil {
         return nil, err
@@ -470,6 +470,7 @@ func (p {{ pascal $key }}) Validate{{ pascal $fieldName }}(err *validation.Error
 	if p.{{ pascal $fieldName }} == nil {
 		return
 	}
+
                 {{ end -}}
                 {{- template "validateField" ($.WithParams "fieldName" $fieldName "schema" $schemaProp "typeName" $key "isPointer" $isPointer ) -}}
 }
