@@ -218,6 +218,16 @@ type {{ pascal $key }} struct {
         {{- end }}
     {{- end }}
 }
+
+        {{ if (.SchemaContainsAllOf $schema) }}
+type {{ pascal $key }}WithEmbedded struct {
+            {{- range $field, $schemaProp := $.SchemaPropertiesWithEmbedded $schema}}
+                {{- $isRequired := $.IsRequiredProperty $field $schema -}}
+                {{- template "propertyDeclaration" ($.WithParams "key" $field "schema" $schemaProp "typeName" $typeName "isRequired" $isRequired)}}
+            {{- end }}
+}
+        {{- end }}
+
     {{- else }}
 type {{ pascal $key }} {{ $.GetType $.PackageName (pascal (print $typeName " Item" )) $schema }}
     {{- end }}
@@ -267,7 +277,7 @@ var {{ camel $key }}Pattern = regexp.MustCompile(`{{ $schema.Value.Pattern }}`)
     {{- end -}}
 
 {{if eq $mediaType "application/json" }}
-    {{- if or $hasValidation $schema.Value.Required (.SchemaPropertiesHaveDefaults $schema)}}
+    {{- if or $hasValidation $schema.Value.Required (.SchemaPropertiesHaveDefaults $schema) (.SchemaContainsAllOf $schema) }}
 
 func (p *{{ pascal $key }}) UnmarshalJSON(b []byte) error {
         {{- if or $schema.Value.Required (.SchemaPropertiesHaveDefaults $schema) }}
@@ -289,6 +299,28 @@ func (p *{{ pascal $key }}) UnmarshalJSON(b []byte) error {
     }
         {{ end }}
 
+        {{ if (.SchemaContainsAllOf $schema) }}
+    var f {{ pascal $key }}WithEmbedded
+
+    if err := json.Unmarshal(b, &f); err != nil {
+        return validation.Error{err.Error(), fmt.Errorf("{{ pascal $key }}.UnmarshalJSON: `%v`: %w", string(b), err)}
+    }
+
+    var v {{ pascal $key }}
+
+            {{- range $allOf := $schema.Value.AllOf }}
+                {{- $allOfType := $.GetType $.PackageName "" $allOf -}}
+                {{- if notEmpty $allOf.Ref -}}
+                    {{- range $field, $schemaProp := $.SchemaPropertiesWithEmbedded $allOf}}
+    v.{{ pascal $field }} = f.{{ pascal $field }}
+                    {{- end -}}
+                {{- end -}}
+            {{- end }}
+
+            {{- range $field, $schemaProp := $.SchemaProperties $schema false}}
+    v.{{ pascal $field }} = f.{{ pascal $field }}
+            {{- end }}
+        {{ else  }}
     type  {{ pascal $key }}JSON {{ pascal $key }}
     var parseObject {{ pascal $key }}JSON
 
@@ -297,6 +329,7 @@ func (p *{{ pascal $key }}) UnmarshalJSON(b []byte) error {
     }
 
     v := {{ pascal $key }}(parseObject)
+        {{ end }}
 
         {{ range $field, $schemaProp := $.SchemaProperties $schema false}}
             {{ $typeName := (print $key " " $field) -}}
@@ -339,14 +372,32 @@ func (p *{{ pascal $key }}) UnmarshalJSON(b []byte) error {
     return nil
 }
 
-        {{ if $hasValidation}}
+        {{ if or $hasValidation  (.SchemaContainsAllOf $schema) }}
 func (p {{ pascal $key }}) MarshalJSON() ([]byte, error) {
+            {{- if $hasValidation }}
     if err := p.Validate(); err != nil {
         return nil, err
     }
+            {{- end }}
 
+            {{ if (.SchemaContainsAllOf $schema) }}
+    b, err := json.Marshal({{ pascal $key }}WithEmbedded{
+                {{- range $allOf := $schema.Value.AllOf }}
+                    {{- if notEmpty $allOf.Ref }}
+                        {{- range $field, $schemaProp := $.SchemaPropertiesWithEmbedded $allOf}}
+                                {{ pascal $field }}: p.{{ $.GetType $.PackageName "" $allOf }}.{{ pascal $field }},
+                        {{- end }}
+                    {{- end }}
+                {{- end }}
+
+                {{- range $field, $schemaProp := $.SchemaProperties $schema false}}
+                    {{ pascal $field }}: p.{{ pascal $field }},
+                {{- end }}
+    })
+            {{ else  }}
     type unvalidated {{ pascal $key }} // Skips the validation check
     b, err := json.Marshal(unvalidated(p))
+            {{ end }}
     if err != nil {
         return nil, fmt.Errorf("{{ pascal $key }}.Marshal: `%+v`: %w", p, err)
     }
@@ -449,10 +500,11 @@ func ParseForm{{ pascal $key }}(r *http.Request) ({{ pascal $key }}, error) {
 
 
 {{- if $hasValidation }}
-    {{- if not (empty $schema.Value.Properties )}}
+    {{ $propertiesWithEmbedded := $.SchemaPropertiesWithEmbedded $schema }}
+    {{- if not (empty $propertiesWithEmbedded )}}
 func (p {{ pascal $key }}) Validate() error {
     var err validation.Errors
-        {{ range $fieldName, $schemaProp := $.SchemaProperties $schema true }}
+        {{ range $fieldName, $schemaProp := $propertiesWithEmbedded }}
             {{- if $.HasValidation $schemaProp }}
     p.Validate{{ pascal $fieldName }}(&err)
             {{- end }}
@@ -460,7 +512,7 @@ func (p {{ pascal $key }}) Validate() error {
 
     return err.GetErr()
 }
-        {{- range $fieldName, $schemaProp := $.SchemaProperties $schema true }}
+        {{- range $fieldName, $schemaProp := $propertiesWithEmbedded }}
             {{- if $.HasValidation $schemaProp }}
                 {{- $isRequired := $.IsRequiredProperty $fieldName $schema -}}
                 {{- $isPointer := and (not $isRequired) ($schemaProp.Value.Nullable) }}
@@ -470,7 +522,6 @@ func (p {{ pascal $key }}) Validate{{ pascal $fieldName }}(err *validation.Error
 	if p.{{ pascal $fieldName }} == nil {
 		return
 	}
-
                 {{ end -}}
                 {{- template "validateField" ($.WithParams "fieldName" $fieldName "schema" $schemaProp "typeName" $key "isPointer" $isPointer ) -}}
 }

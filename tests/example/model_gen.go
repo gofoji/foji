@@ -25,7 +25,61 @@ var ErrMissingRequiredField = errors.New("missing required field")
 //
 // OpenAPI Component Schema: Bar
 type Bar struct {
-	Bar string `json:"bar,omitempty,omitzero"`
+	Bars string `json:"bars,omitempty,omitzero"`
+}
+
+func (p *Bar) UnmarshalJSON(b []byte) error {
+	type BarJSON Bar
+	var parseObject BarJSON
+
+	if err := json.Unmarshal(b, &parseObject); err != nil {
+		return validation.Error{err.Error(), fmt.Errorf("Bar.UnmarshalJSON: `%v`: %w", string(b), err)}
+	}
+
+	v := Bar(parseObject)
+
+	if err := v.Validate(); err != nil {
+		return err
+	}
+
+	*p = v
+
+	return nil
+}
+
+func (p Bar) MarshalJSON() ([]byte, error) {
+	if err := p.Validate(); err != nil {
+		return nil, err
+	}
+
+	type unvalidated Bar // Skips the validation check
+	b, err := json.Marshal(unvalidated(p))
+	if err != nil {
+		return nil, fmt.Errorf("Bar.Marshal: `%+v`: %w", p, err)
+	}
+
+	return b, nil
+}
+
+func (p Bar) Validate() error {
+	var err validation.Errors
+
+	p.ValidateBars(&err)
+
+	return err.GetErr()
+}
+
+func (p Bar) ValidateBars(err *validation.Errors) {
+	if len(p.Bars) < 2 {
+		_ = err.Add("bars", "length must be >= 2")
+	}
+}
+
+// Buzz
+//
+// OpenAPI Component Schema: Buzz
+type Buzz struct {
+	Buzzes string `json:"buzzes,omitempty,omitzero"`
 }
 
 // DefaultWithoutRequired
@@ -151,20 +205,197 @@ func (p *Examples) UnmarshalJSON(b []byte) error {
 //
 // OpenAPI Component Schema: Foo
 type Foo struct {
-	Foo string `json:"foo,omitempty,omitzero"`
+	Foos string `json:"foos,omitempty,omitzero"`
 }
 
 // FooBar
 //
 // OpenAPI Component Schema: FooBar
 type FooBar struct {
-	Buzz string `json:"buzz,omitempty,omitzero"`
+	A string   `json:"a,omitempty,omitzero"`
+	B Season   `json:"b,omitempty,omitzero"`
+	C IntValue `json:"c,omitempty"`
 
 	// OpenAPI Ref: #/components/schemas/Foo
 	Foo
 
 	// OpenAPI Ref: #/components/schemas/Bar
 	Bar
+}
+
+type FooBarWithEmbedded struct {
+	A    string   `json:"a,omitempty,omitzero"`
+	B    Season   `json:"b,omitempty,omitzero"`
+	Bars string   `json:"bars,omitempty,omitzero"`
+	C    IntValue `json:"c,omitempty"`
+	Foos string   `json:"foos,omitempty,omitzero"`
+}
+
+func (p *FooBar) UnmarshalJSON(b []byte) error {
+	var f FooBarWithEmbedded
+
+	if err := json.Unmarshal(b, &f); err != nil {
+		return validation.Error{err.Error(), fmt.Errorf("FooBar.UnmarshalJSON: `%v`: %w", string(b), err)}
+	}
+
+	var v FooBar
+	v.Foos = f.Foos
+	v.Bars = f.Bars
+	v.A = f.A
+	v.B = f.B
+	v.C = f.C
+
+	if err := v.Validate(); err != nil {
+		return err
+	}
+
+	*p = v
+
+	return nil
+}
+
+func (p FooBar) MarshalJSON() ([]byte, error) {
+	if err := p.Validate(); err != nil {
+		return nil, err
+	}
+
+	b, err := json.Marshal(FooBarWithEmbedded{
+		Foos: p.Foo.Foos,
+		Bars: p.Bar.Bars,
+		A:    p.A,
+		B:    p.B,
+		C:    p.C,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("FooBar.Marshal: `%+v`: %w", p, err)
+	}
+
+	return b, nil
+}
+
+func (p FooBar) Validate() error {
+	var err validation.Errors
+
+	p.ValidateA(&err)
+	p.ValidateBars(&err)
+	p.ValidateC(&err)
+
+	return err.GetErr()
+}
+
+func (p FooBar) ValidateA(err *validation.Errors) {
+	if len(p.A) < 2 {
+		_ = err.Add("a", "length must be >= 2")
+	}
+}
+
+func (p FooBar) ValidateBars(err *validation.Errors) {
+	if len(p.Bars) < 2 {
+		_ = err.Add("bars", "length must be >= 2")
+	}
+}
+
+func (p FooBar) ValidateC(err *validation.Errors) {
+	if subErr := p.C.Validate(); subErr != nil {
+		_ = err.Add("c", subErr)
+	}
+}
+
+// FooBarBuzz
+//
+// OpenAPI Component Schema: FooBarBuzz
+type FooBarBuzz struct {
+	X bool `json:"x,omitempty"`
+
+	// OpenAPI Ref: #/components/schemas/FooBar
+	FooBar
+
+	// OpenAPI Ref: #/components/schemas/Buzz
+	Buzz
+}
+
+type FooBarBuzzWithEmbedded struct {
+	A      string   `json:"a,omitempty,omitzero"`
+	B      Season   `json:"b,omitempty,omitzero"`
+	Bars   string   `json:"bars,omitempty,omitzero"`
+	Buzzes string   `json:"buzzes,omitempty,omitzero"`
+	C      IntValue `json:"c,omitempty"`
+	Foos   string   `json:"foos,omitempty,omitzero"`
+	X      bool     `json:"x,omitempty"`
+}
+
+func (p *FooBarBuzz) UnmarshalJSON(b []byte) error {
+	var f FooBarBuzzWithEmbedded
+
+	if err := json.Unmarshal(b, &f); err != nil {
+		return validation.Error{err.Error(), fmt.Errorf("FooBarBuzz.UnmarshalJSON: `%v`: %w", string(b), err)}
+	}
+
+	var v FooBarBuzz
+	v.A = f.A
+	v.B = f.B
+	v.Bars = f.Bars
+	v.C = f.C
+	v.Foos = f.Foos
+	v.Buzzes = f.Buzzes
+	v.X = f.X
+
+	if err := v.Validate(); err != nil {
+		return err
+	}
+
+	*p = v
+
+	return nil
+}
+
+func (p FooBarBuzz) MarshalJSON() ([]byte, error) {
+	if err := p.Validate(); err != nil {
+		return nil, err
+	}
+
+	b, err := json.Marshal(FooBarBuzzWithEmbedded{
+		A:      p.FooBar.A,
+		B:      p.FooBar.B,
+		Bars:   p.FooBar.Bars,
+		C:      p.FooBar.C,
+		Foos:   p.FooBar.Foos,
+		Buzzes: p.Buzz.Buzzes,
+		X:      p.X,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("FooBarBuzz.Marshal: `%+v`: %w", p, err)
+	}
+
+	return b, nil
+}
+
+func (p FooBarBuzz) Validate() error {
+	var err validation.Errors
+
+	p.ValidateA(&err)
+	p.ValidateBars(&err)
+	p.ValidateC(&err)
+
+	return err.GetErr()
+}
+
+func (p FooBarBuzz) ValidateA(err *validation.Errors) {
+	if len(p.A) < 2 {
+		_ = err.Add("a", "length must be >= 2")
+	}
+}
+
+func (p FooBarBuzz) ValidateBars(err *validation.Errors) {
+	if len(p.Bars) < 2 {
+		_ = err.Add("bars", "length must be >= 2")
+	}
+}
+
+func (p FooBarBuzz) ValidateC(err *validation.Errors) {
+	if subErr := p.C.Validate(); subErr != nil {
+		_ = err.Add("c", subErr)
+	}
 }
 
 // int32
@@ -2223,6 +2454,39 @@ type AddInlinedAllOfRequest struct {
 
 	// OpenAPI Ref: #/components/schemas/Foo
 	Foo
+}
+
+type AddInlinedAllOfRequestWithEmbedded struct {
+	Foos    string `json:"foos,omitempty,omitzero"`
+	Special bool   `json:"special,omitempty"`
+}
+
+func (p *AddInlinedAllOfRequest) UnmarshalJSON(b []byte) error {
+	var f AddInlinedAllOfRequestWithEmbedded
+
+	if err := json.Unmarshal(b, &f); err != nil {
+		return validation.Error{err.Error(), fmt.Errorf("AddInlinedAllOfRequest.UnmarshalJSON: `%v`: %w", string(b), err)}
+	}
+
+	var v AddInlinedAllOfRequest
+	v.Foos = f.Foos
+	v.Special = f.Special
+
+	*p = v
+
+	return nil
+}
+
+func (p AddInlinedAllOfRequest) MarshalJSON() ([]byte, error) {
+	b, err := json.Marshal(AddInlinedAllOfRequestWithEmbedded{
+		Foos:    p.Foo.Foos,
+		Special: p.Special,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("AddInlinedAllOfRequest.Marshal: `%+v`: %w", p, err)
+	}
+
+	return b, nil
 }
 
 // AddInlinedBodyRequest

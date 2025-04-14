@@ -10,12 +10,13 @@ lint:
 test:
 	go test ./...
 
-test_gen:
+test_generate:
 	go run main.go weld openAPI -c tests/csvresponse/foji.yaml
 	go run main.go weld openAPI -c tests/example/foji.yaml
 	cd tests; go run tests_main.go
+
+test_gen: test_generate fmt
 	cd tests; go test ./...
-	golangci-lint fmt
 
 cover:
 	go test	-coverprofile cp.out ./...
@@ -36,4 +37,4 @@ tools:
 	go install golang.org/x/tools/cmd/goimports@latest
 	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
 
-.PHONY:	sqlRepo testSchemaList testStub testDumpConfig lint test test_gen cover tidy update updateAll install tools
+.PHONY:	sqlRepo testSchemaList testStub testDumpConfig lint test test_gen test_generate cover tidy update updateAll install tools
