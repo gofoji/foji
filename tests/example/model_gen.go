@@ -208,6 +208,55 @@ type Foo struct {
 	Foos string `json:"foos,omitempty,omitzero"`
 }
 
+var fooFoosPattern = regexp.MustCompile(`(f1|f2)`)
+
+func (p *Foo) UnmarshalJSON(b []byte) error {
+	type FooJSON Foo
+	var parseObject FooJSON
+
+	if err := json.Unmarshal(b, &parseObject); err != nil {
+		return validation.Error{err.Error(), fmt.Errorf("Foo.UnmarshalJSON: `%v`: %w", string(b), err)}
+	}
+
+	v := Foo(parseObject)
+
+	if err := v.Validate(); err != nil {
+		return err
+	}
+
+	*p = v
+
+	return nil
+}
+
+func (p Foo) MarshalJSON() ([]byte, error) {
+	if err := p.Validate(); err != nil {
+		return nil, err
+	}
+
+	type unvalidated Foo // Skips the validation check
+	b, err := json.Marshal(unvalidated(p))
+	if err != nil {
+		return nil, fmt.Errorf("Foo.Marshal: `%+v`: %w", p, err)
+	}
+
+	return b, nil
+}
+
+func (p Foo) Validate() error {
+	var err validation.Errors
+
+	p.ValidateFoos(&err)
+
+	return err.GetErr()
+}
+
+func (p Foo) ValidateFoos(err *validation.Errors) {
+	if p.Foos != "" && !fooFoosPattern.MatchString(string(p.Foos)) {
+		_ = err.Add("foos", `must match "(f1|f2)"`)
+	}
+}
+
 // FooBar
 //
 // OpenAPI Component Schema: FooBar
@@ -218,6 +267,8 @@ type FooBar struct {
 	C    IntValue `json:"c,omitempty"`
 	Foos string   `json:"foos,omitempty,omitzero"`
 }
+
+var fooBarFoosPattern = regexp.MustCompile(`(f1|f2)`)
 
 func (p *FooBar) UnmarshalJSON(b []byte) error {
 	type FooBarJSON FooBar
@@ -258,6 +309,7 @@ func (p FooBar) Validate() error {
 	p.ValidateA(&err)
 	p.ValidateBars(&err)
 	p.ValidateC(&err)
+	p.ValidateFoos(&err)
 
 	return err.GetErr()
 }
@@ -280,6 +332,12 @@ func (p FooBar) ValidateC(err *validation.Errors) {
 	}
 }
 
+func (p FooBar) ValidateFoos(err *validation.Errors) {
+	if p.Foos != "" && !fooBarFoosPattern.MatchString(string(p.Foos)) {
+		_ = err.Add("foos", `must match "(f1|f2)"`)
+	}
+}
+
 // FooBarBuzz
 //
 // OpenAPI Component Schema: FooBarBuzz
@@ -292,6 +350,8 @@ type FooBarBuzz struct {
 	Foos   string   `json:"foos,omitempty,omitzero"`
 	X      bool     `json:"x,omitempty"`
 }
+
+var fooBarBuzzFoosPattern = regexp.MustCompile(`(f1|f2)`)
 
 func (p *FooBarBuzz) UnmarshalJSON(b []byte) error {
 	type FooBarBuzzJSON FooBarBuzz
@@ -332,6 +392,7 @@ func (p FooBarBuzz) Validate() error {
 	p.ValidateA(&err)
 	p.ValidateBars(&err)
 	p.ValidateC(&err)
+	p.ValidateFoos(&err)
 
 	return err.GetErr()
 }
@@ -351,6 +412,12 @@ func (p FooBarBuzz) ValidateBars(err *validation.Errors) {
 func (p FooBarBuzz) ValidateC(err *validation.Errors) {
 	if subErr := p.C.Validate(); subErr != nil {
 		_ = err.Add("c", subErr)
+	}
+}
+
+func (p FooBarBuzz) ValidateFoos(err *validation.Errors) {
+	if p.Foos != "" && !fooBarBuzzFoosPattern.MatchString(string(p.Foos)) {
+		_ = err.Add("foos", `must match "(f1|f2)"`)
 	}
 }
 
@@ -2408,6 +2475,55 @@ func ParseFormAddMultipartFormRequest(r *http.Request) (AddMultipartFormRequest,
 type AddInlinedAllOfRequest struct {
 	Foos    string `json:"foos,omitempty,omitzero"`
 	Special bool   `json:"special,omitempty"`
+}
+
+var addInlinedAllOfRequestFoosPattern = regexp.MustCompile(`(f1|f2)`)
+
+func (p *AddInlinedAllOfRequest) UnmarshalJSON(b []byte) error {
+	type AddInlinedAllOfRequestJSON AddInlinedAllOfRequest
+	var parseObject AddInlinedAllOfRequestJSON
+
+	if err := json.Unmarshal(b, &parseObject); err != nil {
+		return validation.Error{err.Error(), fmt.Errorf("AddInlinedAllOfRequest.UnmarshalJSON: `%v`: %w", string(b), err)}
+	}
+
+	v := AddInlinedAllOfRequest(parseObject)
+
+	if err := v.Validate(); err != nil {
+		return err
+	}
+
+	*p = v
+
+	return nil
+}
+
+func (p AddInlinedAllOfRequest) MarshalJSON() ([]byte, error) {
+	if err := p.Validate(); err != nil {
+		return nil, err
+	}
+
+	type unvalidated AddInlinedAllOfRequest // Skips the validation check
+	b, err := json.Marshal(unvalidated(p))
+	if err != nil {
+		return nil, fmt.Errorf("AddInlinedAllOfRequest.Marshal: `%+v`: %w", p, err)
+	}
+
+	return b, nil
+}
+
+func (p AddInlinedAllOfRequest) Validate() error {
+	var err validation.Errors
+
+	p.ValidateFoos(&err)
+
+	return err.GetErr()
+}
+
+func (p AddInlinedAllOfRequest) ValidateFoos(err *validation.Errors) {
+	if p.Foos != "" && !addInlinedAllOfRequestFoosPattern.MatchString(string(p.Foos)) {
+		_ = err.Add("foos", `must match "(f1|f2)"`)
+	}
 }
 
 // AddInlinedBodyRequest

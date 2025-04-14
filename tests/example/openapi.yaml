@@ -999,6 +999,7 @@ components:
         properties:
            foos:
               type: string
+              pattern: (f1|f2)
 
     Bar:
       type: object

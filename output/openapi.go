@@ -174,7 +174,7 @@ func (o *OpenAPIFileContext) GetType(currentPackage, name string, s *openapi3.Sc
 	}
 
 	if s.Value.Type.Is("object") || s.Value.Type.Is("") || s.Value.Type == nil {
-		if len(o.SchemaProperties(s, true)) == 0 {
+		if len(o.SchemaProperties(s)) == 0 {
 			if t, ok := o.Maps.Type[schemaType]; ok {
 				return o.CheckPackage(t, currentPackage)
 			}
@@ -308,7 +308,7 @@ func (o *OpenAPIFileContext) IsRequiredProperty(name string, s *openapi3.SchemaR
 }
 
 func (o *OpenAPIFileContext) SchemaPropertiesHaveDefaults(schema *openapi3.SchemaRef) bool {
-	for _, v := range o.SchemaProperties(schema, false) {
+	for _, v := range o.SchemaProperties(schema) {
 		if v.Value.Default != nil {
 			return true
 		}
@@ -317,27 +317,7 @@ func (o *OpenAPIFileContext) SchemaPropertiesHaveDefaults(schema *openapi3.Schem
 	return false
 }
 
-func (o *OpenAPIFileContext) SchemaProperties(schema *openapi3.SchemaRef, includeRefs bool) openapi3.Schemas {
-	out := openapi3.Schemas{}
-
-	for k, v := range schema.Value.Properties {
-		out[k] = v
-	}
-
-	for _, subSchema := range schema.Value.AllOf {
-		if !includeRefs && subSchema.Ref != "" {
-			continue
-		}
-
-		for k, v := range subSchema.Value.Properties {
-			out[k] = v
-		}
-	}
-
-	return out
-}
-
-func (o *OpenAPIFileContext) SchemaPropertiesWithEmbedded(schema *openapi3.SchemaRef) openapi3.Schemas {
+func (o *OpenAPIFileContext) SchemaProperties(schema *openapi3.SchemaRef) openapi3.Schemas {
 	out := openapi3.Schemas{}
 
 	return schemaPropertiesWithEmbedded(schema, out)
@@ -358,7 +338,7 @@ func schemaPropertiesWithEmbedded(schema *openapi3.SchemaRef, out openapi3.Schem
 func (o *OpenAPIFileContext) SchemaEnums(schema *openapi3.SchemaRef) openapi3.Schemas {
 	out := openapi3.Schemas{}
 
-	for k, v := range o.SchemaProperties(schema, false) {
+	for k, v := range o.SchemaProperties(schema) {
 		if len(v.Value.Enum) > 0 {
 			out[k] = v
 		}
