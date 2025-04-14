@@ -2410,31 +2410,6 @@ type AddInlinedAllOfRequest struct {
 	Special bool   `json:"special,omitempty"`
 }
 
-func (p *AddInlinedAllOfRequest) UnmarshalJSON(b []byte) error {
-	type AddInlinedAllOfRequestJSON AddInlinedAllOfRequest
-	var parseObject AddInlinedAllOfRequestJSON
-
-	if err := json.Unmarshal(b, &parseObject); err != nil {
-		return validation.Error{err.Error(), fmt.Errorf("AddInlinedAllOfRequest.UnmarshalJSON: `%v`: %w", string(b), err)}
-	}
-
-	v := AddInlinedAllOfRequest(parseObject)
-
-	*p = v
-
-	return nil
-}
-
-func (p AddInlinedAllOfRequest) MarshalJSON() ([]byte, error) {
-	type unvalidated AddInlinedAllOfRequest // Skips the validation check
-	b, err := json.Marshal(unvalidated(p))
-	if err != nil {
-		return nil, fmt.Errorf("AddInlinedAllOfRequest.Marshal: `%+v`: %w", p, err)
-	}
-
-	return b, nil
-}
-
 // AddInlinedBodyRequest
 //
 // OpenAPI AddInlinedBody Body: AddInlinedBody Request
