@@ -28,6 +28,8 @@ type Bar struct {
 	Bars string `json:"bars,omitempty,omitzero"`
 }
 
+var barBarsPattern = regexp.MustCompile(`(b1|b2)`)
+
 func (p *Bar) UnmarshalJSON(b []byte) error {
 	type BarJSON Bar
 	var parseObject BarJSON
@@ -72,6 +74,10 @@ func (p Bar) Validate() error {
 func (p Bar) ValidateBars(err *validation.Errors) {
 	if len(p.Bars) < 2 {
 		_ = err.Add("bars", "length must be >= 2")
+	}
+
+	if p.Bars != "" && !barBarsPattern.MatchString(string(p.Bars)) {
+		_ = err.Add("bars", `must match "(b1|b2)"`)
 	}
 }
 
@@ -205,10 +211,8 @@ func (p *Examples) UnmarshalJSON(b []byte) error {
 //
 // OpenAPI Component Schema: Foo
 type Foo struct {
-	Foos string `json:"foos,omitempty,omitzero"`
+	Foos FooString `json:"foos,omitempty,omitzero"`
 }
-
-var fooFoosPattern = regexp.MustCompile(`(f1|f2)`)
 
 func (p *Foo) UnmarshalJSON(b []byte) error {
 	type FooJSON Foo
@@ -252,8 +256,8 @@ func (p Foo) Validate() error {
 }
 
 func (p Foo) ValidateFoos(err *validation.Errors) {
-	if p.Foos != "" && !fooFoosPattern.MatchString(string(p.Foos)) {
-		_ = err.Add("foos", `must match "(f1|f2)"`)
+	if subErr := p.Foos.Validate(); subErr != nil {
+		_ = err.Add("foos", subErr)
 	}
 }
 
@@ -261,14 +265,14 @@ func (p Foo) ValidateFoos(err *validation.Errors) {
 //
 // OpenAPI Component Schema: FooBar
 type FooBar struct {
-	A    string   `json:"a,omitempty,omitzero"`
-	B    Season   `json:"b,omitempty,omitzero"`
-	Bars string   `json:"bars,omitempty,omitzero"`
-	C    IntValue `json:"c,omitempty"`
-	Foos string   `json:"foos,omitempty,omitzero"`
+	A    string    `json:"a,omitempty,omitzero"`
+	B    Season    `json:"b,omitempty,omitzero"`
+	Bars string    `json:"bars,omitempty,omitzero"`
+	C    IntValue  `json:"c,omitempty"`
+	Foos FooString `json:"foos,omitempty,omitzero"`
 }
 
-var fooBarFoosPattern = regexp.MustCompile(`(f1|f2)`)
+var fooBarBarsPattern = regexp.MustCompile(`(b1|b2)`)
 
 func (p *FooBar) UnmarshalJSON(b []byte) error {
 	type FooBarJSON FooBar
@@ -324,6 +328,10 @@ func (p FooBar) ValidateBars(err *validation.Errors) {
 	if len(p.Bars) < 2 {
 		_ = err.Add("bars", "length must be >= 2")
 	}
+
+	if p.Bars != "" && !fooBarBarsPattern.MatchString(string(p.Bars)) {
+		_ = err.Add("bars", `must match "(b1|b2)"`)
+	}
 }
 
 func (p FooBar) ValidateC(err *validation.Errors) {
@@ -333,8 +341,8 @@ func (p FooBar) ValidateC(err *validation.Errors) {
 }
 
 func (p FooBar) ValidateFoos(err *validation.Errors) {
-	if p.Foos != "" && !fooBarFoosPattern.MatchString(string(p.Foos)) {
-		_ = err.Add("foos", `must match "(f1|f2)"`)
+	if subErr := p.Foos.Validate(); subErr != nil {
+		_ = err.Add("foos", subErr)
 	}
 }
 
@@ -342,16 +350,16 @@ func (p FooBar) ValidateFoos(err *validation.Errors) {
 //
 // OpenAPI Component Schema: FooBarBuzz
 type FooBarBuzz struct {
-	A      string   `json:"a,omitempty,omitzero"`
-	B      Season   `json:"b,omitempty,omitzero"`
-	Bars   string   `json:"bars,omitempty,omitzero"`
-	Buzzes string   `json:"buzzes,omitempty,omitzero"`
-	C      IntValue `json:"c,omitempty"`
-	Foos   string   `json:"foos,omitempty,omitzero"`
-	X      bool     `json:"x,omitempty"`
+	A      string    `json:"a,omitempty,omitzero"`
+	B      Season    `json:"b,omitempty,omitzero"`
+	Bars   string    `json:"bars,omitempty,omitzero"`
+	Buzzes string    `json:"buzzes,omitempty,omitzero"`
+	C      IntValue  `json:"c,omitempty"`
+	Foos   FooString `json:"foos,omitempty,omitzero"`
+	X      bool      `json:"x,omitempty"`
 }
 
-var fooBarBuzzFoosPattern = regexp.MustCompile(`(f1|f2)`)
+var fooBarBuzzBarsPattern = regexp.MustCompile(`(b1|b2)`)
 
 func (p *FooBarBuzz) UnmarshalJSON(b []byte) error {
 	type FooBarBuzzJSON FooBarBuzz
@@ -407,6 +415,10 @@ func (p FooBarBuzz) ValidateBars(err *validation.Errors) {
 	if len(p.Bars) < 2 {
 		_ = err.Add("bars", "length must be >= 2")
 	}
+
+	if p.Bars != "" && !fooBarBuzzBarsPattern.MatchString(string(p.Bars)) {
+		_ = err.Add("bars", `must match "(b1|b2)"`)
+	}
 }
 
 func (p FooBarBuzz) ValidateC(err *validation.Errors) {
@@ -416,9 +428,59 @@ func (p FooBarBuzz) ValidateC(err *validation.Errors) {
 }
 
 func (p FooBarBuzz) ValidateFoos(err *validation.Errors) {
-	if p.Foos != "" && !fooBarBuzzFoosPattern.MatchString(string(p.Foos)) {
-		_ = err.Add("foos", `must match "(f1|f2)"`)
+	if subErr := p.Foos.Validate(); subErr != nil {
+		_ = err.Add("foos", subErr)
 	}
+}
+
+// string
+//
+// OpenAPI Component Schema: FooString
+type FooString string
+
+var fooStringPattern = regexp.MustCompile(`(f1|f2)`)
+
+func (p *FooString) UnmarshalJSON(b []byte) error {
+	type FooStringJSON FooString
+	var parseObject FooStringJSON
+
+	if err := json.Unmarshal(b, &parseObject); err != nil {
+		return validation.Error{err.Error(), fmt.Errorf("FooString.UnmarshalJSON: `%v`: %w", string(b), err)}
+	}
+
+	v := FooString(parseObject)
+
+	if err := v.Validate(); err != nil {
+		return err
+	}
+
+	*p = v
+
+	return nil
+}
+
+func (p FooString) MarshalJSON() ([]byte, error) {
+	if err := p.Validate(); err != nil {
+		return nil, err
+	}
+
+	type unvalidated FooString // Skips the validation check
+	b, err := json.Marshal(unvalidated(p))
+	if err != nil {
+		return nil, fmt.Errorf("FooString.Marshal: `%+v`: %w", p, err)
+	}
+
+	return b, nil
+}
+
+func (p FooString) Validate() error {
+	var err validation.Errors
+
+	if p != "" && !fooStringPattern.MatchString(string(p)) {
+		_ = err.Add("", `must match "(f1|f2)"`)
+	}
+
+	return err.GetErr()
 }
 
 // int32
@@ -618,11 +680,9 @@ func (p PatternsSubValue) ValidateNum(err *validation.Errors) {
 }
 
 var (
-	patternsStatePattern         = regexp.MustCompile(`(enabled|disabled)`)
-	patternsState2Pattern        = regexp.MustCompile(`(enabled|disabled)`)
-	patternsStateAlwaysPattern   = regexp.MustCompile(`(enabled|disabled)`)
-	patternsSubStatePattern      = regexp.MustCompile(`(enabled|disabled)`)
-	patternsSubStateMaybePattern = regexp.MustCompile(`(enabled|disabled)`)
+	patternsStatePattern       = regexp.MustCompile(`(enabled|disabled)`)
+	patternsState2Pattern      = regexp.MustCompile(`(enabled|disabled)`)
+	patternsStateAlwaysPattern = regexp.MustCompile(`(enabled|disabled)`)
 )
 
 func (p *Patterns) UnmarshalJSON(b []byte) error {
@@ -2473,11 +2533,9 @@ func ParseFormAddMultipartFormRequest(r *http.Request) (AddMultipartFormRequest,
 //
 // OpenAPI AddInlinedAllOf Body: AddInlinedAllOf Request
 type AddInlinedAllOfRequest struct {
-	Foos    string `json:"foos,omitempty,omitzero"`
-	Special bool   `json:"special,omitempty"`
+	Foos    FooString `json:"foos,omitempty,omitzero"`
+	Special bool      `json:"special,omitempty"`
 }
-
-var addInlinedAllOfRequestFoosPattern = regexp.MustCompile(`(f1|f2)`)
 
 func (p *AddInlinedAllOfRequest) UnmarshalJSON(b []byte) error {
 	type AddInlinedAllOfRequestJSON AddInlinedAllOfRequest
@@ -2521,8 +2579,8 @@ func (p AddInlinedAllOfRequest) Validate() error {
 }
 
 func (p AddInlinedAllOfRequest) ValidateFoos(err *validation.Errors) {
-	if p.Foos != "" && !addInlinedAllOfRequestFoosPattern.MatchString(string(p.Foos)) {
-		_ = err.Add("foos", `must match "(f1|f2)"`)
+	if subErr := p.Foos.Validate(); subErr != nil {
+		_ = err.Add("foos", subErr)
 	}
 }
 

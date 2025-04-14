@@ -994,12 +994,15 @@ components:
       type: object
       description: Named object
 
+    FooString:
+      type: string
+      pattern: (f1|f2)
+
     Foo:
         type: object
         properties:
            foos:
-              type: string
-              pattern: (f1|f2)
+             $ref: "#/components/schemas/FooString"
 
     Bar:
       type: object
@@ -1007,6 +1010,7 @@ components:
         bars:
           type: string
           minLength: 2
+          pattern: (b1|b2)
 
     Buzz:
       type: object

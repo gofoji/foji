@@ -245,11 +245,11 @@ type {{ pascal $key }} {{ $.GetType $.PackageName (pascal (print $typeName " Ite
 
 {{- /*    Regex Validation Patterns */ -}}
     {{- range $key, $schemaProp := $.SchemaProperties $schema }}
-        {{- if notEmpty $schemaProp.Value.Pattern }}
+        {{- if and (notEmpty $schemaProp.Value.Pattern) (empty $schemaProp.Ref) }}
 var {{ camel $typeName }}{{ pascal $key }}Pattern = regexp.MustCompile(`{{ $schemaProp.Value.Pattern }}`)
         {{- end}}
     {{- end }}
-    {{- if and $hasValidation (notEmpty $schema.Value.Pattern) }}
+    {{- if and $hasValidation (notEmpty $schema.Value.Pattern) (empty $schema.Ref) }}
 var {{ camel $key }}Pattern = regexp.MustCompile(`{{ $schema.Value.Pattern }}`)
     {{ end }}
 
