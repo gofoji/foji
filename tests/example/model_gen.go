@@ -212,18 +212,6 @@ type Foo struct {
 //
 // OpenAPI Component Schema: FooBar
 type FooBar struct {
-	A string   `json:"a,omitempty,omitzero"`
-	B Season   `json:"b,omitempty,omitzero"`
-	C IntValue `json:"c,omitempty"`
-
-	// OpenAPI Ref: #/components/schemas/Foo
-	Foo
-
-	// OpenAPI Ref: #/components/schemas/Bar
-	Bar
-}
-
-type FooBarWithEmbedded struct {
 	A    string   `json:"a,omitempty,omitzero"`
 	B    Season   `json:"b,omitempty,omitzero"`
 	Bars string   `json:"bars,omitempty,omitzero"`
@@ -232,18 +220,14 @@ type FooBarWithEmbedded struct {
 }
 
 func (p *FooBar) UnmarshalJSON(b []byte) error {
-	var f FooBarWithEmbedded
+	type FooBarJSON FooBar
+	var parseObject FooBarJSON
 
-	if err := json.Unmarshal(b, &f); err != nil {
+	if err := json.Unmarshal(b, &parseObject); err != nil {
 		return validation.Error{err.Error(), fmt.Errorf("FooBar.UnmarshalJSON: `%v`: %w", string(b), err)}
 	}
 
-	var v FooBar
-	v.Foos = f.Foos
-	v.Bars = f.Bars
-	v.A = f.A
-	v.B = f.B
-	v.C = f.C
+	v := FooBar(parseObject)
 
 	if err := v.Validate(); err != nil {
 		return err
@@ -259,13 +243,8 @@ func (p FooBar) MarshalJSON() ([]byte, error) {
 		return nil, err
 	}
 
-	b, err := json.Marshal(FooBarWithEmbedded{
-		Foos: p.Foo.Foos,
-		Bars: p.Bar.Bars,
-		A:    p.A,
-		B:    p.B,
-		C:    p.C,
-	})
+	type unvalidated FooBar // Skips the validation check
+	b, err := json.Marshal(unvalidated(p))
 	if err != nil {
 		return nil, fmt.Errorf("FooBar.Marshal: `%+v`: %w", p, err)
 	}
@@ -305,16 +284,6 @@ func (p FooBar) ValidateC(err *validation.Errors) {
 //
 // OpenAPI Component Schema: FooBarBuzz
 type FooBarBuzz struct {
-	X bool `json:"x,omitempty"`
-
-	// OpenAPI Ref: #/components/schemas/FooBar
-	FooBar
-
-	// OpenAPI Ref: #/components/schemas/Buzz
-	Buzz
-}
-
-type FooBarBuzzWithEmbedded struct {
 	A      string   `json:"a,omitempty,omitzero"`
 	B      Season   `json:"b,omitempty,omitzero"`
 	Bars   string   `json:"bars,omitempty,omitzero"`
@@ -325,20 +294,14 @@ type FooBarBuzzWithEmbedded struct {
 }
 
 func (p *FooBarBuzz) UnmarshalJSON(b []byte) error {
-	var f FooBarBuzzWithEmbedded
+	type FooBarBuzzJSON FooBarBuzz
+	var parseObject FooBarBuzzJSON
 
-	if err := json.Unmarshal(b, &f); err != nil {
+	if err := json.Unmarshal(b, &parseObject); err != nil {
 		return validation.Error{err.Error(), fmt.Errorf("FooBarBuzz.UnmarshalJSON: `%v`: %w", string(b), err)}
 	}
 
-	var v FooBarBuzz
-	v.A = f.A
-	v.B = f.B
-	v.Bars = f.Bars
-	v.C = f.C
-	v.Foos = f.Foos
-	v.Buzzes = f.Buzzes
-	v.X = f.X
+	v := FooBarBuzz(parseObject)
 
 	if err := v.Validate(); err != nil {
 		return err
@@ -354,15 +317,8 @@ func (p FooBarBuzz) MarshalJSON() ([]byte, error) {
 		return nil, err
 	}
 
-	b, err := json.Marshal(FooBarBuzzWithEmbedded{
-		A:      p.FooBar.A,
-		B:      p.FooBar.B,
-		Bars:   p.FooBar.Bars,
-		C:      p.FooBar.C,
-		Foos:   p.FooBar.Foos,
-		Buzzes: p.Buzz.Buzzes,
-		X:      p.X,
-	})
+	type unvalidated FooBarBuzz // Skips the validation check
+	b, err := json.Marshal(unvalidated(p))
 	if err != nil {
 		return nil, fmt.Errorf("FooBarBuzz.Marshal: `%+v`: %w", p, err)
 	}
@@ -2450,27 +2406,19 @@ func ParseFormAddMultipartFormRequest(r *http.Request) (AddMultipartFormRequest,
 //
 // OpenAPI AddInlinedAllOf Body: AddInlinedAllOf Request
 type AddInlinedAllOfRequest struct {
-	Special bool `json:"special,omitempty"`
-
-	// OpenAPI Ref: #/components/schemas/Foo
-	Foo
-}
-
-type AddInlinedAllOfRequestWithEmbedded struct {
 	Foos    string `json:"foos,omitempty,omitzero"`
 	Special bool   `json:"special,omitempty"`
 }
 
 func (p *AddInlinedAllOfRequest) UnmarshalJSON(b []byte) error {
-	var f AddInlinedAllOfRequestWithEmbedded
+	type AddInlinedAllOfRequestJSON AddInlinedAllOfRequest
+	var parseObject AddInlinedAllOfRequestJSON
 
-	if err := json.Unmarshal(b, &f); err != nil {
+	if err := json.Unmarshal(b, &parseObject); err != nil {
 		return validation.Error{err.Error(), fmt.Errorf("AddInlinedAllOfRequest.UnmarshalJSON: `%v`: %w", string(b), err)}
 	}
 
-	var v AddInlinedAllOfRequest
-	v.Foos = f.Foos
-	v.Special = f.Special
+	v := AddInlinedAllOfRequest(parseObject)
 
 	*p = v
 
@@ -2478,10 +2426,8 @@ func (p *AddInlinedAllOfRequest) UnmarshalJSON(b []byte) error {
 }
 
 func (p AddInlinedAllOfRequest) MarshalJSON() ([]byte, error) {
-	b, err := json.Marshal(AddInlinedAllOfRequestWithEmbedded{
-		Foos:    p.Foo.Foos,
-		Special: p.Special,
-	})
+	type unvalidated AddInlinedAllOfRequest // Skips the validation check
+	b, err := json.Marshal(unvalidated(p))
 	if err != nil {
 		return nil, fmt.Errorf("AddInlinedAllOfRequest.Marshal: `%+v`: %w", p, err)
 	}

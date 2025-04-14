@@ -259,19 +259,13 @@ func TestFooBarBuzzUnmarshall(t *testing.T) {
 			Name: "success",
 			Raw:  `{"x": true, "a": "xy", "b": "spring", "c": 4, "foos": "f1", "bars": "b1", "buzzes": "z1"}`,
 			Expected: FooBarBuzz{
-				X: true,
-				FooBar: FooBar{
-					A: "xy",
-					B: SeasonSpring,
-					C: 4,
-					Foo: Foo{
-						Foos: "f1",
-					},
-					Bar: Bar{
-						Bars: "b1",
-					},
-				},
-				Buzz: Buzz{Buzzes: "z1"},
+				X:      true,
+				A:      "xy",
+				B:      SeasonSpring,
+				C:      4,
+				Foos:   "f1",
+				Bars:   "b1",
+				Buzzes: "z1",
 			},
 		},
 		{
@@ -312,56 +306,38 @@ func TestFooBarBuzzRoundTripMarshall(t *testing.T) {
 		{
 			Name: "maximal",
 			Expected: FooBarBuzz{
-				X: true,
-				FooBar: FooBar{
-					A: "xy",
-					B: SeasonSpring,
-					C: 4,
-					Foo: Foo{
-						Foos: "f1",
-					},
-					Bar: Bar{
-						Bars: "b1",
-					},
-				},
-				Buzz: Buzz{Buzzes: "z1"},
+				X:      true,
+				A:      "xy",
+				B:      SeasonSpring,
+				C:      4,
+				Foos:   "f1",
+				Bars:   "b1",
+				Buzzes: "z1",
 			},
 		},
 		{
 			Name: "invalid inlined type alias IntValue",
 			Expected: FooBarBuzz{
-				X: true,
-				FooBar: FooBar{
-					A: "xy",
-					B: SeasonSpring,
-					C: 5,
-					Foo: Foo{
-						Foos: "f1",
-					},
-					Bar: Bar{
-						Bars: "b1",
-					},
-				},
-				Buzz: Buzz{Buzzes: "z1"},
+				X:      true,
+				A:      "xy",
+				B:      SeasonSpring,
+				C:      5,
+				Foos:   "f1",
+				Bars:   "b1",
+				Buzzes: "z1",
 			},
 			ErrMsg: "must be multiple of 2",
 		},
 		{
 			Name: "invalid embedded field foobar a ",
 			Expected: FooBarBuzz{
-				X: true,
-				FooBar: FooBar{
-					A: "x",
-					B: SeasonSpring,
-					C: 4,
-					Foo: Foo{
-						Foos: "f1",
-					},
-					Bar: Bar{
-						Bars: "b1",
-					},
-				},
-				Buzz: Buzz{Buzzes: "z1"},
+				X:      true,
+				A:      "x",
+				B:      SeasonSpring,
+				C:      4,
+				Foos:   "f1",
+				Bars:   "b1",
+				Buzzes: "z1",
 			},
 			ErrMsg: "length must be >= 2",
 		},

@@ -111,7 +111,7 @@ func (e *{{ $enumType }}) Scan(src interface{}) error {
         {{- $fieldDeref = print "*" $fieldDot -}}
     {{- end -}}
 
-    {{- if or (notEmpty $schema.Ref)  ($schema.Value.Type.Is "object") }}
+    {{- if or (notEmpty $schema.Ref) ($schema.Value.Type.Is "object") }}
         {{ if $.HasValidation $schema }}
             {{ if $isPointer }}
                 if {{$fieldDot}} != nil {
@@ -203,31 +203,20 @@ func (e *{{ $enumType }}) Scan(src interface{}) error {
     {{- if $.IsDefaultEnum $key $schema }}
         {{- $label := .RuntimeParams.label }}
         {{- template "enum" ($.WithParams "name" $key "schema" $schema "description" (print $label " : " $key ))}}
-
+    {{ else if (.SchemaContainsAllOf $schema) }}
+type {{ pascal $key }} struct {
+        {{- range $field, $schemaProp := $.SchemaPropertiesWithEmbedded $schema}}
+            {{- $isRequired := $.IsRequiredProperty $field $schema -}}
+            {{- template "propertyDeclaration" ($.WithParams "key" $field "schema" $schemaProp "typeName" $typeName "isRequired" $isRequired)}}
+        {{- end }}
+}
     {{- else if and ($schema.Value.Type.Permits "object") (gt (len ($.SchemaProperties $schema true)) 0) }}
 type {{ pascal $key }} struct {
     {{- range $field, $schemaProp := $.SchemaProperties $schema false}}
         {{- $isRequired := $.IsRequiredProperty $field $schema -}}
         {{- template "propertyDeclaration" ($.WithParams "key" $field "schema" $schemaProp "typeName" $typeName "isRequired" $isRequired)}}
     {{- end }}
-    {{- range $schema.Value.AllOf }}
-        {{- if notEmpty .Ref }}
-
-    // OpenAPI Ref: {{ .Ref }}
-    {{ $.GetType $.PackageName "" . }}
-        {{- end }}
-    {{- end }}
 }
-
-        {{ if (.SchemaContainsAllOf $schema) }}
-type {{ pascal $key }}WithEmbedded struct {
-            {{- range $field, $schemaProp := $.SchemaPropertiesWithEmbedded $schema}}
-                {{- $isRequired := $.IsRequiredProperty $field $schema -}}
-                {{- template "propertyDeclaration" ($.WithParams "key" $field "schema" $schemaProp "typeName" $typeName "isRequired" $isRequired)}}
-            {{- end }}
-}
-        {{- end }}
-
     {{- else }}
 type {{ pascal $key }} {{ $.GetType $.PackageName (pascal (print $typeName " Item" )) $schema }}
     {{- end }}
@@ -299,28 +288,6 @@ func (p *{{ pascal $key }}) UnmarshalJSON(b []byte) error {
     }
         {{ end }}
 
-        {{ if (.SchemaContainsAllOf $schema) }}
-    var f {{ pascal $key }}WithEmbedded
-
-    if err := json.Unmarshal(b, &f); err != nil {
-        return validation.Error{err.Error(), fmt.Errorf("{{ pascal $key }}.UnmarshalJSON: `%v`: %w", string(b), err)}
-    }
-
-    var v {{ pascal $key }}
-
-            {{- range $allOf := $schema.Value.AllOf }}
-                {{- $allOfType := $.GetType $.PackageName "" $allOf -}}
-                {{- if notEmpty $allOf.Ref -}}
-                    {{- range $field, $schemaProp := $.SchemaPropertiesWithEmbedded $allOf}}
-    v.{{ pascal $field }} = f.{{ pascal $field }}
-                    {{- end -}}
-                {{- end -}}
-            {{- end }}
-
-            {{- range $field, $schemaProp := $.SchemaProperties $schema false}}
-    v.{{ pascal $field }} = f.{{ pascal $field }}
-            {{- end }}
-        {{ else  }}
     type  {{ pascal $key }}JSON {{ pascal $key }}
     var parseObject {{ pascal $key }}JSON
 
@@ -329,7 +296,6 @@ func (p *{{ pascal $key }}) UnmarshalJSON(b []byte) error {
     }
 
     v := {{ pascal $key }}(parseObject)
-        {{ end }}
 
         {{ range $field, $schemaProp := $.SchemaProperties $schema false}}
             {{ $typeName := (print $key " " $field) -}}
@@ -372,7 +338,7 @@ func (p *{{ pascal $key }}) UnmarshalJSON(b []byte) error {
     return nil
 }
 
-        {{ if or $hasValidation  (.SchemaContainsAllOf $schema) }}
+        {{ if or $hasValidation (.SchemaContainsAllOf $schema) }}
 func (p {{ pascal $key }}) MarshalJSON() ([]byte, error) {
             {{- if $hasValidation }}
     if err := p.Validate(); err != nil {
@@ -380,24 +346,8 @@ func (p {{ pascal $key }}) MarshalJSON() ([]byte, error) {
     }
             {{- end }}
 
-            {{ if (.SchemaContainsAllOf $schema) }}
-    b, err := json.Marshal({{ pascal $key }}WithEmbedded{
-                {{- range $allOf := $schema.Value.AllOf }}
-                    {{- if notEmpty $allOf.Ref }}
-                        {{- range $field, $schemaProp := $.SchemaPropertiesWithEmbedded $allOf}}
-                                {{ pascal $field }}: p.{{ $.GetType $.PackageName "" $allOf }}.{{ pascal $field }},
-                        {{- end }}
-                    {{- end }}
-                {{- end }}
-
-                {{- range $field, $schemaProp := $.SchemaProperties $schema false}}
-                    {{ pascal $field }}: p.{{ pascal $field }},
-                {{- end }}
-    })
-            {{ else  }}
     type unvalidated {{ pascal $key }} // Skips the validation check
     b, err := json.Marshal(unvalidated(p))
-            {{ end }}
     if err != nil {
         return nil, fmt.Errorf("{{ pascal $key }}.Marshal: `%+v`: %w", p, err)
     }
