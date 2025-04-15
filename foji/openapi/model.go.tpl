@@ -111,7 +111,7 @@ func (e *{{ $enumType }}) Scan(src interface{}) error {
         {{- $fieldDeref = print "*" $fieldDot -}}
     {{- end -}}
 
-    {{- if or (notEmpty $schema.Ref)  ($schema.Value.Type.Is "object") }}
+    {{- if or (notEmpty $schema.Ref) ($schema.Value.Type.Is "object") }}
         {{ if $.HasValidation $schema }}
             {{ if $isPointer }}
                 if {{$fieldDot}} != nil {
@@ -203,19 +203,11 @@ func (e *{{ $enumType }}) Scan(src interface{}) error {
     {{- if $.IsDefaultEnum $key $schema }}
         {{- $label := .RuntimeParams.label }}
         {{- template "enum" ($.WithParams "name" $key "schema" $schema "description" (print $label " : " $key ))}}
-
-    {{- else if and ($schema.Value.Type.Permits "object") (gt (len ($.SchemaProperties $schema true)) 0) }}
+    {{- else if and ($schema.Value.Type.Permits "object") (gt (len ($.SchemaProperties $schema)) 0) }}
 type {{ pascal $key }} struct {
-    {{- range $field, $schemaProp := $.SchemaProperties $schema false}}
+    {{- range $field, $schemaProp := $.SchemaProperties $schema}}
         {{- $isRequired := $.IsRequiredProperty $field $schema -}}
         {{- template "propertyDeclaration" ($.WithParams "key" $field "schema" $schemaProp "typeName" $typeName "isRequired" $isRequired)}}
-    {{- end }}
-    {{- range $schema.Value.AllOf }}
-        {{- if notEmpty .Ref }}
-
-    // OpenAPI Ref: {{ .Ref }}
-    {{ $.GetType $.PackageName "" . }}
-        {{- end }}
     {{- end }}
 }
     {{- else }}
@@ -225,7 +217,7 @@ type {{ pascal $key }} {{ $.GetType $.PackageName (pascal (print $typeName " Ite
 {{- $hasValidation := $.HasValidation $schema -}}
 
 {{- /* Nested Types */}}
-    {{- range $key, $schemaProp := $.SchemaProperties $schema false }}
+    {{- range $key, $schemaProp := $.SchemaProperties $schema }}
         {{- if not (empty $schemaProp.Value.Properties )}}
             {{- if empty $schemaProp.Ref -}}
                 {{- template "typeDeclaration" ($.WithParams "mediaType" "application/json" "key" (pascal (print $typeName " " $key)) "schema" $schemaProp "label" (print  $typeName " inline " $key))}}
@@ -233,7 +225,7 @@ type {{ pascal $key }} {{ $.GetType $.PackageName (pascal (print $typeName " Ite
         {{- else if $schemaProp.Value.Type.Is "array"}}
             {{- if empty $schemaProp.Value.Items.Ref -}}
                 {{- $isEnumItem := $.IsDefaultEnum $key $schemaProp.Value.Items }}
-                {{- $hasProperties := not (empty ($.SchemaProperties $schemaProp.Value.Items false )) }}
+                {{- $hasProperties := not (empty ($.SchemaProperties $schemaProp.Value.Items )) }}
                 {{- if or $isEnumItem $hasProperties}}
                     {{- template "typeDeclaration" ($.WithParams "mediaType" "application/json" "key" (pascal (print $typeName " " $key)) "schema" $schemaProp.Value.Items "label" (print  $typeName " inline item " $key))}}
                 {{- end }}
@@ -244,7 +236,7 @@ type {{ pascal $key }} {{ $.GetType $.PackageName (pascal (print $typeName " Ite
     {{- if $schema.Value.Type.Is "array"}}
         {{- if empty $schema.Value.Items.Ref -}}
             {{- $isEnumItem := $.IsDefaultEnum $key $schema.Value.Items }}
-            {{- $hasProperties := not (empty ($.SchemaProperties $schema.Value.Items false )) }}
+            {{- $hasProperties := not (empty ($.SchemaProperties $schema.Value.Items )) }}
             {{- if or $isEnumItem $hasProperties}}
                 {{- template "typeDeclaration" ($.WithParams "mediaType" "application/json" "key" (pascal (print $typeName " Item" )) "schema" $schema.Value.Items "label" (print  $typeName " inline item " $key))}}
             {{- end }}
@@ -252,12 +244,12 @@ type {{ pascal $key }} {{ $.GetType $.PackageName (pascal (print $typeName " Ite
     {{- end }}
 
 {{- /*    Regex Validation Patterns */ -}}
-    {{- range $key, $schemaProp := $.SchemaProperties $schema false}}
-        {{- if notEmpty $schemaProp.Value.Pattern }}
+    {{- range $key, $schemaProp := $.SchemaProperties $schema }}
+        {{- if and (notEmpty $schemaProp.Value.Pattern) (empty $schemaProp.Ref) }}
 var {{ camel $typeName }}{{ pascal $key }}Pattern = regexp.MustCompile(`{{ $schemaProp.Value.Pattern }}`)
         {{- end}}
     {{- end }}
-    {{- if and $hasValidation (notEmpty $schema.Value.Pattern) }}
+    {{- if and $hasValidation (notEmpty $schema.Value.Pattern) (empty $schema.Ref) }}
 var {{ camel $key }}Pattern = regexp.MustCompile(`{{ $schema.Value.Pattern }}`)
     {{ end }}
 
@@ -298,7 +290,7 @@ func (p *{{ pascal $key }}) UnmarshalJSON(b []byte) error {
 
     v := {{ pascal $key }}(parseObject)
 
-        {{ range $field, $schemaProp := $.SchemaProperties $schema false}}
+        {{ range $field, $schemaProp := $.SchemaProperties $schema}}
             {{ $typeName := (print $key " " $field) -}}
             {{- if notEmpty $schemaProp.Ref -}}
                 {{- $typeName = trimPrefix "#/components/parameters/" $schemaProp.Ref -}}
@@ -367,7 +359,7 @@ func ParseForm{{ pascal $key }}(r *http.Request) ({{ pascal $key }}, error) {
       v {{ pascal $key }}
     )
 
-    {{ range $field, $schemaProp := $.SchemaProperties $schema false}}
+    {{ range $field, $schemaProp := $.SchemaProperties $schema }}
         {{- $isRequired := $.IsRequiredProperty $field $schema }}
         {{ $typeName := (print $key " " $field) -}}
         {{- if notEmpty $schemaProp.Ref -}}
@@ -449,10 +441,11 @@ func ParseForm{{ pascal $key }}(r *http.Request) ({{ pascal $key }}, error) {
 
 
 {{- if $hasValidation }}
-    {{- if not (empty $schema.Value.Properties )}}
+    {{ $properties := $.SchemaProperties $schema }}
+    {{- if not (empty $properties )}}
 func (p {{ pascal $key }}) Validate() error {
     var err validation.Errors
-        {{ range $fieldName, $schemaProp := $.SchemaProperties $schema true }}
+        {{ range $fieldName, $schemaProp := $properties }}
             {{- if $.HasValidation $schemaProp }}
     p.Validate{{ pascal $fieldName }}(&err)
             {{- end }}
@@ -460,7 +453,7 @@ func (p {{ pascal $key }}) Validate() error {
 
     return err.GetErr()
 }
-        {{- range $fieldName, $schemaProp := $.SchemaProperties $schema true }}
+        {{- range $fieldName, $schemaProp := $properties }}
             {{- if $.HasValidation $schemaProp }}
                 {{- $isRequired := $.IsRequiredProperty $fieldName $schema -}}
                 {{- $isPointer := and (not $isRequired) ($schemaProp.Value.Nullable) }}

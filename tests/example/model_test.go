@@ -247,3 +247,117 @@ func TestNotRequiredWithValidation(t *testing.T) {
 		})
 	}
 }
+
+func TestFooBarBuzzUnmarshall(t *testing.T) {
+	testCases := []struct {
+		Name     string
+		Raw      string
+		Expected FooBarBuzz
+		ErrMsg   string
+	}{
+		{
+			Name: "success",
+			Raw:  `{"x": true, "a": "xy", "b": "spring", "c": 4, "foos": "f1", "bars": "b1", "buzzes": "z1"}`,
+			Expected: FooBarBuzz{
+				X:      true,
+				A:      "xy",
+				B:      SeasonSpring,
+				C:      4,
+				Foos:   "f1",
+				Bars:   "b1",
+				Buzzes: "z1",
+			},
+		},
+		{
+			Name:   "foobar a error",
+			Raw:    `{"x": true, "a": "x", "b": "spring", "c": 4, "foos": "f1", "bars": "b1", "buzzes": "z1"}`,
+			ErrMsg: "length must be >= 2",
+		},
+		{
+			Name:   "inValue error",
+			Raw:    `{"x": true, "a": "xy", "b": "spring", "c": 5, "foos": "f1", "bars": "b1", "buzzes": "z1"}`,
+			ErrMsg: "must be multiple of 2",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			var actual FooBarBuzz
+			err := json.Unmarshal([]byte(tc.Raw), &actual)
+			if tc.ErrMsg != "" {
+				assert.Error(t, err)
+				assert.ErrorContains(t, err, tc.ErrMsg)
+				return
+			}
+
+			assert.NoError(t, err)
+
+			assert.Equal(t, tc.Expected, actual)
+		})
+	}
+}
+
+func TestFooBarBuzzRoundTripMarshall(t *testing.T) {
+	testCases := []struct {
+		Name     string
+		Expected FooBarBuzz
+		ErrMsg   string
+	}{
+		{
+			Name: "maximal",
+			Expected: FooBarBuzz{
+				X:      true,
+				A:      "xy",
+				B:      SeasonSpring,
+				C:      4,
+				Foos:   "f1",
+				Bars:   "b1",
+				Buzzes: "z1",
+			},
+		},
+		{
+			Name: "invalid inlined type alias IntValue",
+			Expected: FooBarBuzz{
+				X:      true,
+				A:      "xy",
+				B:      SeasonSpring,
+				C:      5,
+				Foos:   "f1",
+				Bars:   "b1",
+				Buzzes: "z1",
+			},
+			ErrMsg: "must be multiple of 2",
+		},
+		{
+			Name: "invalid embedded field foobar a ",
+			Expected: FooBarBuzz{
+				X:      true,
+				A:      "x",
+				B:      SeasonSpring,
+				C:      4,
+				Foos:   "f1",
+				Bars:   "b1",
+				Buzzes: "z1",
+			},
+			ErrMsg: "length must be >= 2",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			data, err := json.Marshal(tc.Expected)
+			if tc.ErrMsg != "" {
+				assert.Error(t, err)
+				assert.ErrorContains(t, err, tc.ErrMsg)
+				return
+			}
+			assert.NoError(t, err)
+
+			var actual FooBarBuzz
+			err = json.Unmarshal(data, &actual)
+			assert.NoError(t, err)
+
+			assert.Equal(t, tc.Expected, actual)
+		})
+	}
+}

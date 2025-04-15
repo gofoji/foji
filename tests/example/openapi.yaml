@@ -994,16 +994,28 @@ components:
       type: object
       description: Named object
 
+    FooString:
+      type: string
+      pattern: (f1|f2)
+
     Foo:
         type: object
         properties:
-           foo:
-              type: string
+           foos:
+             $ref: "#/components/schemas/FooString"
 
     Bar:
       type: object
       properties:
-        bar:
+        bars:
+          type: string
+          minLength: 2
+          pattern: (b1|b2)
+
+    Buzz:
+      type: object
+      properties:
+        buzzes:
           type: string
 
     FooBar:
@@ -1011,9 +1023,25 @@ components:
         - $ref: "#/components/schemas/Foo"
         - $ref: "#/components/schemas/Bar"
         - type: object
-        - properties:
-            buzz:
+          required:
+            - a
+          properties:
+            a:
               type: string
+              minLength: 2
+            b:
+              $ref: "#/components/schemas/Season"
+            c:
+              $ref: "#/components/schemas/IntValue"
+
+    FooBarBuzz:
+      allOf:
+        - $ref: "#/components/schemas/FooBar"
+        - $ref: "#/components/schemas/Buzz"
+        - type: object
+          properties:
+            x:
+              type: boolean
 
     DefaultWithoutRequired:
       type: object
