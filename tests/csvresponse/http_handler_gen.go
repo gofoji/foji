@@ -26,7 +26,9 @@ type Mux interface {
 }
 
 func RegisterHTTP(ops Operations, r Mux) *OpenAPIHandlers {
-	s := OpenAPIHandlers{ops: ops}
+	s := OpenAPIHandlers{
+		ops: ops,
+	}
 
 	r.Handle("GET /bytesCSV", http.HandlerFunc(s.GetByteCsv))
 	r.Handle("GET /readerCSV", http.HandlerFunc(s.GetReaderCsv))

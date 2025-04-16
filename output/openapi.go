@@ -130,6 +130,19 @@ func (o *OpenAPIFileContext) OpHasExtension(op *openapi3.Operation, ext string) 
 	return true
 }
 
+func (o *OpenAPIFileContext) SecurityHasExtension(scheme *openapi3.SecuritySchemeRef, ext string) bool {
+	v, ok := scheme.Value.Extensions[ext]
+	if !ok {
+		return false
+	}
+
+	if b, isBool := v.(bool); isBool {
+		return b
+	}
+
+	return true
+}
+
 func (o *OpenAPIFileContext) HasExtension(s *openapi3.SchemaRef, ext string) bool {
 	_, ok := s.Value.Extensions[ext]
 

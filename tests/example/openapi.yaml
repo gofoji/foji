@@ -649,6 +649,15 @@ paths:
       responses:
         "200":
           description: OK
+  /examples/complexSecurity:
+    get:
+      operationId: getComplexSecurity
+      security:
+        - Raw: []
+        - Bearer: []
+      responses:
+        "200":
+          description: OK
 components:
   securitySchemes:
     HeaderAuth:
@@ -659,6 +668,14 @@ components:
       type: apiKey
       name: jwt
       in: query
+    Bearer:
+      type: http
+      scheme: bearer
+    Raw:
+      x-raw-auth: true
+      type: apiKey
+      name: Authorization
+      in: header
   parameters:
     IdParam:
       name: id

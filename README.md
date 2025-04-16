@@ -213,7 +213,7 @@ WARN[0000] skipped, output file exists                   target="!test/cmd/serve
 
 ## Optional Generation
 You can use the `Context` method `NotNeededIf` to abort the current file generation  if the file is not needed.  
-Example from `openapi/auth.go.tpl`
+Example:
 
 ```gotemplate
 {{ .NotNeededIf (empty .API.Components.SecuritySchemes) "no security schemes" -}}

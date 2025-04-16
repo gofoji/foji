@@ -14,6 +14,15 @@ import (
 	"github.com/google/uuid"
 )
 
+type (
+	RequestAuthenticator = httputil.AuthenticateFunc[*ExampleAuth]
+	TokenAuthenticator   = httputil.TokenAuthenticatorFunc[*ExampleAuth]
+
+	SecurityGroup  = httputil.SecurityGroup[*ExampleAuth]
+	SecurityGroups = httputil.SecurityGroups[*ExampleAuth]
+	AuthorizeFunc  = httputil.AuthorizeFunc[*ExampleAuth]
+)
+
 type Operations interface {
 	GetExamples(ctx context.Context) (*Examples, error)
 	GetAuthComplex(ctx context.Context, user *ExampleAuth) error
@@ -22,6 +31,7 @@ type Operations interface {
 	GetAuthSimple2(ctx context.Context, user *ExampleAuth) error
 	GetAuthSimple2Maybe(ctx context.Context, user *ExampleAuth) error
 	GetAuthComplexMaybe(ctx context.Context, user *ExampleAuth) error
+	GetComplexSecurity(ctx context.Context, user *ExampleAuth) error
 	AddForm(ctx context.Context, body AddFormRequest) (*FooBar, error)
 	AddMultipartForm(ctx context.Context, body AddMultipartFormRequest) (*FooBar, error)
 	HeaderResponse(ctx context.Context) (http.Header, error)
@@ -40,43 +50,58 @@ type Operations interface {
 
 type OpenAPIHandlers struct {
 	ops                         Operations
-	headerAuthAuth              AuthenticateFunc
-	jwtAuth                     AuthenticateFunc
+	bearerAuth                  RequestAuthenticator
+	headerAuthAuth              RequestAuthenticator
+	jwtAuth                     RequestAuthenticator
+	rawAuth                     RequestAuthenticator
 	authorize                   AuthorizeFunc
 	getAuthComplexSecurity      SecurityGroups
 	getAuthSimpleMaybeSecurity  SecurityGroups
 	getAuthSimple2MaybeSecurity SecurityGroups
 	getAuthComplexMaybeSecurity SecurityGroups
+	getComplexSecuritySecurity  SecurityGroups
 }
 
 type Mux interface {
 	Handle(pattern string, handler http.Handler)
 }
 
-func RegisterHTTP(ops Operations, r Mux, headerAuthAuth, jwtAuth AuthenticateFunc, authorize AuthorizeFunc) *OpenAPIHandlers {
-	s := OpenAPIHandlers{ops: ops, headerAuthAuth: headerAuthAuth, jwtAuth: jwtAuth, authorize: authorize}
+func RegisterHTTP(ops Operations, r Mux, bearerAuth TokenAuthenticator, headerAuthAuth TokenAuthenticator, jwtAuth TokenAuthenticator, rawAuth RequestAuthenticator, authorize AuthorizeFunc) *OpenAPIHandlers {
+	s := OpenAPIHandlers{
+		ops:            ops,
+		bearerAuth:     httputil.BearerAuth("Authorization", bearerAuth),
+		headerAuthAuth: httputil.HeaderAuth("Authorization", headerAuthAuth),
+		jwtAuth:        httputil.QueryAuth("jwt", jwtAuth),
+		rawAuth:        rawAuth,
+		authorize:      authorize,
+	}
 
 	s.getAuthComplexSecurity = SecurityGroups{
-		SecurityGroup{httputil.NewAuthCheck(headerAuthAuth, authorize, "foo")},
-		SecurityGroup{httputil.NewAuthCheck(headerAuthAuth, authorize, "bar")},
-		SecurityGroup{httputil.NewAuthCheck(jwtAuth, nil)},
+		SecurityGroup{httputil.NewAuthCheck(s.headerAuthAuth, authorize, "foo")},
+		SecurityGroup{httputil.NewAuthCheck(s.headerAuthAuth, authorize, "bar")},
+		SecurityGroup{httputil.NewAuthCheck(s.jwtAuth, nil)},
 	}
 
 	s.getAuthSimpleMaybeSecurity = SecurityGroups{
-		SecurityGroup{httputil.NewAuthCheck(headerAuthAuth, nil)},
+		SecurityGroup{httputil.NewAuthCheck(s.headerAuthAuth, nil)},
 		SecurityGroup{},
 	}
 
 	s.getAuthSimple2MaybeSecurity = SecurityGroups{
-		SecurityGroup{httputil.NewAuthCheck(headerAuthAuth, authorize, "foo")},
-		SecurityGroup{httputil.NewAuthCheck(headerAuthAuth, authorize, "bar")},
+		SecurityGroup{httputil.NewAuthCheck(s.headerAuthAuth, authorize, "foo")},
+		SecurityGroup{httputil.NewAuthCheck(s.headerAuthAuth, authorize, "bar")},
 		SecurityGroup{},
 	}
 
 	s.getAuthComplexMaybeSecurity = SecurityGroups{
-		SecurityGroup{httputil.NewAuthCheck(headerAuthAuth, nil)},
-		SecurityGroup{httputil.NewAuthCheck(jwtAuth, nil)},
+		SecurityGroup{httputil.NewAuthCheck(s.headerAuthAuth, nil)},
+		SecurityGroup{httputil.NewAuthCheck(s.jwtAuth, nil)},
 		SecurityGroup{},
+	}
+
+	s.getComplexSecuritySecurity = SecurityGroups{
+		SecurityGroup{httputil.NewAuthCheck(s.rawAuth, nil)},
+		SecurityGroup{httputil.NewAuthCheck(s.bearerAuth, nil)},
 	}
 
 	r.Handle("GET /examples", http.HandlerFunc(s.GetExamples))
@@ -86,6 +111,7 @@ func RegisterHTTP(ops Operations, r Mux, headerAuthAuth, jwtAuth AuthenticateFun
 	r.Handle("GET /examples/auth/simple2", http.HandlerFunc(s.GetAuthSimple2))
 	r.Handle("GET /examples/auth/simple2/maybe", http.HandlerFunc(s.GetAuthSimple2Maybe))
 	r.Handle("GET /examples/complexAuthMaybe", http.HandlerFunc(s.GetAuthComplexMaybe))
+	r.Handle("GET /examples/complexSecurity", http.HandlerFunc(s.GetComplexSecurity))
 	r.Handle("POST /examples/form", http.HandlerFunc(s.AddForm))
 	r.Handle("POST /examples/form:multipart", http.HandlerFunc(s.AddMultipartForm))
 	r.Handle("GET /examples/header", http.HandlerFunc(s.HeaderResponse))
@@ -256,6 +282,29 @@ func (h OpenAPIHandlers) GetAuthComplexMaybe(w http.ResponseWriter, r *http.Requ
 	}
 
 	err = h.ops.GetAuthComplexMaybe(r.Context(), user)
+	if err != nil {
+		httputil.ErrorHandler(w, r, err)
+
+		return
+	}
+
+	w.WriteHeader(200)
+}
+
+// GetComplexSecurity
+func (h OpenAPIHandlers) GetComplexSecurity(w http.ResponseWriter, r *http.Request) {
+	var err error
+
+	logctx.AddStrToContext(r.Context(), "op", "getComplexSecurity")
+
+	user, err := h.getComplexSecuritySecurity.Auth(r)
+	if err != nil {
+		httputil.ErrorHandler(w, r, err)
+
+		return
+	}
+
+	err = h.ops.GetComplexSecurity(r.Context(), user)
 	if err != nil {
 		httputil.ErrorHandler(w, r, err)
 
