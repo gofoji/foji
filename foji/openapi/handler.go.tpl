@@ -149,6 +149,32 @@ import (
 {{- end }}
 )
 
+{{ if .HasAuthentication -}}
+{{ .ErrorIf (empty $.Params.Auth) "params.Auth" -}}
+
+type (
+    RequestAuthenticator = httputil.AuthenticateFunc[*{{ $.CheckPackage $.Params.Auth $package }}]
+	TokenAuthenticator = httputil.TokenAuthenticatorFunc[*{{ $.CheckPackage $.Params.Auth $package }}]
+
+{{if .HasComplexAuth }}
+	SecurityGroup  = httputil.SecurityGroup[*{{ $.CheckPackage $.Params.Auth $package }}]
+	SecurityGroups = httputil.SecurityGroups[*{{ $.CheckPackage $.Params.Auth $package }}]
+{{- end}}
+
+{{- if .HasAuthorization }}
+	AuthorizeFunc  = httputil.AuthorizeFunc[*{{ $.CheckPackage $.Params.Auth $package }}]
+{{- end}}
+
+{{- if .HasBasicAuth }}
+
+	// BasicAuthenticator takes a user/pass pair and returns the authenticated user.
+	type BasicAuthenticator = func(user,pass string) (*{{ $.CheckPackage $.Params.Auth $package }}, error)
+{{- end}}
+
+)
+
+{{ end }}
+
 type Operations interface {
 {{- range $name, $path := .API.Paths.Map }}
     {{- range $verb, $op := $path.Operations }}
@@ -165,7 +191,7 @@ type OpenAPIHandlers struct {
 	ops      Operations
 {{- if .HasAuthentication }}
     {{- range $security, $value := .API.Components.SecuritySchemes }}
-	{{ camel $security }}Auth AuthenticateFunc
+	{{ camel $security }}Auth RequestAuthenticator
     {{- end }}
 {{- if .HasAuthorization }}
     authorize AuthorizeFunc
@@ -187,8 +213,8 @@ type Mux interface {
 func RegisterHTTP(ops Operations, r Mux
 {{- if .HasAuthentication }}
 	{{- range $security, $value := .API.Components.SecuritySchemes -}}
-    , {{ camel $security }}Auth
-	{{- end }} AuthenticateFunc
+    , {{ camel $security }}Auth {{ if $.SecurityHasExtension $value "x-raw-auth" -}} RequestAuthenticator {{ else }} TokenAuthenticator {{end -}}
+	{{- end }}
 	{{- if .HasAuthorization -}}
     , authorize AuthorizeFunc
 	{{- end -}}
@@ -197,7 +223,7 @@ func RegisterHTTP(ops Operations, r Mux
 	s := OpenAPIHandlers{ops: ops
 {{- if .HasAuthentication }}
 	{{- range $security, $value := .API.Components.SecuritySchemes -}}
-    , {{ camel $security }}Auth: {{ camel $security }}Auth
+    , {{ camel $security }}Auth: {{ if $.SecurityHasExtension $value "x-raw-auth" -}} {{ camel $security }}Auth {{ else }} httputil.{{ pascal $value.Value.In}}Auth("{{ $value.Value.Name }}",  {{ camel $security }}Auth) {{end}}
 	{{- end -}}
 	{{- if .HasAuthorization -}}
 	, authorize: authorize{{- end -}}
@@ -213,7 +239,7 @@ func RegisterHTTP(ops Operations, r Mux
             {{- range $securityGroup := $securityList }}
 		SecurityGroup{
                 {{- range $security, $scopes := $securityGroup -}}
-					httputil.NewAuthCheck({{camel $security}}Auth
+					httputil.NewAuthCheck(s.{{camel $security}}Auth
                     {{- if not (empty $scopes) -}}
 						, authorize
                         {{- range $scopes -}}

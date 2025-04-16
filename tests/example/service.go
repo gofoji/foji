@@ -95,3 +95,5 @@ func (s *Service) NoResponse(ctx context.Context, body Foo) error {
 func (s *Service) HeaderResponse(ctx context.Context) (http.Header, error) {
 	return nil, nil
 }
+
+func (s *Service) GetComplexSecurity(ctx context.Context, user *ExampleAuth) error { return nil }
