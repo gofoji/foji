@@ -220,15 +220,22 @@ func RegisterHTTP(ops Operations, r Mux
 	{{- end -}}
 {{- end -}}
 ) *OpenAPIHandlers {
-	s := OpenAPIHandlers{ops: ops
+	s := OpenAPIHandlers{
+		ops: ops,
 {{- if .HasAuthentication }}
-	{{- range $security, $value := .API.Components.SecuritySchemes -}}
-    , {{ camel $security }}Auth: {{ if $.SecurityHasExtension $value "x-raw-auth" -}} {{ camel $security }}Auth {{ else }} httputil.{{ pascal $value.Value.In}}Auth("{{ $value.Value.Name }}",  {{ camel $security }}Auth) {{end}}
+	{{- range $security, $value := .API.Components.SecuritySchemes }}
+        {{ camel $security }}Auth: {{ if $.SecurityHasExtension $value "x-raw-auth" -}} {{ camel $security }}Auth {{ else -}}
+			{{- if eq $value.Value.Scheme "bearer"}}
+		httputil.BearerAuth("Authorization",  {{ camel $security }}Auth)
+			{{- else -}}
+		httputil.{{ pascal $value.Value.In}}Auth("{{ $value.Value.Name }}",  {{ camel $security }}Auth)
+			{{- end}}
+	{{- end}},
 	{{- end -}}
-	{{- if .HasAuthorization -}}
-	, authorize: authorize{{- end -}}
+	{{- if .HasAuthorization }}
+		authorize: authorize{{- end -}},
 {{- end -}}
-}
+	}
 
 {{- range $name, $path := .API.Paths.Map }}
     {{- range $verb, $op := $path.Operations }}

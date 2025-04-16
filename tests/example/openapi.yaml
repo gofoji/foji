@@ -654,6 +654,7 @@ paths:
       operationId: getComplexSecurity
       security:
         - Raw: []
+        - Bearer: []
       responses:
         "200":
           description: OK
@@ -667,6 +668,9 @@ components:
       type: apiKey
       name: jwt
       in: query
+    Bearer:
+      type: http
+      scheme: bearer
     Raw:
       x-raw-auth: true
       type: apiKey

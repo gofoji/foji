@@ -50,6 +50,7 @@ type Operations interface {
 
 type OpenAPIHandlers struct {
 	ops                         Operations
+	bearerAuth                  RequestAuthenticator
 	headerAuthAuth              RequestAuthenticator
 	jwtAuth                     RequestAuthenticator
 	rawAuth                     RequestAuthenticator
@@ -58,14 +59,22 @@ type OpenAPIHandlers struct {
 	getAuthSimpleMaybeSecurity  SecurityGroups
 	getAuthSimple2MaybeSecurity SecurityGroups
 	getAuthComplexMaybeSecurity SecurityGroups
+	getComplexSecuritySecurity  SecurityGroups
 }
 
 type Mux interface {
 	Handle(pattern string, handler http.Handler)
 }
 
-func RegisterHTTP(ops Operations, r Mux, headerAuthAuth TokenAuthenticator, jwtAuth TokenAuthenticator, rawAuth RequestAuthenticator, authorize AuthorizeFunc) *OpenAPIHandlers {
-	s := OpenAPIHandlers{ops: ops, headerAuthAuth: httputil.HeaderAuth("Authorization", headerAuthAuth), jwtAuth: httputil.QueryAuth("jwt", jwtAuth), rawAuth: rawAuth, authorize: authorize}
+func RegisterHTTP(ops Operations, r Mux, bearerAuth TokenAuthenticator, headerAuthAuth TokenAuthenticator, jwtAuth TokenAuthenticator, rawAuth RequestAuthenticator, authorize AuthorizeFunc) *OpenAPIHandlers {
+	s := OpenAPIHandlers{
+		ops:            ops,
+		bearerAuth:     httputil.BearerAuth("Authorization", bearerAuth),
+		headerAuthAuth: httputil.HeaderAuth("Authorization", headerAuthAuth),
+		jwtAuth:        httputil.QueryAuth("jwt", jwtAuth),
+		rawAuth:        rawAuth,
+		authorize:      authorize,
+	}
 
 	s.getAuthComplexSecurity = SecurityGroups{
 		SecurityGroup{httputil.NewAuthCheck(s.headerAuthAuth, authorize, "foo")},
@@ -88,6 +97,11 @@ func RegisterHTTP(ops Operations, r Mux, headerAuthAuth TokenAuthenticator, jwtA
 		SecurityGroup{httputil.NewAuthCheck(s.headerAuthAuth, nil)},
 		SecurityGroup{httputil.NewAuthCheck(s.jwtAuth, nil)},
 		SecurityGroup{},
+	}
+
+	s.getComplexSecuritySecurity = SecurityGroups{
+		SecurityGroup{httputil.NewAuthCheck(s.rawAuth, nil)},
+		SecurityGroup{httputil.NewAuthCheck(s.bearerAuth, nil)},
 	}
 
 	r.Handle("GET /examples", http.HandlerFunc(s.GetExamples))
@@ -283,7 +297,7 @@ func (h OpenAPIHandlers) GetComplexSecurity(w http.ResponseWriter, r *http.Reque
 
 	logctx.AddStrToContext(r.Context(), "op", "getComplexSecurity")
 
-	user, err := h.rawAuth(r)
+	user, err := h.getComplexSecuritySecurity.Auth(r)
 	if err != nil {
 		httputil.ErrorHandler(w, r, err)
 

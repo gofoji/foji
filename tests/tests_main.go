@@ -27,7 +27,7 @@ func main() {
 
 	var ops example.Operations = &example.Service{}
 
-	example.RegisterHTTP(ops, http.NewServeMux(), tokenAuth, tokenAuth, rawAuth, authorize)
+	example.RegisterHTTP(ops, http.NewServeMux(), tokenAuth, tokenAuth, tokenAuth, rawAuth, authorize)
 
 	os.Exit(0)
 }
