@@ -51,6 +51,7 @@ type Operations interface {
 type OpenAPIHandlers struct {
 	ops                         Operations
 	bearerAuth                  RequestAuthenticator
+	customHeaderAuthAuth        RequestAuthenticator
 	headerAuthAuth              RequestAuthenticator
 	jwtAuth                     RequestAuthenticator
 	rawAuth                     RequestAuthenticator
@@ -66,14 +67,15 @@ type Mux interface {
 	Handle(pattern string, handler http.Handler)
 }
 
-func RegisterHTTP(ops Operations, r Mux, bearerAuth TokenAuthenticator, headerAuthAuth TokenAuthenticator, jwtAuth TokenAuthenticator, rawAuth RequestAuthenticator, authorize AuthorizeFunc) *OpenAPIHandlers {
+func RegisterHTTP(ops Operations, r Mux, bearerAuth TokenAuthenticator, customHeaderAuthAuth TokenAuthenticator, headerAuthAuth TokenAuthenticator, jwtAuth TokenAuthenticator, rawAuth RequestAuthenticator, authorize AuthorizeFunc) *OpenAPIHandlers {
 	s := OpenAPIHandlers{
-		ops:            ops,
-		bearerAuth:     httputil.BearerAuth("Authorization", bearerAuth),
-		headerAuthAuth: httputil.HeaderAuth("Authorization", headerAuthAuth),
-		jwtAuth:        httputil.QueryAuth("jwt", jwtAuth),
-		rawAuth:        rawAuth,
-		authorize:      authorize,
+		ops:                  ops,
+		bearerAuth:           httputil.BearerAuth("Authorization", bearerAuth),
+		customHeaderAuthAuth: httputil.HeaderAuth("X-CUSTOM-HEADER", customHeaderAuthAuth),
+		headerAuthAuth:       httputil.HeaderAuth("Authorization", headerAuthAuth),
+		jwtAuth:              httputil.QueryAuth("jwt", jwtAuth),
+		rawAuth:              rawAuth,
+		authorize:            authorize,
 	}
 
 	s.getAuthComplexSecurity = SecurityGroups{
@@ -102,6 +104,7 @@ func RegisterHTTP(ops Operations, r Mux, bearerAuth TokenAuthenticator, headerAu
 	s.getComplexSecuritySecurity = SecurityGroups{
 		SecurityGroup{httputil.NewAuthCheck(s.rawAuth, nil)},
 		SecurityGroup{httputil.NewAuthCheck(s.bearerAuth, nil)},
+		SecurityGroup{httputil.NewAuthCheck(s.customHeaderAuthAuth, nil)},
 	}
 
 	r.Handle("GET /examples", http.HandlerFunc(s.GetExamples))

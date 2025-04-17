@@ -36,6 +36,11 @@ paths:
                 x-go-type: io.Reader
 
 components:
+  securitySchemes:
+    HeaderAuth:
+      type: apiKey
+      name: Authorization
+      in: header
   schemas:
     Example:
       type: object

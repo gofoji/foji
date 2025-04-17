@@ -655,6 +655,7 @@ paths:
       security:
         - Raw: []
         - Bearer: []
+        - CustomHeaderAuth: []
       responses:
         "200":
           description: OK
@@ -676,6 +677,11 @@ components:
       type: apiKey
       name: Authorization
       in: header
+    CustomHeaderAuth:
+      x-raw-request: true
+      type: apiKey
+      in: header
+      name: X-CUSTOM-HEADER
   parameters:
     IdParam:
       name: id

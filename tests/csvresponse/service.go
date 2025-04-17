@@ -5,6 +5,8 @@ import (
 	"io"
 )
 
+type ExampleAuth struct{}
+
 type Service struct{}
 
 func (s *Service) GetByteCsv(ctx context.Context) ([]byte, error) {
