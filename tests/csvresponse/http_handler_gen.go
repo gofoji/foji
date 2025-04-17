@@ -11,6 +11,11 @@ import (
 	"github.com/bir/iken/logctx"
 )
 
+type (
+	RequestAuthenticator = httputil.AuthenticateFunc[*ExampleAuth]
+	TokenAuthenticator   = httputil.TokenAuthenticatorFunc[*ExampleAuth]
+)
+
 type Operations interface {
 	GetByteCsv(ctx context.Context) ([]byte, error)
 	GetReaderCsv(ctx context.Context) (io.Reader, error)
@@ -18,16 +23,18 @@ type Operations interface {
 }
 
 type OpenAPIHandlers struct {
-	ops Operations
+	ops            Operations
+	headerAuthAuth RequestAuthenticator
 }
 
 type Mux interface {
 	Handle(pattern string, handler http.Handler)
 }
 
-func RegisterHTTP(ops Operations, r Mux) *OpenAPIHandlers {
+func RegisterHTTP(ops Operations, r Mux, headerAuthAuth TokenAuthenticator) *OpenAPIHandlers {
 	s := OpenAPIHandlers{
-		ops: ops,
+		ops:            ops,
+		headerAuthAuth: httputil.HeaderAuth("Authorization", headerAuthAuth),
 	}
 
 	r.Handle("GET /bytesCSV", http.HandlerFunc(s.GetByteCsv))
