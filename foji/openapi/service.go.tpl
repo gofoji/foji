@@ -26,20 +26,13 @@ package {{ .PackageName }}
 
 import (
 	"context"
+	"errors"
 
 {{- .CheckAllTypes .PackageName ($.Params.GetWithDefault "Auth" "") -}}
 {{ range .GoImports }}
 	"{{ . }}"
 {{- end }}
 )
-
-type Error string
-
-func (e Error) Error() string {
-	return string(e)
-}
-
-const ErrNotImplemented = Error("not implemented")
 
 // New creates a new service instance.
 func New() *Service {
@@ -62,7 +55,7 @@ func (s *Service) {{ pascal $op.OperationID}}(ctx context.Context,
     return 
 	{{- if notEmpty $response -}}nil, {{ end -}}
     {{- if gt (len ($.GetOpHappyResponseHeaders $.PackageName $op)) 0 -}}http.Header{}, {{ end -}} 
-	ErrNotImplemented
+	errors.ErrUnsupported
 }
 	{{- end }}
 {{- end }}
