@@ -659,6 +659,15 @@ paths:
       responses:
         "200":
           description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  description: Sample mapping int to custom type
+                  type: integer
+                  format: int32
+                  x-go-type: TestInt
 components:
   securitySchemes:
     HeaderAuth:

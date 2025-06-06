@@ -12,6 +12,8 @@ type ExampleAuth struct{}
 
 type Service struct{}
 
+type TestInt int32
+
 func (s *Service) GetExamples(ctx context.Context) (*Examples, error) {
 	return nil, nil
 }
@@ -96,4 +98,6 @@ func (s *Service) HeaderResponse(ctx context.Context) (http.Header, error) {
 	return nil, nil
 }
 
-func (s *Service) GetComplexSecurity(ctx context.Context, user *ExampleAuth) error { return nil }
+func (s *Service) GetComplexSecurity(ctx context.Context, user *ExampleAuth) ([]TestInt, error) {
+	return nil, nil
+}
