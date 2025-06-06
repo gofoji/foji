@@ -1,0 +1,267 @@
+openapi: 3.0.3
+info:
+  title: Comprehensive Security API
+  description: |
+    A comprehensive API specification demonstrating all valid combinations 
+    of OpenAPI security schemes and their applications.
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@example.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.example.com/v1
+    description: Production server
+  - url: https://staging-api.example.com/v1
+    description: Staging server
+
+# Security Schemes Definition
+components:
+  securitySchemes:
+    # API Key Security Schemes
+    ApiKeyHeader:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key passed in header
+
+    ApiKeyQuery:
+      type: apiKey
+      in: query
+      name: query_key_name
+      description: API key passed as query parameter
+
+    ApiKeyCookie:
+      type: apiKey
+      in: cookie
+      name: cookie_name
+      description: API key passed as cookie
+
+    # HTTP Authentication Schemes
+    BasicAuth:
+      type: http
+      scheme: basic
+      description: Basic HTTP authentication
+
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Bearer token authentication (JWT)
+
+    # OpenID Connect
+    OpenIDConnect:
+      type: openIdConnect
+      openIdConnectUrl: https://auth.example.com/.well-known/openid_configuration
+      description: OpenID Connect authentication
+
+    # Custom auth that processes the request directly using `x-raw-auth`.
+    Raw:
+      x-raw-auth: true
+      type: apiKey
+      name: Authorization
+      in: header
+
+    Oauth2Example:
+      type: oauth2
+      flows:
+        implicit:
+          authorizationUrl: https://example.com/api/oauth/dialog
+          scopes:
+            write:pets: modify pets in your account
+            read:pets: read your pets
+        authorizationCode:
+          authorizationUrl: https://example.com/api/oauth/dialog
+          tokenUrl: https://example.com/api/oauth/token
+          scopes:
+            write:pets: modify pets in your account
+            read:pets: read your pets
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [user, admin, moderator]
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        code:
+          type: integer
+
+# Global security requirement (optional - can be overridden at operation level)
+security:
+  - BearerAuth: []
+
+paths:
+  # No authentication required
+  /public/status:
+    get:
+      operationId: getPublicStatus
+      summary: Get API status
+      description: Public endpoint that requires no authentication
+      security: []  # Override global security to require no auth
+      responses:
+        '200':
+          description: API status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  version:
+                    type: string
+
+  # Single authentication method
+  /users/profile:
+    get:
+      operationId: getUserProfile
+      summary: Get user profile
+      description: Requires bearer token authentication
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Alternative authentication methods (OR logic)
+  /users/me:
+    get:
+      operationId: getCurrentUser
+      summary: Get current user
+      description: Requires either API key in header OR bearer token
+      security:
+        - ApiKeyHeader: []
+        - BearerAuth: []
+        - Oauth2Example: []
+      responses:
+        '200':
+          description: Current user information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  # Multiple authentication methods required (AND logic)
+  /admin/users:
+    get:
+      operationId: listAdminUsers
+      summary: List all users (admin only)
+      description: Requires both API key AND bearer token with admin scope
+      security:
+        - ApiKeyHeader: []
+          BearerAuth: []
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+
+
+  # Complex security combinations
+  /protected-resource:
+    get:
+      operationId: getProtectedResource
+      summary: Access protected resource
+      description: |
+        Multiple authentication options:
+        1. OAuth2 with read scope, OR
+        2. API key (header) + Basic auth, OR  
+        3. Bearer token + API key (cookie)
+      security:
+        - ApiKeyHeader: []
+          BasicAuth: []
+        - BearerAuth: []
+          ApiKeyCookie: []
+      responses:
+        '200':
+          description: Protected resource data
+
+  # Different auth methods for different operations
+  /documents:
+    get:
+      operationId: listDocuments
+      summary: List documents
+      description: Requires basic authentication
+      security:
+        - BasicAuth: []
+      responses:
+        '200':
+          description: List of documents
+
+    post:
+      operationId: createDocument
+      summary: Create document
+      description: Requires API key with bearer token
+      security:
+        - ApiKeyHeader: [write]
+          BearerAuth: []
+      responses:
+        '201':
+          description: Document created
+
+  # OpenID Connect authentication
+  /profile/detailed:
+    get:
+      operationId: getDetailedProfile
+      summary: Get detailed profile
+      description: Requires OpenID Connect authentication
+      security:
+        - OpenIDConnect: []
+      responses:
+        '200':
+          description: Detailed user profile
+
+  # API key variations
+  /data/query:
+    get:
+      operationId: queryDataWithApiKey
+      summary: Query data with API key
+      description: Accepts API key in header, query parameter, or cookie
+      security:
+        - ApiKeyHeader: []
+        - ApiKeyQuery: []
+        - ApiKeyCookie: []
+        - Raw: []
+      parameters:
+        - name: query
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Query results
+

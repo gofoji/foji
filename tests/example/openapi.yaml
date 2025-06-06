@@ -687,7 +687,6 @@ components:
       name: Authorization
       in: header
     CustomHeaderAuth:
-      x-raw-request: true
       type: apiKey
       in: header
       name: X-CUSTOM-HEADER
