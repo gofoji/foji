@@ -13,6 +13,7 @@ test:
 test_generate:
 	go run main.go weld openAPI -c tests/csvresponse/foji.yaml
 	go run main.go weld openAPI -c tests/example/foji.yaml
+	go run main.go weld openAPI -c tests/auth/foji.yaml
 	cd tests; go run tests_main.go
 
 test_gen: test_generate fmt
