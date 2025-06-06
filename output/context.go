@@ -120,6 +120,7 @@ type Imports stringlist.Strings
 // If the type is defined in a separate package the package is added to the import list.
 func (ii *Imports) CheckPackage(t, currentPackage string) string {
 	arrayPrefix := ""
+
 	if strings.HasPrefix(t, "[]") {
 		t = t[2:]
 		arrayPrefix = "[]"
