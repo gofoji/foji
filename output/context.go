@@ -119,10 +119,17 @@ type Imports stringlist.Strings
 // "github.com/domain/repo/package/subpackage.Type", "github.com/domain/repo/package/subpackage" => "Type"
 // If the type is defined in a separate package the package is added to the import list.
 func (ii *Imports) CheckPackage(t, currentPackage string) string {
+	arrayPrefix := ""
+
+	if strings.HasPrefix(t, "[]") {
+		t = t[2:]
+		arrayPrefix = "[]"
+	}
+
 	tt := strings.Split(t, ".")
 	// Base Type
 	if len(tt) == 1 {
-		return t
+		return arrayPrefix + t
 	}
 
 	prefix := ""
@@ -135,7 +142,7 @@ func (ii *Imports) CheckPackage(t, currentPackage string) string {
 
 	// Type defined in same package
 	if typePkg == currentPackage {
-		return prefix + tt[len(tt)-1]
+		return arrayPrefix + prefix + tt[len(tt)-1]
 	}
 
 	// Type defined in external package
@@ -144,10 +151,10 @@ func (ii *Imports) CheckPackage(t, currentPackage string) string {
 	pp := strings.Split(t, "/")
 
 	if len(pp) > 1 {
-		return prefix + pp[len(pp)-1]
+		return arrayPrefix + prefix + pp[len(pp)-1]
 	}
 
-	return t
+	return arrayPrefix + t
 }
 
 // Add filters duplicates and appends to the import list.

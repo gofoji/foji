@@ -31,7 +31,7 @@ type Operations interface {
 	GetAuthSimple2(ctx context.Context, user *ExampleAuth) error
 	GetAuthSimple2Maybe(ctx context.Context, user *ExampleAuth) error
 	GetAuthComplexMaybe(ctx context.Context, user *ExampleAuth) error
-	GetComplexSecurity(ctx context.Context, user *ExampleAuth) error
+	GetComplexSecurity(ctx context.Context, user *ExampleAuth) ([]TestInt, error)
 	AddForm(ctx context.Context, body AddFormRequest) (*FooBar, error)
 	AddMultipartForm(ctx context.Context, body AddMultipartFormRequest) (*FooBar, error)
 	HeaderResponse(ctx context.Context) (http.Header, error)
@@ -307,14 +307,14 @@ func (h OpenAPIHandlers) GetComplexSecurity(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	err = h.ops.GetComplexSecurity(r.Context(), user)
+	response, err := h.ops.GetComplexSecurity(r.Context(), user)
 	if err != nil {
 		httputil.ErrorHandler(w, r, err)
 
 		return
 	}
 
-	w.WriteHeader(200)
+	httputil.JSONWrite(w, r, 200, response)
 }
 
 // AddForm
