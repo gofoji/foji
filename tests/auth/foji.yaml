@@ -1,0 +1,12 @@
+files:
+  api:
+    files:
+      - "tests/auth/openapi.yaml"
+processes:
+  openAPI:
+    params:
+      Package: foji/tests/auth
+      Auth: tests/example.ExampleAuth
+    OpenAPIFile:
+      'tests/auth/http_handler_gen.go': foji/openapi/handler.go.tpl
+      'tests/auth/model_gen.go': foji/openapi/model.go.tpl

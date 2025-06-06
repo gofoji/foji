@@ -166,9 +166,7 @@ type (
 {{- end}}
 
 {{- if .HasBasicAuth }}
-
-	// BasicAuthenticator takes a user/pass pair and returns the authenticated user.
-	type BasicAuthenticator = func(user,pass string) (*{{ $.CheckPackage $.Params.Auth $package }}, error)
+	BasicAuthenticator = httputil.BasicAuthenticatorFunc[*{{ $.CheckPackage $.Params.Auth $package }}]
 {{- end}}
 
 )
@@ -213,7 +211,17 @@ type Mux interface {
 func RegisterHTTP(ops Operations, r Mux
 {{- if .HasAuthentication }}
 	{{- range $security, $value := .API.Components.SecuritySchemes -}}
-    , {{ camel $security }}Auth {{ if $.SecurityHasExtension $value "x-raw-auth" -}} RequestAuthenticator {{ else }} TokenAuthenticator {{end -}}
+    , {{ camel $security }}Auth {{ if $.SecurityHasExtension $value "x-raw-auth" -}}
+			RequestAuthenticator
+			{{- else if eq $value.Value.Scheme "basic" -}}
+			BasicAuthenticator
+	        {{- else if eq $value.Value.Scheme "bearer" -}}
+			TokenAuthenticator
+	        {{- else if eq $value.Value.Type "apiKey" -}}
+			TokenAuthenticator
+			{{- else -}}
+			RequestAuthenticator
+		{{- end -}}
 	{{- end }}
 	{{- if .HasAuthorization -}}
     , authorize AuthorizeFunc
@@ -224,12 +232,17 @@ func RegisterHTTP(ops Operations, r Mux
 		ops: ops,
 {{- if .HasAuthentication }}
 	{{- range $security, $value := .API.Components.SecuritySchemes }}
-        {{ camel $security }}Auth: {{- if $.SecurityHasExtension $value "x-raw-auth" -}} {{ camel $security }}Auth {{ else -}}
-			{{- if eq $value.Value.Scheme "bearer"}}
+        {{ camel $security }}Auth:
+		{{- if $.SecurityHasExtension $value "x-raw-auth" -}}
+			{{ camel $security }}Auth
+			{{- else if eq $value.Value.Scheme "bearer"}}
 		httputil.BearerAuth("Authorization",  {{ camel $security }}Auth)
-			{{- else -}}
+	        {{- else if eq $value.Value.Scheme "basic"}}
+		httputil.BasicAuth({{ camel $security }}Auth)
+			{{- else if not (empty $value.Value.In) -}}
 		httputil.{{ pascal $value.Value.In}}Auth("{{ $value.Value.Name }}",  {{ camel $security }}Auth)
-			{{- end -}}
+			{{- else -}}
+		{{ camel $security }}Auth
 	    {{- end -}},
 	{{- end -}}
 	{{- if .HasAuthorization }}
