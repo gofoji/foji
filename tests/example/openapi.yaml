@@ -100,6 +100,21 @@ paths:
           schema:
             type: integer
             format: int64
+        - name: k6
+          in: query
+          required: true
+          schema:
+            type: array
+            items:
+              type: string
+        - name: k7
+          in: query
+          required: true
+          schema:
+            type: array
+            items:
+              type: string
+              format: uuid
       responses:
         "200":
           description: 'Example'

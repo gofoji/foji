@@ -66,7 +66,7 @@ func (s *Service) GetExampleOptional(ctx context.Context, k1 *string, k2 *uuid.U
 	return nil, nil
 }
 
-func (s *Service) GetExampleQuery(ctx context.Context, k1 string, k2 uuid.UUID, k3 time.Time, k4 int32, k5 int64) (*Example, error) {
+func (s *Service) GetExampleQuery(ctx context.Context, k1 string, k2 uuid.UUID, k3 time.Time, k4 int32, k5 int64, k6 []string, k7 []uuid.UUID) (*Example, error) {
 	return nil, nil
 }
 

@@ -3,7 +3,7 @@ module tests
 go 1.24
 
 require (
-	github.com/bir/iken v0.8.8
+	github.com/bir/iken v0.8.9
 	github.com/google/uuid v1.6.0
 	github.com/stretchr/testify v1.10.0
 )
