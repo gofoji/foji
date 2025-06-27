@@ -41,6 +41,8 @@
     {{- if $param.Value.Schema.Value.Type.Is "array" -}}
         {{- if eq $goType "[]int32" -}}
             {{- $getRequiredParamFunction = "GetInt32Array" -}}
+		{{- else if eq $goType "[]uuid.UUID" }}
+			{{- $getRequiredParamFunction = "GetUUIDArray" -}}
         {{- else if $isArrayEnum }}
             {{- $getRequiredParamFunction = "GetEnumArray" -}}
         {{- else }}

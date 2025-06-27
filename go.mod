@@ -7,7 +7,7 @@ toolchain go1.24.1
 require (
 	github.com/codemodus/kace v0.5.1
 	github.com/getkin/kin-openapi v0.132.0
-	github.com/go-sprout/sprout v1.0.0
+	github.com/go-sprout/sprout v1.0.1
 	github.com/gofoji/plates v0.3.2
 	github.com/gofoji/plates/plush v0.3.3
 	github.com/jackc/pgx/v5 v5.7.5
@@ -21,7 +21,7 @@ require (
 
 require (
 	dario.cat/mergo v1.0.2 // indirect
-	github.com/Masterminds/semver/v3 v3.3.1 // indirect
+	github.com/Masterminds/semver/v3 v3.4.0 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fatih/structs v1.1.0 // indirect

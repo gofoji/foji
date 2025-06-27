@@ -40,7 +40,7 @@ type Operations interface {
 	GetExampleParams(ctx context.Context, k1 string, k2 uuid.UUID, k3 time.Time, k4 int32, k5 int64, enumTest GetExampleParamsEnumTest) (*Example, error)
 	NoResponse(ctx context.Context, body Foo) error
 	GetExampleOptional(ctx context.Context, k1 *string, k2 *uuid.UUID, k3 *time.Time, k4 *int32, k5 *int64, k5Default int64) (*Example, error)
-	GetExampleQuery(ctx context.Context, k1 string, k2 uuid.UUID, k3 time.Time, k4 int32, k5 int64) (*Example, error)
+	GetExampleQuery(ctx context.Context, k1 string, k2 uuid.UUID, k3 time.Time, k4 int32, k5 int64, k6 []string, k7 []uuid.UUID) (*Example, error)
 	GetRawRequest(r *http.Request, vehicle GetRawRequestVehicle) (*Example, error)
 	GetRawRequestResponse(r *http.Request, w http.ResponseWriter, vehicle GetRawRequestResponseVehicle) (*Example, error)
 	GetRawRequestResponseAndHeaders(r *http.Request, w http.ResponseWriter, vehicle GetRawRequestResponseAndHeadersVehicle) (*Example, http.Header, error)
@@ -633,13 +633,23 @@ func (h OpenAPIHandlers) GetExampleQuery(w http.ResponseWriter, r *http.Request)
 		validationErrors.Add("k5", err)
 	}
 
+	k6, _, err := params.GetStringArrayQuery(r, "k6", true)
+	if err != nil {
+		validationErrors.Add("k6", err)
+	}
+
+	k7, _, err := params.GetUUIDArrayQuery(r, "k7", true)
+	if err != nil {
+		validationErrors.Add("k7", err)
+	}
+
 	if validationErrors != nil {
 		httputil.ErrorHandler(w, r, validationErrors.GetErr())
 
 		return
 	}
 
-	response, err := h.ops.GetExampleQuery(r.Context(), k1, k2, k3, k4, k5)
+	response, err := h.ops.GetExampleQuery(r.Context(), k1, k2, k3, k4, k5, k6, k7)
 	if err != nil {
 		httputil.ErrorHandler(w, r, err)
 
