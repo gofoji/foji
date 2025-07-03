@@ -215,6 +215,7 @@ type {{ pascal $key }} {{ $.GetType $.PackageName (pascal (print $typeName " Ite
     {{- end }}
 
 {{- $hasValidation := $.HasValidation $schema -}}
+{{- $hasRequired := $.HasRequiredProperties $schema -}}
 
 {{- /* Nested Types */}}
     {{- range $key, $schemaProp := $.SchemaProperties $schema }}
@@ -259,10 +260,10 @@ var {{ camel $key }}Pattern = regexp.MustCompile(`{{ $schema.Value.Pattern }}`)
     {{- end -}}
 
 {{if eq $mediaType "application/json" }}
-    {{- if or $hasValidation $schema.Value.Required (.SchemaPropertiesHaveDefaults $schema)}}
+    {{- if or $hasValidation $hasRequired (.SchemaPropertiesHaveDefaults $schema)}}
 
 func (p *{{ pascal $key }}) UnmarshalJSON(b []byte) error {
-        {{- if or $schema.Value.Required (.SchemaPropertiesHaveDefaults $schema) }}
+        {{- if or $hasRequired (.SchemaPropertiesHaveDefaults $schema) }}
     var requiredCheck map[string]any
 
     if err := json.Unmarshal(b, &requiredCheck); err != nil {
@@ -270,7 +271,7 @@ func (p *{{ pascal $key }}) UnmarshalJSON(b []byte) error {
     }
 
     var validationErrors validation.Errors
-            {{ range $field := $schema.Value.Required }}
+            {{ range $field, $schemaProp := ($.RequiredProperties $schema) }}
     if _, ok := requiredCheck["{{ $field }}"]; !ok {
         validationErrors.Add("{{ $field }}", ErrMissingRequiredField)
     }

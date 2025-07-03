@@ -315,9 +315,59 @@ func (o *OpenAPIFileContext) IsDefaultEnum(name string, s *openapi3.SchemaRef) b
 	return !ok
 }
 
+func (o *OpenAPIFileContext) HasRequiredProperties(s *openapi3.SchemaRef) bool {
+	return len(o.RequiredProperties(s)) > 0
+}
+
 // IsRequiredProperty helper that checks if a property is required.
 func (o *OpenAPIFileContext) IsRequiredProperty(name string, s *openapi3.SchemaRef) bool {
-	return slices.Contains(s.Value.Required, name)
+	// property is required if it is listed in the schema's required properties
+	if slices.Contains(s.Value.Required, name) {
+		return true
+	}
+
+	// property is required if any of the allOf schemas require it
+	for _, subSchema := range s.Value.AllOf {
+		if slices.Contains(subSchema.Value.Required, name) {
+			return true
+		}
+	}
+
+	// property is required if there is at least one anyOf schema and they all require the field
+	anyOfWithoutProp := false
+	for _, subSchema := range s.Value.AnyOf {
+		if !slices.Contains(subSchema.Value.Required, name) {
+			anyOfWithoutProp = true
+		}
+	}
+	if !anyOfWithoutProp && len(s.Value.AnyOf) > 0 {
+		return true
+	}
+
+	// property is required if there is at least one oneOf schema and they all require the field
+	oneOfWithoutProp := false
+	for _, subSchema := range s.Value.OneOf {
+		if !slices.Contains(subSchema.Value.Required, name) {
+			oneOfWithoutProp = true
+		}
+	}
+	if !oneOfWithoutProp && len(s.Value.OneOf) > 0 {
+		return true
+	}
+
+	return false
+}
+
+func (o *OpenAPIFileContext) RequiredProperties(schema *openapi3.SchemaRef) openapi3.Schemas {
+	out := openapi3.Schemas{}
+
+	for name, ref := range o.SchemaProperties(schema) {
+		if o.IsRequiredProperty(name, schema) {
+			out[name] = ref
+		}
+	}
+
+	return out
 }
 
 func (o *OpenAPIFileContext) SchemaPropertiesHaveDefaults(schema *openapi3.SchemaRef) bool {
