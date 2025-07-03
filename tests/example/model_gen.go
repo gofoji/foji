@@ -31,16 +31,20 @@ type Bar struct {
 var barBarsPattern = regexp.MustCompile(`(b1|b2)`)
 
 func (p *Bar) UnmarshalJSON(b []byte) error {
+	var err error
+
 	type BarJSON Bar
 	var parseObject BarJSON
 
-	if err := json.Unmarshal(b, &parseObject); err != nil {
+	err = json.Unmarshal(b, &parseObject)
+	if err != nil {
 		return validation.Error{err.Error(), fmt.Errorf("Bar.UnmarshalJSON: `%v`: %w", string(b), err)}
 	}
 
 	v := Bar(parseObject)
 
-	if err := v.Validate(); err != nil {
+	err = v.Validate()
+	if err != nil {
 		return err
 	}
 
@@ -50,7 +54,8 @@ func (p *Bar) UnmarshalJSON(b []byte) error {
 }
 
 func (p Bar) MarshalJSON() ([]byte, error) {
-	if err := p.Validate(); err != nil {
+	err := p.Validate()
+	if err != nil {
 		return nil, err
 	}
 
@@ -96,9 +101,11 @@ type DefaultWithoutRequired struct {
 }
 
 func (p *DefaultWithoutRequired) UnmarshalJSON(b []byte) error {
+	var err error
 	var requiredCheck map[string]any
 
-	if err := json.Unmarshal(b, &requiredCheck); err != nil {
+	err = json.Unmarshal(b, &requiredCheck)
+	if err != nil {
 		return validation.Error{err.Error(), fmt.Errorf("DefaultWithoutRequired.UnmarshalJSON Required: `%v`: %w", string(b), err)}
 	}
 
@@ -111,7 +118,8 @@ func (p *DefaultWithoutRequired) UnmarshalJSON(b []byte) error {
 	type DefaultWithoutRequiredJSON DefaultWithoutRequired
 	var parseObject DefaultWithoutRequiredJSON
 
-	if err := json.Unmarshal(b, &parseObject); err != nil {
+	err = json.Unmarshal(b, &parseObject)
+	if err != nil {
 		return validation.Error{err.Error(), fmt.Errorf("DefaultWithoutRequired.UnmarshalJSON: `%v`: %w", string(b), err)}
 	}
 
@@ -139,9 +147,11 @@ type Example struct {
 }
 
 func (p *Example) UnmarshalJSON(b []byte) error {
+	var err error
 	var requiredCheck map[string]any
 
-	if err := json.Unmarshal(b, &requiredCheck); err != nil {
+	err = json.Unmarshal(b, &requiredCheck)
+	if err != nil {
 		return validation.Error{err.Error(), fmt.Errorf("Example.UnmarshalJSON Required: `%v`: %w", string(b), err)}
 	}
 
@@ -158,7 +168,8 @@ func (p *Example) UnmarshalJSON(b []byte) error {
 	type ExampleJSON Example
 	var parseObject ExampleJSON
 
-	if err := json.Unmarshal(b, &parseObject); err != nil {
+	err = json.Unmarshal(b, &parseObject)
+	if err != nil {
 		return validation.Error{err.Error(), fmt.Errorf("Example.UnmarshalJSON: `%v`: %w", string(b), err)}
 	}
 
@@ -177,9 +188,11 @@ type Examples struct {
 }
 
 func (p *Examples) UnmarshalJSON(b []byte) error {
+	var err error
 	var requiredCheck map[string]any
 
-	if err := json.Unmarshal(b, &requiredCheck); err != nil {
+	err = json.Unmarshal(b, &requiredCheck)
+	if err != nil {
 		return validation.Error{err.Error(), fmt.Errorf("Examples.UnmarshalJSON Required: `%v`: %w", string(b), err)}
 	}
 
@@ -196,7 +209,8 @@ func (p *Examples) UnmarshalJSON(b []byte) error {
 	type ExamplesJSON Examples
 	var parseObject ExamplesJSON
 
-	if err := json.Unmarshal(b, &parseObject); err != nil {
+	err = json.Unmarshal(b, &parseObject)
+	if err != nil {
 		return validation.Error{err.Error(), fmt.Errorf("Examples.UnmarshalJSON: `%v`: %w", string(b), err)}
 	}
 
@@ -215,16 +229,20 @@ type Foo struct {
 }
 
 func (p *Foo) UnmarshalJSON(b []byte) error {
+	var err error
+
 	type FooJSON Foo
 	var parseObject FooJSON
 
-	if err := json.Unmarshal(b, &parseObject); err != nil {
+	err = json.Unmarshal(b, &parseObject)
+	if err != nil {
 		return validation.Error{err.Error(), fmt.Errorf("Foo.UnmarshalJSON: `%v`: %w", string(b), err)}
 	}
 
 	v := Foo(parseObject)
 
-	if err := v.Validate(); err != nil {
+	err = v.Validate()
+	if err != nil {
 		return err
 	}
 
@@ -234,7 +252,8 @@ func (p *Foo) UnmarshalJSON(b []byte) error {
 }
 
 func (p Foo) MarshalJSON() ([]byte, error) {
-	if err := p.Validate(); err != nil {
+	err := p.Validate()
+	if err != nil {
 		return nil, err
 	}
 
@@ -265,7 +284,7 @@ func (p Foo) ValidateFoos(err *validation.Errors) {
 //
 // OpenAPI Component Schema: FooBar
 type FooBar struct {
-	A    string    `json:"a,omitempty,omitzero"`
+	A    string    `json:"a"`
 	B    Season    `json:"b,omitempty,omitzero"`
 	Bars string    `json:"bars,omitempty,omitzero"`
 	C    IntValue  `json:"c,omitempty"`
@@ -275,16 +294,36 @@ type FooBar struct {
 var fooBarBarsPattern = regexp.MustCompile(`(b1|b2)`)
 
 func (p *FooBar) UnmarshalJSON(b []byte) error {
+	var err error
+	var requiredCheck map[string]any
+
+	err = json.Unmarshal(b, &requiredCheck)
+	if err != nil {
+		return validation.Error{err.Error(), fmt.Errorf("FooBar.UnmarshalJSON Required: `%v`: %w", string(b), err)}
+	}
+
+	var validationErrors validation.Errors
+
+	if _, ok := requiredCheck["a"]; !ok {
+		validationErrors.Add("a", ErrMissingRequiredField)
+	}
+
+	if validationErrors != nil {
+		return validationErrors.GetErr()
+	}
+
 	type FooBarJSON FooBar
 	var parseObject FooBarJSON
 
-	if err := json.Unmarshal(b, &parseObject); err != nil {
+	err = json.Unmarshal(b, &parseObject)
+	if err != nil {
 		return validation.Error{err.Error(), fmt.Errorf("FooBar.UnmarshalJSON: `%v`: %w", string(b), err)}
 	}
 
 	v := FooBar(parseObject)
 
-	if err := v.Validate(); err != nil {
+	err = v.Validate()
+	if err != nil {
 		return err
 	}
 
@@ -294,7 +333,8 @@ func (p *FooBar) UnmarshalJSON(b []byte) error {
 }
 
 func (p FooBar) MarshalJSON() ([]byte, error) {
-	if err := p.Validate(); err != nil {
+	err := p.Validate()
+	if err != nil {
 		return nil, err
 	}
 
@@ -362,16 +402,20 @@ type FooBarBuzz struct {
 var fooBarBuzzBarsPattern = regexp.MustCompile(`(b1|b2)`)
 
 func (p *FooBarBuzz) UnmarshalJSON(b []byte) error {
+	var err error
+
 	type FooBarBuzzJSON FooBarBuzz
 	var parseObject FooBarBuzzJSON
 
-	if err := json.Unmarshal(b, &parseObject); err != nil {
+	err = json.Unmarshal(b, &parseObject)
+	if err != nil {
 		return validation.Error{err.Error(), fmt.Errorf("FooBarBuzz.UnmarshalJSON: `%v`: %w", string(b), err)}
 	}
 
 	v := FooBarBuzz(parseObject)
 
-	if err := v.Validate(); err != nil {
+	err = v.Validate()
+	if err != nil {
 		return err
 	}
 
@@ -381,7 +425,8 @@ func (p *FooBarBuzz) UnmarshalJSON(b []byte) error {
 }
 
 func (p FooBarBuzz) MarshalJSON() ([]byte, error) {
-	if err := p.Validate(); err != nil {
+	err := p.Validate()
+	if err != nil {
 		return nil, err
 	}
 
@@ -441,16 +486,20 @@ type FooString string
 var fooStringPattern = regexp.MustCompile(`(f1|f2)`)
 
 func (p *FooString) UnmarshalJSON(b []byte) error {
+	var err error
+
 	type FooStringJSON FooString
 	var parseObject FooStringJSON
 
-	if err := json.Unmarshal(b, &parseObject); err != nil {
+	err = json.Unmarshal(b, &parseObject)
+	if err != nil {
 		return validation.Error{err.Error(), fmt.Errorf("FooString.UnmarshalJSON: `%v`: %w", string(b), err)}
 	}
 
 	v := FooString(parseObject)
 
-	if err := v.Validate(); err != nil {
+	err = v.Validate()
+	if err != nil {
 		return err
 	}
 
@@ -460,7 +509,8 @@ func (p *FooString) UnmarshalJSON(b []byte) error {
 }
 
 func (p FooString) MarshalJSON() ([]byte, error) {
-	if err := p.Validate(); err != nil {
+	err := p.Validate()
+	if err != nil {
 		return nil, err
 	}
 
@@ -489,16 +539,20 @@ func (p FooString) Validate() error {
 type IntValue int32
 
 func (p *IntValue) UnmarshalJSON(b []byte) error {
+	var err error
+
 	type IntValueJSON IntValue
 	var parseObject IntValueJSON
 
-	if err := json.Unmarshal(b, &parseObject); err != nil {
+	err = json.Unmarshal(b, &parseObject)
+	if err != nil {
 		return validation.Error{err.Error(), fmt.Errorf("IntValue.UnmarshalJSON: `%v`: %w", string(b), err)}
 	}
 
 	v := IntValue(parseObject)
 
-	if err := v.Validate(); err != nil {
+	err = v.Validate()
+	if err != nil {
 		return err
 	}
 
@@ -508,7 +562,8 @@ func (p *IntValue) UnmarshalJSON(b []byte) error {
 }
 
 func (p IntValue) MarshalJSON() ([]byte, error) {
-	if err := p.Validate(); err != nil {
+	err := p.Validate()
+	if err != nil {
 		return nil, err
 	}
 
@@ -553,16 +608,20 @@ type NotRequiredWithValidation struct {
 }
 
 func (p *NotRequiredWithValidation) UnmarshalJSON(b []byte) error {
+	var err error
+
 	type NotRequiredWithValidationJSON NotRequiredWithValidation
 	var parseObject NotRequiredWithValidationJSON
 
-	if err := json.Unmarshal(b, &parseObject); err != nil {
+	err = json.Unmarshal(b, &parseObject)
+	if err != nil {
 		return validation.Error{err.Error(), fmt.Errorf("NotRequiredWithValidation.UnmarshalJSON: `%v`: %w", string(b), err)}
 	}
 
 	v := NotRequiredWithValidation(parseObject)
 
-	if err := v.Validate(); err != nil {
+	err = v.Validate()
+	if err != nil {
 		return err
 	}
 
@@ -572,7 +631,8 @@ func (p *NotRequiredWithValidation) UnmarshalJSON(b []byte) error {
 }
 
 func (p NotRequiredWithValidation) MarshalJSON() ([]byte, error) {
-	if err := p.Validate(); err != nil {
+	err := p.Validate()
+	if err != nil {
 		return nil, err
 	}
 
@@ -633,16 +693,20 @@ type PatternsSubValue struct {
 }
 
 func (p *PatternsSubValue) UnmarshalJSON(b []byte) error {
+	var err error
+
 	type PatternsSubValueJSON PatternsSubValue
 	var parseObject PatternsSubValueJSON
 
-	if err := json.Unmarshal(b, &parseObject); err != nil {
+	err = json.Unmarshal(b, &parseObject)
+	if err != nil {
 		return validation.Error{err.Error(), fmt.Errorf("PatternsSubValue.UnmarshalJSON: `%v`: %w", string(b), err)}
 	}
 
 	v := PatternsSubValue(parseObject)
 
-	if err := v.Validate(); err != nil {
+	err = v.Validate()
+	if err != nil {
 		return err
 	}
 
@@ -652,7 +716,8 @@ func (p *PatternsSubValue) UnmarshalJSON(b []byte) error {
 }
 
 func (p PatternsSubValue) MarshalJSON() ([]byte, error) {
-	if err := p.Validate(); err != nil {
+	err := p.Validate()
+	if err != nil {
 		return nil, err
 	}
 
@@ -686,9 +751,11 @@ var (
 )
 
 func (p *Patterns) UnmarshalJSON(b []byte) error {
+	var err error
 	var requiredCheck map[string]any
 
-	if err := json.Unmarshal(b, &requiredCheck); err != nil {
+	err = json.Unmarshal(b, &requiredCheck)
+	if err != nil {
 		return validation.Error{err.Error(), fmt.Errorf("Patterns.UnmarshalJSON Required: `%v`: %w", string(b), err)}
 	}
 
@@ -721,7 +788,8 @@ func (p *Patterns) UnmarshalJSON(b []byte) error {
 	type PatternsJSON Patterns
 	var parseObject PatternsJSON
 
-	if err := json.Unmarshal(b, &parseObject); err != nil {
+	err = json.Unmarshal(b, &parseObject)
+	if err != nil {
 		return validation.Error{err.Error(), fmt.Errorf("Patterns.UnmarshalJSON: `%v`: %w", string(b), err)}
 	}
 
@@ -732,7 +800,8 @@ func (p *Patterns) UnmarshalJSON(b []byte) error {
 		v.State3 = &defaultVal
 	}
 
-	if err := v.Validate(); err != nil {
+	err = v.Validate()
+	if err != nil {
 		return err
 	}
 
@@ -742,7 +811,8 @@ func (p *Patterns) UnmarshalJSON(b []byte) error {
 }
 
 func (p Patterns) MarshalJSON() ([]byte, error) {
-	if err := p.Validate(); err != nil {
+	err := p.Validate()
+	if err != nil {
 		return nil, err
 	}
 
@@ -951,9 +1021,11 @@ type PlayerAlways struct {
 }
 
 func (p *PlayerAlways) UnmarshalJSON(b []byte) error {
+	var err error
 	var requiredCheck map[string]any
 
-	if err := json.Unmarshal(b, &requiredCheck); err != nil {
+	err = json.Unmarshal(b, &requiredCheck)
+	if err != nil {
 		return validation.Error{err.Error(), fmt.Errorf("PlayerAlways.UnmarshalJSON Required: `%v`: %w", string(b), err)}
 	}
 
@@ -970,7 +1042,8 @@ func (p *PlayerAlways) UnmarshalJSON(b []byte) error {
 	type PlayerAlwaysJSON PlayerAlways
 	var parseObject PlayerAlwaysJSON
 
-	if err := json.Unmarshal(b, &parseObject); err != nil {
+	err = json.Unmarshal(b, &parseObject)
+	if err != nil {
 		return validation.Error{err.Error(), fmt.Errorf("PlayerAlways.UnmarshalJSON: `%v`: %w", string(b), err)}
 	}
 
@@ -994,9 +1067,11 @@ type PlayerMaybe struct {
 }
 
 func (p *PlayerMaybe) UnmarshalJSON(b []byte) error {
+	var err error
 	var requiredCheck map[string]any
 
-	if err := json.Unmarshal(b, &requiredCheck); err != nil {
+	err = json.Unmarshal(b, &requiredCheck)
+	if err != nil {
 		return validation.Error{err.Error(), fmt.Errorf("PlayerMaybe.UnmarshalJSON Required: `%v`: %w", string(b), err)}
 	}
 
@@ -1013,7 +1088,8 @@ func (p *PlayerMaybe) UnmarshalJSON(b []byte) error {
 	type PlayerMaybeJSON PlayerMaybe
 	var parseObject PlayerMaybeJSON
 
-	if err := json.Unmarshal(b, &parseObject); err != nil {
+	err = json.Unmarshal(b, &parseObject)
+	if err != nil {
 		return validation.Error{err.Error(), fmt.Errorf("PlayerMaybe.UnmarshalJSON: `%v`: %w", string(b), err)}
 	}
 
@@ -1196,16 +1272,20 @@ type State string
 var statePattern = regexp.MustCompile(`(enabled|disabled)`)
 
 func (p *State) UnmarshalJSON(b []byte) error {
+	var err error
+
 	type StateJSON State
 	var parseObject StateJSON
 
-	if err := json.Unmarshal(b, &parseObject); err != nil {
+	err = json.Unmarshal(b, &parseObject)
+	if err != nil {
 		return validation.Error{err.Error(), fmt.Errorf("State.UnmarshalJSON: `%v`: %w", string(b), err)}
 	}
 
 	v := State(parseObject)
 
-	if err := v.Validate(); err != nil {
+	err = v.Validate()
+	if err != nil {
 		return err
 	}
 
@@ -1215,7 +1295,8 @@ func (p *State) UnmarshalJSON(b []byte) error {
 }
 
 func (p State) MarshalJSON() ([]byte, error) {
-	if err := p.Validate(); err != nil {
+	err := p.Validate()
+	if err != nil {
 		return nil, err
 	}
 
@@ -1254,16 +1335,20 @@ type SubPattern struct {
 }
 
 func (p *SubPattern) UnmarshalJSON(b []byte) error {
+	var err error
+
 	type SubPatternJSON SubPattern
 	var parseObject SubPatternJSON
 
-	if err := json.Unmarshal(b, &parseObject); err != nil {
+	err = json.Unmarshal(b, &parseObject)
+	if err != nil {
 		return validation.Error{err.Error(), fmt.Errorf("SubPattern.UnmarshalJSON: `%v`: %w", string(b), err)}
 	}
 
 	v := SubPattern(parseObject)
 
-	if err := v.Validate(); err != nil {
+	err = v.Validate()
+	if err != nil {
 		return err
 	}
 
@@ -1273,7 +1358,8 @@ func (p *SubPattern) UnmarshalJSON(b []byte) error {
 }
 
 func (p SubPattern) MarshalJSON() ([]byte, error) {
-	if err := p.Validate(); err != nil {
+	err := p.Validate()
+	if err != nil {
 		return nil, err
 	}
 
@@ -1836,16 +1922,20 @@ var (
 )
 
 func (p *ExampleKebabCaseField) UnmarshalJSON(b []byte) error {
+	var err error
+
 	type ExampleKebabCaseFieldJSON ExampleKebabCaseField
 	var parseObject ExampleKebabCaseFieldJSON
 
-	if err := json.Unmarshal(b, &parseObject); err != nil {
+	err = json.Unmarshal(b, &parseObject)
+	if err != nil {
 		return validation.Error{err.Error(), fmt.Errorf("ExampleKebabCaseField.UnmarshalJSON: `%v`: %w", string(b), err)}
 	}
 
 	v := ExampleKebabCaseField(parseObject)
 
-	if err := v.Validate(); err != nil {
+	err = v.Validate()
+	if err != nil {
 		return err
 	}
 
@@ -1855,7 +1945,8 @@ func (p *ExampleKebabCaseField) UnmarshalJSON(b []byte) error {
 }
 
 func (p ExampleKebabCaseField) MarshalJSON() ([]byte, error) {
-	if err := p.Validate(); err != nil {
+	err := p.Validate()
+	if err != nil {
 		return nil, err
 	}
 
@@ -2416,7 +2507,8 @@ func ParseFormAddFormRequest(r *http.Request) (AddFormRequest, error) {
 		return AddFormRequest{}, parseErrors.GetErr()
 	}
 
-	if err := v.Validate(); err != nil {
+	err = v.Validate()
+	if err != nil {
 		return AddFormRequest{}, err
 	}
 
@@ -2538,16 +2630,20 @@ type AddInlinedAllOfRequest struct {
 }
 
 func (p *AddInlinedAllOfRequest) UnmarshalJSON(b []byte) error {
+	var err error
+
 	type AddInlinedAllOfRequestJSON AddInlinedAllOfRequest
 	var parseObject AddInlinedAllOfRequestJSON
 
-	if err := json.Unmarshal(b, &parseObject); err != nil {
+	err = json.Unmarshal(b, &parseObject)
+	if err != nil {
 		return validation.Error{err.Error(), fmt.Errorf("AddInlinedAllOfRequest.UnmarshalJSON: `%v`: %w", string(b), err)}
 	}
 
 	v := AddInlinedAllOfRequest(parseObject)
 
-	if err := v.Validate(); err != nil {
+	err = v.Validate()
+	if err != nil {
 		return err
 	}
 
@@ -2557,7 +2653,8 @@ func (p *AddInlinedAllOfRequest) UnmarshalJSON(b []byte) error {
 }
 
 func (p AddInlinedAllOfRequest) MarshalJSON() ([]byte, error) {
-	if err := p.Validate(); err != nil {
+	err := p.Validate()
+	if err != nil {
 		return nil, err
 	}
 
@@ -2764,9 +2861,11 @@ func (e *AddInlinedBodyRequestF08Null) Scan(src interface{}) error {
 }
 
 func (p *AddInlinedBodyRequest) UnmarshalJSON(b []byte) error {
+	var err error
 	var requiredCheck map[string]any
 
-	if err := json.Unmarshal(b, &requiredCheck); err != nil {
+	err = json.Unmarshal(b, &requiredCheck)
+	if err != nil {
 		return validation.Error{err.Error(), fmt.Errorf("AddInlinedBodyRequest.UnmarshalJSON Required: `%v`: %w", string(b), err)}
 	}
 
@@ -2787,7 +2886,8 @@ func (p *AddInlinedBodyRequest) UnmarshalJSON(b []byte) error {
 	type AddInlinedBodyRequestJSON AddInlinedBodyRequest
 	var parseObject AddInlinedBodyRequestJSON
 
-	if err := json.Unmarshal(b, &parseObject); err != nil {
+	err = json.Unmarshal(b, &parseObject)
+	if err != nil {
 		return validation.Error{err.Error(), fmt.Errorf("AddInlinedBodyRequest.UnmarshalJSON: `%v`: %w", string(b), err)}
 	}
 
@@ -2829,7 +2929,8 @@ func (p *AddInlinedBodyRequest) UnmarshalJSON(b []byte) error {
 		v.F13Null = &defaultVal
 	}
 
-	if err := v.Validate(); err != nil {
+	err = v.Validate()
+	if err != nil {
 		return err
 	}
 
@@ -2839,7 +2940,8 @@ func (p *AddInlinedBodyRequest) UnmarshalJSON(b []byte) error {
 }
 
 func (p AddInlinedBodyRequest) MarshalJSON() ([]byte, error) {
-	if err := p.Validate(); err != nil {
+	err := p.Validate()
+	if err != nil {
 		return nil, err
 	}
 

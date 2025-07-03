@@ -394,7 +394,9 @@ func (h OpenAPIHandlers) AddInlinedAllOf(w http.ResponseWriter, r *http.Request)
 	logctx.AddStrToContext(r.Context(), "op", "AddInlinedAllOf")
 
 	var body AddInlinedAllOfRequest
-	if err = httputil.GetJSONBody(r.Body, &body); err != nil {
+
+	err = httputil.GetJSONBody(r.Body, &body)
+	if err != nil {
 		httputil.ErrorHandler(w, r, err)
 
 		return
@@ -417,7 +419,9 @@ func (h OpenAPIHandlers) AddInlinedBody(w http.ResponseWriter, r *http.Request) 
 	logctx.AddStrToContext(r.Context(), "op", "AddInlinedBody")
 
 	var body AddInlinedBodyRequest
-	if err = httputil.GetJSONBody(r.Body, &body); err != nil {
+
+	err = httputil.GetJSONBody(r.Body, &body)
+	if err != nil {
 		httputil.ErrorHandler(w, r, err)
 
 		return
@@ -498,7 +502,9 @@ func (h OpenAPIHandlers) NoResponse(w http.ResponseWriter, r *http.Request) {
 	logctx.AddStrToContext(r.Context(), "op", "noResponse")
 
 	var body Foo
-	if err = httputil.GetJSONBody(r.Body, &body); err != nil {
+
+	err = httputil.GetJSONBody(r.Body, &body)
+	if err != nil {
 		httputil.ErrorHandler(w, r, err)
 
 		return
