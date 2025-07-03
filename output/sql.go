@@ -86,6 +86,7 @@ type SQLContext struct {
 
 type SQLFileGroupContext struct {
 	SQLContext
+
 	Files []sql.File
 }
 

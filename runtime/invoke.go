@@ -36,7 +36,8 @@ func Invoke(file string, commandLine []string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	if err := cmd.Run(); err != nil {
+	err := cmd.Run()
+	if err != nil {
 		return fmt.Errorf("%w: error invoking post process command '%s %s'", err, name, strings.Join(args, " "))
 	}
 

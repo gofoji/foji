@@ -41,7 +41,8 @@ func Execute() {
 	rootCmd.AddCommand(weldCmd)
 	rootCmd.AddCommand(listCmd)
 
-	if err := rootCmd.Execute(); err != nil {
+	err := rootCmd.Execute()
+	if err != nil {
 		fmt.Println(err) //nolint
 		os.Exit(1)
 	}

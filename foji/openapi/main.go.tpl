@@ -72,7 +72,9 @@ func main() {
 		defer func() { httpServerExit <- 1 }()
 
 		l.Info().Msgf("Serving on: http://%s", httpServer.Addr)
-		if err := httpServer.ListenAndServe(); err != nil {
+
+		err := httpServer.ListenAndServe()
+		if err != nil {
 			if !errors.Is(err, http.ErrServerClosed) {
 				log.Error().Stack().Err(err).Msg("HTTP Server error")
 			}

@@ -118,7 +118,8 @@ func (w *Welder) protoProcess(simulate bool, p cfg.Process, ff []input.FileGroup
 }
 
 func (w *Welder) sqlProcess(simulate bool, p cfg.Process, ff []input.FileGroup) error {
-	if err := w.initDBConnection(); err != nil {
+	err := w.initDBConnection()
+	if err != nil {
 		return err
 	}
 
@@ -131,7 +132,8 @@ func (w *Welder) sqlProcess(simulate bool, p cfg.Process, ff []input.FileGroup) 
 }
 
 func (w *Welder) dbProcess(simulate bool, p cfg.Process, _ []input.FileGroup) error {
-	if err := w.initDBConnection(); err != nil {
+	err := w.initDBConnection()
+	if err != nil {
 		return err
 	}
 

@@ -24,9 +24,11 @@ type Example struct {
 }
 
 func (p *Example) UnmarshalJSON(b []byte) error {
+	var err error
 	var requiredCheck map[string]any
 
-	if err := json.Unmarshal(b, &requiredCheck); err != nil {
+	err = json.Unmarshal(b, &requiredCheck)
+	if err != nil {
 		return validation.Error{err.Error(), fmt.Errorf("Example.UnmarshalJSON Required: `%v`: %w", string(b), err)}
 	}
 
@@ -43,7 +45,8 @@ func (p *Example) UnmarshalJSON(b []byte) error {
 	type ExampleJSON Example
 	var parseObject ExampleJSON
 
-	if err := json.Unmarshal(b, &parseObject); err != nil {
+	err = json.Unmarshal(b, &parseObject)
+	if err != nil {
 		return validation.Error{err.Error(), fmt.Errorf("Example.UnmarshalJSON: `%v`: %w", string(b), err)}
 	}
 

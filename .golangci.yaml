@@ -14,6 +14,7 @@ linters:
     - nlreturn
     - varnamelen
     - wrapcheck
+    - wsl # superseeded by wsl_v5
   settings:
     cyclop:
       max-complexity: 15

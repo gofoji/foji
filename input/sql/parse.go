@@ -31,6 +31,7 @@ type Parser struct {
 
 type File struct {
 	input.File
+
 	Queries []Query
 }
 

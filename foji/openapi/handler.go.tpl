@@ -362,7 +362,9 @@ func (h OpenAPIHandlers) {{ pascal $op.OperationID}}(w http.ResponseWriter, r *h
 			{{- if $opBody.IsJson }}
 
 	var body {{ $bodyType }}
-	if err = httputil.GetJSONBody(r.Body, &body); err != nil {
+
+	err = httputil.GetJSONBody(r.Body, &body)
+	if err != nil {
 		httputil.ErrorHandler(w, r, err)
 
 		return

@@ -215,6 +215,7 @@ type {{ pascal $key }} {{ $.GetType $.PackageName (pascal (print $typeName " Ite
     {{- end }}
 
 {{- $hasValidation := $.HasValidation $schema -}}
+{{- $hasRequired := $.HasRequiredProperties $schema -}}
 
 {{- /* Nested Types */}}
     {{- range $key, $schemaProp := $.SchemaProperties $schema }}
@@ -259,18 +260,20 @@ var {{ camel $key }}Pattern = regexp.MustCompile(`{{ $schema.Value.Pattern }}`)
     {{- end -}}
 
 {{if eq $mediaType "application/json" }}
-    {{- if or $hasValidation $schema.Value.Required (.SchemaPropertiesHaveDefaults $schema)}}
+    {{- if or $hasValidation $hasRequired (.SchemaPropertiesHaveDefaults $schema)}}
 
 func (p *{{ pascal $key }}) UnmarshalJSON(b []byte) error {
-        {{- if or $schema.Value.Required (.SchemaPropertiesHaveDefaults $schema) }}
+    var err error
+        {{- if or $hasRequired (.SchemaPropertiesHaveDefaults $schema) }}
     var requiredCheck map[string]any
 
-    if err := json.Unmarshal(b, &requiredCheck); err != nil {
+    err = json.Unmarshal(b, &requiredCheck)
+    if err != nil {
         return validation.Error{err.Error(), fmt.Errorf("{{ pascal $key }}.UnmarshalJSON Required: `%v`: %w", string(b), err)}
     }
 
     var validationErrors validation.Errors
-            {{ range $field := $schema.Value.Required }}
+            {{ range $field, $schemaProp := ($.RequiredProperties $schema) }}
     if _, ok := requiredCheck["{{ $field }}"]; !ok {
         validationErrors.Add("{{ $field }}", ErrMissingRequiredField)
     }
@@ -284,7 +287,8 @@ func (p *{{ pascal $key }}) UnmarshalJSON(b []byte) error {
     type  {{ pascal $key }}JSON {{ pascal $key }}
     var parseObject {{ pascal $key }}JSON
 
-    if err := json.Unmarshal(b, &parseObject); err != nil {
+    err = json.Unmarshal(b, &parseObject)
+    if err != nil {
         return validation.Error{err.Error(), fmt.Errorf("{{ pascal $key }}.UnmarshalJSON: `%v`: %w", string(b), err)}
     }
 
@@ -321,7 +325,9 @@ func (p *{{ pascal $key }}) UnmarshalJSON(b []byte) error {
         {{end}}
 
         {{ if $hasValidation}}
-    if err := v.Validate(); err != nil {
+
+    err = v.Validate()
+    if err != nil {
         return err
     }
         {{ end }}
@@ -333,7 +339,8 @@ func (p *{{ pascal $key }}) UnmarshalJSON(b []byte) error {
 
         {{ if $hasValidation}}
 func (p {{ pascal $key }}) MarshalJSON() ([]byte, error) {
-    if err := p.Validate(); err != nil {
+    err := p.Validate()
+    if err != nil {
         return nil, err
     }
 
@@ -430,7 +437,8 @@ func ParseForm{{ pascal $key }}(r *http.Request) ({{ pascal $key }}, error) {
 	}
 
     {{ if $hasValidation}}
-    if err := v.Validate(); err != nil {
+    err = v.Validate()
+    if err != nil {
         return {{ pascal $key }}{}, err
     }
     {{ end }}

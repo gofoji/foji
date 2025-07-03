@@ -18,11 +18,13 @@ type (
 
 	Message struct {
 		*parser.Message
+
 		Fields []*Field
 	}
 
 	Field struct {
 		*parser.Field
+
 		Message *Message
 	}
 
@@ -30,6 +32,7 @@ type (
 
 	Enum struct {
 		*parser.Enum
+
 		Fields []*EnumField
 	}
 

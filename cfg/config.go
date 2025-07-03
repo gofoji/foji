@@ -44,6 +44,8 @@ type (
 
 	// Process encapsulates all data for executing a weld.
 	Process struct {
+		Output `yaml:",inline"`
+
 		// Used to make a bundle of processes, if populated all other attributes are ignored
 		Processes stringlist.Strings `yaml:"processes,omitempty,flow"`
 		// ID of the process (used for bundle processes), populated by Processes.Merge
@@ -64,7 +66,6 @@ type (
 		RootDir string `yaml:"rootDir,omitempty"`
 		// ID of shared resources used for file input
 		Resources stringlist.Strings `yaml:"resources,omitempty,flow"`
-		Output    `yaml:",inline"`
 	}
 
 	Config struct {

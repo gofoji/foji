@@ -15,6 +15,7 @@ import (
 
 type FileGroup struct {
 	cfg.FileInput
+
 	Files []File
 }
 

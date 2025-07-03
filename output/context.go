@@ -19,6 +19,7 @@ type Context struct {
 	RuntimeParams
 	// Process provides the details of the currently executing Process
 	cfg.Process
+
 	// Logger provides logging features to the context helpers and templates
 	Logger zerolog.Logger
 	// AbortError allows cancelling saving of a file.  See NotNeededIf.

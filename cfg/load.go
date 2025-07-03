@@ -49,7 +49,8 @@ func LoadYaml(source string) (Config, error) {
 
 	d := yaml.NewDecoder(strings.NewReader(source))
 
-	if err := d.Decode(&c); err != nil {
+	err := d.Decode(&c)
+	if err != nil {
 		return c, fmt.Errorf("can't decode yaml:%w", err)
 	}
 
