@@ -292,7 +292,8 @@ func (t *Time) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 
-	if err := json.Unmarshal(data, &t.Time); err != nil {
+	err := json.Unmarshal(data, &t.Time)
+	if err != nil {
 		return fmt.Errorf("null: couldn't unmarshal JSON: %w", err)
 	}
 
@@ -319,7 +320,9 @@ func (t *Time) UnmarshalText(text []byte) error {
 		t.Valid = false
 		return nil
 	}
-	if err := t.Time.UnmarshalText(text); err != nil {
+
+	err := t.Time.UnmarshalText(text)
+	if err != nil {
 		return fmt.Errorf("null: couldn't unmarshal text: %w", err)
 	}
 	t.Valid = true

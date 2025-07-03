@@ -104,11 +104,12 @@ func templateEngine() *plates.Factory {
 }
 
 type ProcessRunner struct {
+	*plates.Factory
+
 	l        zerolog.Logger
 	dir      string
 	fn       cfg.FileHandler
 	simulate bool
-	*plates.Factory
 }
 
 func NewProcessRunner(dir string, fn cfg.FileHandler, l zerolog.Logger, simulate bool) ProcessRunner {

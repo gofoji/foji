@@ -335,22 +335,26 @@ func (o *OpenAPIFileContext) IsRequiredProperty(name string, s *openapi3.SchemaR
 
 	// property is required if there is at least one anyOf schema and they all require the field
 	anyOfWithoutProp := false
+
 	for _, subSchema := range s.Value.AnyOf {
 		if !slices.Contains(subSchema.Value.Required, name) {
 			anyOfWithoutProp = true
 		}
 	}
+
 	if !anyOfWithoutProp && len(s.Value.AnyOf) > 0 {
 		return true
 	}
 
 	// property is required if there is at least one oneOf schema and they all require the field
 	oneOfWithoutProp := false
+
 	for _, subSchema := range s.Value.OneOf {
 		if !slices.Contains(subSchema.Value.Required, name) {
 			oneOfWithoutProp = true
 		}
 	}
+
 	if !oneOfWithoutProp && len(s.Value.OneOf) > 0 {
 		return true
 	}
@@ -517,6 +521,7 @@ func (o *OpenAPIFileContext) GetOpHappyResponse(pkg string, op *openapi3.Operati
 
 func (o *OpenAPIFileContext) OpParams(path *openapi3.PathItem, op *openapi3.Operation) openapi3.Parameters {
 	var out openapi3.Parameters
+
 	out = append(out, path.Parameters...)
 	out = append(out, op.Parameters...)
 

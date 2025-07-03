@@ -61,7 +61,8 @@ const (
 )
 
 func WriteToFile(source []byte, file string) error {
-	if err := os.MkdirAll(filepath.Dir(file), permRWXUser); err != nil {
+	err := os.MkdirAll(filepath.Dir(file), permRWXUser)
+	if err != nil {
 		return fmt.Errorf("create output directory:%w", err)
 	}
 
@@ -72,7 +73,8 @@ func WriteToFile(source []byte, file string) error {
 
 	_, err = f.Write(source)
 
-	if closeErr := f.Close(); closeErr != nil {
+	closeErr := f.Close()
+	if closeErr != nil {
 		return fmt.Errorf("closing file:%w", closeErr)
 	}
 

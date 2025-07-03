@@ -46,8 +46,9 @@ func (m MimeType) IsLongPollingOperation() bool {
 func (m MimeType) String() string { return string(m) }
 
 type OpResponse struct {
-	Key string
 	MimeType
+
+	Key       string
 	MediaType *openapi3.MediaType
 	GoType    string
 	Headers   []string
@@ -55,5 +56,6 @@ type OpResponse struct {
 
 type OpBody struct {
 	MimeType
+
 	Schema *openapi3.SchemaRef
 }

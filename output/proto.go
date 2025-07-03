@@ -61,16 +61,19 @@ func Proto(p cfg.Process, fn cfg.FileHandler, l zerolog.Logger, groups proto.PBF
 type ProtoContext struct {
 	Context
 	Imports
+
 	FileGroups proto.PBFileGroups
 }
 
 type ProtoFileGroupContext struct {
 	ProtoContext
+
 	FileGroup proto.PBFileGroup
 }
 
 type ProtoFileContext struct {
 	ProtoFileGroupContext
+
 	proto.PBFile
 }
 
