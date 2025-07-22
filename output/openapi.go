@@ -470,50 +470,64 @@ func happyStatusCode(key string) bool {
 	return key[0] == '2' || key[0] == '3'
 }
 
-//nolint:gocognit
 func (o *OpenAPIFileContext) GetOpHappyResponse(pkg string, op *openapi3.Operation) OpResponse {
 	supportedResponseContentTypes := []string{ApplicationJSON, ApplicationJSONL, TextPlain, TextHTML, TextCSV}
 
-	happyKey := "200"
+	// kin-openapi does not preserve response ordering, so we order here by "happy key"
+	// to make sure we choose a happy response deterministically
 
-	for key, r := range op.Responses.Map() {
-		if happyStatusCode(key) { //nolint:nestif
-			happyKey = key
+	happyKeys := []string{}
 
-			for _, mimeType := range supportedResponseContentTypes {
-				mediaType := r.Value.Content.Get(mimeType)
-				if mediaType != nil {
-					mime := MimeType(mimeType)
-					t := o.GetType(pkg, kace.Pascal(op.OperationID)+" Response", mediaType.Schema)
+	for key := range op.Responses.Map() {
+		if happyStatusCode(key) {
+			happyKeys = append(happyKeys, key)
+		}
+	}
 
-					if t == "" {
-						// Unknown type, use []byte by default
-						t = "[]byte"
-					}
+	slices.Sort(happyKeys)
 
-					var goType string
+	for _, key := range happyKeys {
+		r := op.Responses.Map()[key]
+		for _, mimeType := range supportedResponseContentTypes {
+			mediaType := r.Value.Content.Get(mimeType)
+			if mediaType != nil {
+				mime := MimeType(mimeType)
+				t := o.GetType(pkg, kace.Pascal(op.OperationID)+" Response", mediaType.Schema)
 
-					if strings.HasPrefix(t, "[]") || strings.HasPrefix(t, "map[") || slices.Contains(knownInterfaces, t) {
-						goType = t
-					} else {
-						goType = "*" + t
-					}
-
-					if r.Value.Headers != nil {
-						return OpResponse{Key: key, MimeType: mime, MediaType: mediaType, GoType: goType, Headers: slices.Collect(maps.Keys(r.Value.Headers))}
-					}
-
-					return OpResponse{Key: key, MimeType: mime, MediaType: mediaType, GoType: goType, Headers: []string{}}
+				if t == "" {
+					// Unknown type, use []byte by default
+					t = "[]byte"
 				}
+
+				var goType string
+
+				if strings.HasPrefix(t, "[]") || strings.HasPrefix(t, "map[") || slices.Contains(knownInterfaces, t) {
+					goType = t
+				} else {
+					goType = "*" + t
+				}
+
+				if r.Value.Headers != nil {
+					return OpResponse{Key: key, MimeType: mime, MediaType: mediaType, GoType: goType, Headers: slices.Collect(maps.Keys(r.Value.Headers))}
+				}
+
+				return OpResponse{Key: key, MimeType: mime, MediaType: mediaType, GoType: goType, Headers: []string{}}
 			}
 		}
 	}
 
 	// No response with a supported content type found, but maybe there's a response with headers only
-	for key, r := range op.Responses.Map() {
-		if happyStatusCode(key) && len(r.Value.Headers) > 0 {
+	for _, key := range happyKeys {
+		r := op.Responses.Map()[key]
+		if len(r.Value.Headers) > 0 {
 			return OpResponse{Key: key, MimeType: "", MediaType: nil, GoType: "", Headers: slices.Collect(maps.Keys(r.Value.Headers))}
 		}
+	}
+
+	happyKey := "200"
+	if len(happyKeys) > 0 {
+		// If none of the responses have a supported content type, use the first "happy" response
+		happyKey = happyKeys[0]
 	}
 
 	return OpResponse{Key: happyKey, MimeType: "", MediaType: nil, GoType: ""}
