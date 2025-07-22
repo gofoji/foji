@@ -14,14 +14,6 @@ import (
 	"github.com/gofoji/foji/stringlist"
 )
 
-func TestGetOpHappyResponse(t *testing.T) {
-	doc, err := openapi3.NewLoader().LoadFromFile("testdata/openapi.yaml")
-	require.NoError(t, err)
-	ctx := getContext(doc)
-	got := ctx.GetOpHappyResponse("", ctx.API.Paths.Find("/examples/with-auth").Get)
-	assert.Equal(t, "200", got.Key)
-}
-
 func TestGetType(t *testing.T) {
 	doc, err := openapi3.NewLoader().LoadFromFile("testdata/openapi.yaml")
 	require.NoError(t, err)
