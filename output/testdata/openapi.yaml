@@ -2,7 +2,30 @@ openapi: 3.0.2
 info:
   title: "Test"
   version: "1.0"
-paths: {}
+paths:
+  /examples/HappyPath:
+    get:
+      operationId: happyPath
+      security:
+        - HeaderAuth: [ "foo" ]
+        - HeaderAuth: [ "bar" ]
+        - Jwt: [ ]
+      responses:
+        "307":
+          description: 'Temporary redirect'
+        "308":
+          description: 'Permanent redirect'
+        "200":
+          description: OK
+
+  /examples/HappyPathCreate:
+    post:
+      operationId: happyPathCreate
+      responses:
+        "201":
+          description: OK
+
+
 components:
   schemas:
     MapTest:
