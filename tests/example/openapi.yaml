@@ -218,6 +218,27 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Example"
+  /examples/rawBody:
+    get:
+      operationId: getRawBody
+      x-raw-body: true
+      parameters:
+        - name: vehicle
+          in: query
+          required: true
+          schema:
+            type: string
+            enum:
+              - car
+              - truck
+              - bike
+      responses:
+        "200":
+          description: 'Example'
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Example"
   /examples/rawResponse:
     get:
       operationId: getRawResponse
