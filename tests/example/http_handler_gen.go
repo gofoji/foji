@@ -4,6 +4,7 @@ package example
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"time"
 
@@ -32,15 +33,22 @@ type Operations interface {
 	GetAuthSimple2Maybe(ctx context.Context, user *ExampleAuth) error
 	GetAuthComplexMaybe(ctx context.Context, user *ExampleAuth) error
 	GetComplexSecurity(ctx context.Context, user *ExampleAuth) ([]TestInt, error)
-	AddForm(ctx context.Context, body AddFormRequest) (*FooBar, error)
-	AddMultipartForm(ctx context.Context, body AddMultipartFormRequest) (*FooBar, error)
+	AddForm(ctx context.Context,
+		body AddFormRequest) (*FooBar, error)
+	AddMultipartForm(ctx context.Context,
+		body AddMultipartFormRequest) (*FooBar, error)
 	HeaderResponse(ctx context.Context) (http.Header, error)
-	AddInlinedAllOf(ctx context.Context, body AddInlinedAllOfRequest) (*FooBar, error)
-	AddInlinedBody(ctx context.Context, body AddInlinedBodyRequest) (*FooBar, error)
+	AddInlinedAllOf(ctx context.Context,
+		body AddInlinedAllOfRequest) (*FooBar, error)
+	AddInlinedBody(ctx context.Context,
+		body AddInlinedBodyRequest) (*FooBar, error)
 	GetExampleParams(ctx context.Context, k1 string, k2 uuid.UUID, k3 time.Time, k4 int32, k5 int64, enumTest GetExampleParamsEnumTest) (*Example, error)
-	NoResponse(ctx context.Context, body Foo) error
+	NoResponse(ctx context.Context,
+		body Foo) error
 	GetExampleOptional(ctx context.Context, k1 *string, k2 *uuid.UUID, k3 *time.Time, k4 *int32, k5 *int64, k5Default int64) (*Example, error)
 	GetExampleQuery(ctx context.Context, k1 string, k2 uuid.UUID, k3 time.Time, k4 int32, k5 int64, k6 []string, k7 []uuid.UUID) (*Example, error)
+	GetRawBody(ctx context.Context, vehicle GetRawBodyVehicle,
+		body io.ReadCloser) (*Example, error)
 	GetRawRequest(r *http.Request, vehicle GetRawRequestVehicle) (*Example, error)
 	GetRawRequestResponse(r *http.Request, w http.ResponseWriter, vehicle GetRawRequestResponseVehicle) (*Example, error)
 	GetRawRequestResponseAndHeaders(r *http.Request, w http.ResponseWriter, vehicle GetRawRequestResponseAndHeadersVehicle) (*Example, http.Header, error)
@@ -124,6 +132,7 @@ func RegisterHTTP(ops Operations, r Mux, bearerAuth TokenAuthenticator, customHe
 	r.Handle("POST /examples/noResponse", http.HandlerFunc(s.NoResponse))
 	r.Handle("GET /examples/optional", http.HandlerFunc(s.GetExampleOptional))
 	r.Handle("GET /examples/query", http.HandlerFunc(s.GetExampleQuery))
+	r.Handle("GET /examples/rawBody", http.HandlerFunc(s.GetRawBody))
 	r.Handle("GET /examples/rawRequest", http.HandlerFunc(s.GetRawRequest))
 	r.Handle("GET /examples/rawRequestResponse", http.HandlerFunc(s.GetRawRequestResponse))
 	r.Handle("GET /examples/rawRequestResponseAndHeaders", http.HandlerFunc(s.GetRawRequestResponseAndHeaders))
@@ -656,6 +665,36 @@ func (h OpenAPIHandlers) GetExampleQuery(w http.ResponseWriter, r *http.Request)
 	}
 
 	response, err := h.ops.GetExampleQuery(r.Context(), k1, k2, k3, k4, k5, k6, k7)
+	if err != nil {
+		httputil.ErrorHandler(w, r, err)
+
+		return
+	}
+
+	httputil.JSONWrite(w, r, 200, response)
+}
+
+// GetRawBody
+func (h OpenAPIHandlers) GetRawBody(w http.ResponseWriter, r *http.Request) {
+	var err error
+
+	logctx.AddStrToContext(r.Context(), "op", "getRawBody")
+
+	var validationErrors validation.Errors
+
+	vehicle, _, err := params.GetEnumQuery(r, "vehicle", true, NewGetRawBodyVehicle)
+	if err != nil {
+		validationErrors.Add("vehicle", err)
+	}
+
+	if validationErrors != nil {
+		httputil.ErrorHandler(w, r, validationErrors.GetErr())
+
+		return
+	}
+	body := r.Body
+
+	response, err := h.ops.GetRawBody(r.Context(), vehicle, body)
 	if err != nil {
 		httputil.ErrorHandler(w, r, err)
 
