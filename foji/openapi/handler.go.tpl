@@ -12,9 +12,9 @@
         {{ goToken (camel $param.Value.Name) -}}
         {{- if $.ParamIsOptionalType $param }} *{{ end }} {{ $.GetType $package $typeName $param.Value.Schema }},
     {{- end -}}
-	{{- if $.OpHasExtension $op "x-raw-body" }}
+	{{- if $.OpHasExtension $op "x-raw-body" -}}
         body io.ReadCloser
-    {{- else if not (empty $body) }}
+    {{- else if not (empty $body) -}}
         body {{ $.GetType $package (print $op.OperationID " Request") $body.Schema }}
     {{- end -}}
 	) (

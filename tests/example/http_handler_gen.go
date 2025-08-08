@@ -33,22 +33,16 @@ type Operations interface {
 	GetAuthSimple2Maybe(ctx context.Context, user *ExampleAuth) error
 	GetAuthComplexMaybe(ctx context.Context, user *ExampleAuth) error
 	GetComplexSecurity(ctx context.Context, user *ExampleAuth) ([]TestInt, error)
-	AddForm(ctx context.Context,
-		body AddFormRequest) (*FooBar, error)
-	AddMultipartForm(ctx context.Context,
-		body AddMultipartFormRequest) (*FooBar, error)
+	AddForm(ctx context.Context, body AddFormRequest) (*FooBar, error)
+	AddMultipartForm(ctx context.Context, body AddMultipartFormRequest) (*FooBar, error)
 	HeaderResponse(ctx context.Context) (http.Header, error)
-	AddInlinedAllOf(ctx context.Context,
-		body AddInlinedAllOfRequest) (*FooBar, error)
-	AddInlinedBody(ctx context.Context,
-		body AddInlinedBodyRequest) (*FooBar, error)
+	AddInlinedAllOf(ctx context.Context, body AddInlinedAllOfRequest) (*FooBar, error)
+	AddInlinedBody(ctx context.Context, body AddInlinedBodyRequest) (*FooBar, error)
 	GetExampleParams(ctx context.Context, k1 string, k2 uuid.UUID, k3 time.Time, k4 int32, k5 int64, enumTest GetExampleParamsEnumTest) (*Example, error)
-	NoResponse(ctx context.Context,
-		body Foo) error
+	NoResponse(ctx context.Context, body Foo) error
 	GetExampleOptional(ctx context.Context, k1 *string, k2 *uuid.UUID, k3 *time.Time, k4 *int32, k5 *int64, k5Default int64) (*Example, error)
 	GetExampleQuery(ctx context.Context, k1 string, k2 uuid.UUID, k3 time.Time, k4 int32, k5 int64, k6 []string, k7 []uuid.UUID) (*Example, error)
-	GetRawBody(ctx context.Context, vehicle GetRawBodyVehicle,
-		body io.ReadCloser) (*Example, error)
+	GetRawBody(ctx context.Context, vehicle GetRawBodyVehicle, body io.ReadCloser) (*Example, error)
 	GetRawRequest(r *http.Request, vehicle GetRawRequestVehicle) (*Example, error)
 	GetRawRequestResponse(r *http.Request, w http.ResponseWriter, vehicle GetRawRequestResponseVehicle) (*Example, error)
 	GetRawRequestResponseAndHeaders(r *http.Request, w http.ResponseWriter, vehicle GetRawRequestResponseAndHeadersVehicle) (*Example, http.Header, error)
