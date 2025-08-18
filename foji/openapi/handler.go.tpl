@@ -301,6 +301,7 @@ func (h OpenAPIHandlers) {{ pascal $op.OperationID}}(w http.ResponseWriter, r *h
 	var err error
         {{- $securityList := $.OpSecurity $op }}
 
+    logctx.SetOperation(r.Context(), "{{$op.OperationID}}")
 	logctx.AddStrToContext(r.Context(), "op", "{{$op.OperationID}}")
 
         {{- if $.IsSimpleAuth $op }}

@@ -48,6 +48,7 @@ func RegisterHTTP(ops Operations, r Mux, headerAuthAuth TokenAuthenticator) *Ope
 func (h OpenAPIHandlers) GetByteCsv(w http.ResponseWriter, r *http.Request) {
 	var err error
 
+	logctx.SetOperation(r.Context(), "getByteCSV")
 	logctx.AddStrToContext(r.Context(), "op", "getByteCSV")
 
 	response, err := h.ops.GetByteCsv(r.Context())
@@ -64,6 +65,7 @@ func (h OpenAPIHandlers) GetByteCsv(w http.ResponseWriter, r *http.Request) {
 func (h OpenAPIHandlers) GetReaderCsv(w http.ResponseWriter, r *http.Request) {
 	var err error
 
+	logctx.SetOperation(r.Context(), "getReaderCSV")
 	logctx.AddStrToContext(r.Context(), "op", "getReaderCSV")
 
 	response, err := h.ops.GetReaderCsv(r.Context())
@@ -80,6 +82,7 @@ func (h OpenAPIHandlers) GetReaderCsv(w http.ResponseWriter, r *http.Request) {
 func (h OpenAPIHandlers) GetStringCsv(w http.ResponseWriter, r *http.Request) {
 	var err error
 
+	logctx.SetOperation(r.Context(), "getStringCSV")
 	logctx.AddStrToContext(r.Context(), "op", "getStringCSV")
 
 	response, err := h.ops.GetStringCsv(r.Context())
