@@ -116,6 +116,7 @@ func RegisterHTTP(ops Operations, r Mux, apiKeyCookieAuth TokenAuthenticator, ap
 func (h OpenAPIHandlers) ListAdminUsers(w http.ResponseWriter, r *http.Request) {
 	var err error
 
+	logctx.SetOperation(r.Context(), "listAdminUsers")
 	logctx.AddStrToContext(r.Context(), "op", "listAdminUsers")
 
 	user, err := h.listAdminUsersSecurity.Auth(r)
@@ -141,6 +142,7 @@ func (h OpenAPIHandlers) ListAdminUsers(w http.ResponseWriter, r *http.Request) 
 func (h OpenAPIHandlers) QueryDataWithApiKey(w http.ResponseWriter, r *http.Request) {
 	var err error
 
+	logctx.SetOperation(r.Context(), "queryDataWithApiKey")
 	logctx.AddStrToContext(r.Context(), "op", "queryDataWithApiKey")
 
 	user, err := h.queryDataWithApiKeySecurity.Auth(r)
@@ -185,6 +187,7 @@ func (h OpenAPIHandlers) QueryDataWithApiKey(w http.ResponseWriter, r *http.Requ
 func (h OpenAPIHandlers) ListDocuments(w http.ResponseWriter, r *http.Request) {
 	var err error
 
+	logctx.SetOperation(r.Context(), "listDocuments")
 	logctx.AddStrToContext(r.Context(), "op", "listDocuments")
 
 	user, err := h.basicAuthAuth(r)
@@ -210,6 +213,7 @@ func (h OpenAPIHandlers) ListDocuments(w http.ResponseWriter, r *http.Request) {
 func (h OpenAPIHandlers) CreateDocument(w http.ResponseWriter, r *http.Request) {
 	var err error
 
+	logctx.SetOperation(r.Context(), "createDocument")
 	logctx.AddStrToContext(r.Context(), "op", "createDocument")
 
 	user, err := h.createDocumentSecurity.Auth(r)
@@ -235,6 +239,7 @@ func (h OpenAPIHandlers) CreateDocument(w http.ResponseWriter, r *http.Request) 
 func (h OpenAPIHandlers) GetDetailedProfile(w http.ResponseWriter, r *http.Request) {
 	var err error
 
+	logctx.SetOperation(r.Context(), "getDetailedProfile")
 	logctx.AddStrToContext(r.Context(), "op", "getDetailedProfile")
 
 	user, err := h.openIdconnectAuth(r)
@@ -264,6 +269,7 @@ func (h OpenAPIHandlers) GetDetailedProfile(w http.ResponseWriter, r *http.Reque
 func (h OpenAPIHandlers) GetProtectedResource(w http.ResponseWriter, r *http.Request) {
 	var err error
 
+	logctx.SetOperation(r.Context(), "getProtectedResource")
 	logctx.AddStrToContext(r.Context(), "op", "getProtectedResource")
 
 	user, err := h.getProtectedResourceSecurity.Auth(r)
@@ -289,6 +295,7 @@ func (h OpenAPIHandlers) GetProtectedResource(w http.ResponseWriter, r *http.Req
 func (h OpenAPIHandlers) GetPublicStatus(w http.ResponseWriter, r *http.Request) {
 	var err error
 
+	logctx.SetOperation(r.Context(), "getPublicStatus")
 	logctx.AddStrToContext(r.Context(), "op", "getPublicStatus")
 
 	response, err := h.ops.GetPublicStatus(r.Context())
@@ -307,6 +314,7 @@ func (h OpenAPIHandlers) GetPublicStatus(w http.ResponseWriter, r *http.Request)
 func (h OpenAPIHandlers) GetCurrentUser(w http.ResponseWriter, r *http.Request) {
 	var err error
 
+	logctx.SetOperation(r.Context(), "getCurrentUser")
 	logctx.AddStrToContext(r.Context(), "op", "getCurrentUser")
 
 	user, err := h.getCurrentUserSecurity.Auth(r)
@@ -332,6 +340,7 @@ func (h OpenAPIHandlers) GetCurrentUser(w http.ResponseWriter, r *http.Request) 
 func (h OpenAPIHandlers) GetUserProfile(w http.ResponseWriter, r *http.Request) {
 	var err error
 
+	logctx.SetOperation(r.Context(), "getUserProfile")
 	logctx.AddStrToContext(r.Context(), "op", "getUserProfile")
 
 	user, err := h.bearerAuthAuth(r)
