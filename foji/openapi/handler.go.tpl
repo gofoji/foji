@@ -12,8 +12,10 @@
         {{ goToken (camel $param.Value.Name) -}}
         {{- if $.ParamIsOptionalType $param }} *{{ end }} {{ $.GetType $package $typeName $param.Value.Schema }},
     {{- end -}}
-    {{- if isNotNil $body}}
-        {{- $type := $.GetType $package (print $op.OperationID " Request") $body.Schema }} body {{ $type  -}}
+	{{- if $.OpHasExtension $op "x-raw-body" -}}
+        body io.ReadCloser
+    {{- else if not (empty $body) -}}
+        body {{ $.GetType $package (print $op.OperationID " Request") $body.Schema }}
     {{- end -}}
 	) (
     {{- $response := $.GetOpHappyResponseType $package .RuntimeParams.op}}
@@ -357,8 +359,10 @@ func (h OpenAPIHandlers) {{ pascal $op.OperationID}}(w http.ResponseWriter, r *h
 	}
 		{{- end}}
 
-        {{- $hasBody := not (empty $opBody)}}
-		{{- if $hasBody }}
+        {{- $hasBody := or (not (empty $opBody)) ($.OpHasExtension $op "x-raw-body" ) }}
+		{{- if $.OpHasExtension $op "x-raw-body" }}
+	body := r.Body
+		{{- else if not (empty $opBody) }}
 			{{- $bodyType := $.GetType $package (print $op.OperationID " Request") $opBody.Schema}}
 			{{- if $opBody.IsJson }}
 

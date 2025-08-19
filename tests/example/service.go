@@ -2,6 +2,7 @@ package example
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"time"
 
@@ -71,6 +72,10 @@ func (s *Service) GetExampleQuery(ctx context.Context, k1 string, k2 uuid.UUID, 
 }
 
 func (s *Service) GetRawRequest(r *http.Request, vehicle GetRawRequestVehicle) (*Example, error) {
+	return nil, nil
+}
+
+func (s *Service) GetRawBody(ctx context.Context, vehicle GetRawBodyVehicle, body io.ReadCloser) (*Example, error) {
 	return nil, nil
 }
 
