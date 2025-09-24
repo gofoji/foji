@@ -75,7 +75,7 @@ func (s *Service) GetRawRequest(r *http.Request, vehicle GetRawRequestVehicle) (
 	return nil, nil
 }
 
-func (s *Service) GetRawBody(ctx context.Context, vehicle GetRawBodyVehicle, body io.ReadCloser) (*Example, error) {
+func (s *Service) GetRawBody(ctx context.Context, body io.ReadCloser) (*Example, error) {
 	return nil, nil
 }
 

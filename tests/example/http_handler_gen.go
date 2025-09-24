@@ -42,7 +42,7 @@ type Operations interface {
 	NoResponse(ctx context.Context, body Foo) error
 	GetExampleOptional(ctx context.Context, k1 *string, k2 *uuid.UUID, k3 *time.Time, k4 *int32, k5 *int64, k5Default int64) (*Example, error)
 	GetExampleQuery(ctx context.Context, k1 string, k2 uuid.UUID, k3 time.Time, k4 int32, k5 int64, k6 []string, k7 []uuid.UUID) (*Example, error)
-	GetRawBody(ctx context.Context, vehicle GetRawBodyVehicle, body io.ReadCloser) (*Example, error)
+	GetRawBody(ctx context.Context, body io.ReadCloser) (*Example, error)
 	GetRawRequest(r *http.Request, vehicle GetRawRequestVehicle) (*Example, error)
 	GetRawRequestResponse(r *http.Request, w http.ResponseWriter, vehicle GetRawRequestResponseVehicle) (*Example, error)
 	GetRawRequestResponseAndHeaders(r *http.Request, w http.ResponseWriter, vehicle GetRawRequestResponseAndHeadersVehicle) (*Example, http.Header, error)
@@ -673,22 +673,9 @@ func (h OpenAPIHandlers) GetRawBody(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	logctx.AddStrToContext(r.Context(), "op", "getRawBody")
-
-	var validationErrors validation.Errors
-
-	vehicle, _, err := params.GetEnumQuery(r, "vehicle", true, NewGetRawBodyVehicle)
-	if err != nil {
-		validationErrors.Add("vehicle", err)
-	}
-
-	if validationErrors != nil {
-		httputil.ErrorHandler(w, r, validationErrors.GetErr())
-
-		return
-	}
 	body := r.Body
 
-	response, err := h.ops.GetRawBody(r.Context(), vehicle, body)
+	response, err := h.ops.GetRawBody(r.Context(), body)
 	if err != nil {
 		httputil.ErrorHandler(w, r, err)
 

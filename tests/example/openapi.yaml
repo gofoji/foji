@@ -222,16 +222,11 @@ paths:
     get:
       operationId: getRawBody
       x-raw-body: true
-      parameters:
-        - name: vehicle
-          in: query
-          required: true
-          schema:
-            type: string
-            enum:
-              - car
-              - truck
-              - bike
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Foo'
       responses:
         "200":
           description: 'Example'
