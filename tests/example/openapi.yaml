@@ -218,6 +218,22 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Example"
+  /examples/rawBody:
+    get:
+      operationId: getRawBody
+      x-raw-body: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Foo'
+      responses:
+        "200":
+          description: 'Example'
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Example"
   /examples/rawResponse:
     get:
       operationId: getRawResponse
