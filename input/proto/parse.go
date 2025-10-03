@@ -150,7 +150,7 @@ func (d *PBFile) VisitMessage(n *parser.Message) bool {
 	return true
 }
 
-// The rest of these are required by the visitor interface.
+// VisitExtend The rest of these are required by the visitor interface.
 func (d *PBFile) VisitExtend(_ *parser.Extend) bool {
 	return true
 }
