@@ -508,7 +508,7 @@ func (o *OpenAPIFileContext) GetOpHappyResponse(pkg string, op *openapi3.Operati
 				}
 
 				if r.Value.Headers != nil {
-					return OpResponse{Key: key, MimeType: mime, MediaType: mediaType, GoType: goType, Headers: sortedHeaderKeys(r.Value.Headers)}
+					return OpResponse{Key: key, MimeType: mime, MediaType: mediaType, GoType: goType, Headers: mapKeysSorted(r.Value.Headers)}
 				}
 
 				return OpResponse{Key: key, MimeType: mime, MediaType: mediaType, GoType: goType, Headers: []string{}}
@@ -520,7 +520,7 @@ func (o *OpenAPIFileContext) GetOpHappyResponse(pkg string, op *openapi3.Operati
 	for _, key := range happyKeys {
 		r := op.Responses.Map()[key]
 		if len(r.Value.Headers) > 0 {
-			return OpResponse{Key: key, MimeType: "", MediaType: nil, GoType: "", Headers: sortedHeaderKeys(r.Value.Headers)}
+			return OpResponse{Key: key, MimeType: "", MediaType: nil, GoType: "", Headers: mapKeysSorted(r.Value.Headers)}
 		}
 	}
 
@@ -533,7 +533,7 @@ func (o *OpenAPIFileContext) GetOpHappyResponse(pkg string, op *openapi3.Operati
 	return OpResponse{Key: happyKey, MimeType: "", MediaType: nil, GoType: ""}
 }
 
-func sortedHeaderKeys(in openapi3.Headers) []string {
+func mapKeysSorted[T any](in map[string]T) []string {
 	out := slices.Collect(maps.Keys(in))
 	slices.Sort(out)
 
