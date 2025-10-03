@@ -161,7 +161,7 @@ func (f FileInput) Merge(from FileInput) FileInput {
 	return from
 }
 
-// Merge merges all properties from an ancestor TypeMap.
+// MergeTypesMaps Merge merges all properties from an ancestor TypeMap.
 func MergeTypesMaps(maps ...stringlist.StringMap) stringlist.StringMap {
 	result := stringlist.StringMap{}
 
