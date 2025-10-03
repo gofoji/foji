@@ -779,6 +779,13 @@ func (h OpenAPIHandlers) GetRawRequestResponseAndHeaders(w http.ResponseWriter, 
 		return
 	}
 
+	example1 := headers.Values("Example-1")
+	for _, v := range example1 {
+		if v != "" {
+			w.Header().Add("Example-1", v)
+		}
+	}
+
 	location := headers.Values("Location")
 	for _, v := range location {
 		if v != "" {
