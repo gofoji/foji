@@ -140,6 +140,7 @@ func RegisterHTTP(ops Operations, r Mux, bearerAuth TokenAuthenticator, customHe
 func (h OpenAPIHandlers) GetExamples(w http.ResponseWriter, r *http.Request) {
 	var err error
 
+	logctx.SetOperation(r.Context(), "getExamples")
 	logctx.AddStrToContext(r.Context(), "op", "getExamples")
 
 	response, err := h.ops.GetExamples(r.Context())
@@ -156,6 +157,7 @@ func (h OpenAPIHandlers) GetExamples(w http.ResponseWriter, r *http.Request) {
 func (h OpenAPIHandlers) GetAuthComplex(w http.ResponseWriter, r *http.Request) {
 	var err error
 
+	logctx.SetOperation(r.Context(), "getAuthComplex")
 	logctx.AddStrToContext(r.Context(), "op", "getAuthComplex")
 
 	user, err := h.getAuthComplexSecurity.Auth(r)
@@ -179,6 +181,7 @@ func (h OpenAPIHandlers) GetAuthComplex(w http.ResponseWriter, r *http.Request) 
 func (h OpenAPIHandlers) GetAuthSimple(w http.ResponseWriter, r *http.Request) {
 	var err error
 
+	logctx.SetOperation(r.Context(), "getAuthSimple")
 	logctx.AddStrToContext(r.Context(), "op", "getAuthSimple")
 
 	user, err := h.headerAuthAuth(r)
@@ -202,6 +205,7 @@ func (h OpenAPIHandlers) GetAuthSimple(w http.ResponseWriter, r *http.Request) {
 func (h OpenAPIHandlers) GetAuthSimpleMaybe(w http.ResponseWriter, r *http.Request) {
 	var err error
 
+	logctx.SetOperation(r.Context(), "getAuthSimpleMaybe")
 	logctx.AddStrToContext(r.Context(), "op", "getAuthSimpleMaybe")
 
 	user, err := h.getAuthSimpleMaybeSecurity.Auth(r)
@@ -225,6 +229,7 @@ func (h OpenAPIHandlers) GetAuthSimpleMaybe(w http.ResponseWriter, r *http.Reque
 func (h OpenAPIHandlers) GetAuthSimple2(w http.ResponseWriter, r *http.Request) {
 	var err error
 
+	logctx.SetOperation(r.Context(), "getAuthSimple2")
 	logctx.AddStrToContext(r.Context(), "op", "getAuthSimple2")
 
 	user, err := h.headerAuthAuth(r)
@@ -255,6 +260,7 @@ func (h OpenAPIHandlers) GetAuthSimple2(w http.ResponseWriter, r *http.Request) 
 func (h OpenAPIHandlers) GetAuthSimple2Maybe(w http.ResponseWriter, r *http.Request) {
 	var err error
 
+	logctx.SetOperation(r.Context(), "getAuthSimple2Maybe")
 	logctx.AddStrToContext(r.Context(), "op", "getAuthSimple2Maybe")
 
 	user, err := h.getAuthSimple2MaybeSecurity.Auth(r)
@@ -278,6 +284,7 @@ func (h OpenAPIHandlers) GetAuthSimple2Maybe(w http.ResponseWriter, r *http.Requ
 func (h OpenAPIHandlers) GetAuthComplexMaybe(w http.ResponseWriter, r *http.Request) {
 	var err error
 
+	logctx.SetOperation(r.Context(), "getAuthComplexMaybe")
 	logctx.AddStrToContext(r.Context(), "op", "getAuthComplexMaybe")
 
 	user, err := h.getAuthComplexMaybeSecurity.Auth(r)
@@ -301,6 +308,7 @@ func (h OpenAPIHandlers) GetAuthComplexMaybe(w http.ResponseWriter, r *http.Requ
 func (h OpenAPIHandlers) GetComplexSecurity(w http.ResponseWriter, r *http.Request) {
 	var err error
 
+	logctx.SetOperation(r.Context(), "getComplexSecurity")
 	logctx.AddStrToContext(r.Context(), "op", "getComplexSecurity")
 
 	user, err := h.getComplexSecuritySecurity.Auth(r)
@@ -324,6 +332,7 @@ func (h OpenAPIHandlers) GetComplexSecurity(w http.ResponseWriter, r *http.Reque
 func (h OpenAPIHandlers) AddForm(w http.ResponseWriter, r *http.Request) {
 	var err error
 
+	logctx.SetOperation(r.Context(), "AddForm")
 	logctx.AddStrToContext(r.Context(), "op", "AddForm")
 
 	body, err := ParseFormAddFormRequest(r)
@@ -347,6 +356,7 @@ func (h OpenAPIHandlers) AddForm(w http.ResponseWriter, r *http.Request) {
 func (h OpenAPIHandlers) AddMultipartForm(w http.ResponseWriter, r *http.Request) {
 	var err error
 
+	logctx.SetOperation(r.Context(), "AddMultipartForm")
 	logctx.AddStrToContext(r.Context(), "op", "AddMultipartForm")
 
 	body, err := ParseFormAddMultipartFormRequest(r)
@@ -371,6 +381,7 @@ func (h OpenAPIHandlers) AddMultipartForm(w http.ResponseWriter, r *http.Request
 func (h OpenAPIHandlers) HeaderResponse(w http.ResponseWriter, r *http.Request) {
 	var err error
 
+	logctx.SetOperation(r.Context(), "HeaderResponse")
 	logctx.AddStrToContext(r.Context(), "op", "HeaderResponse")
 
 	headers, err := h.ops.HeaderResponse(r.Context())
@@ -394,6 +405,7 @@ func (h OpenAPIHandlers) HeaderResponse(w http.ResponseWriter, r *http.Request) 
 func (h OpenAPIHandlers) AddInlinedAllOf(w http.ResponseWriter, r *http.Request) {
 	var err error
 
+	logctx.SetOperation(r.Context(), "AddInlinedAllOf")
 	logctx.AddStrToContext(r.Context(), "op", "AddInlinedAllOf")
 
 	var body AddInlinedAllOfRequest
@@ -419,6 +431,7 @@ func (h OpenAPIHandlers) AddInlinedAllOf(w http.ResponseWriter, r *http.Request)
 func (h OpenAPIHandlers) AddInlinedBody(w http.ResponseWriter, r *http.Request) {
 	var err error
 
+	logctx.SetOperation(r.Context(), "AddInlinedBody")
 	logctx.AddStrToContext(r.Context(), "op", "AddInlinedBody")
 
 	var body AddInlinedBodyRequest
@@ -444,6 +457,7 @@ func (h OpenAPIHandlers) AddInlinedBody(w http.ResponseWriter, r *http.Request) 
 func (h OpenAPIHandlers) GetExampleParams(w http.ResponseWriter, r *http.Request) {
 	var err error
 
+	logctx.SetOperation(r.Context(), "getExampleParams")
 	logctx.AddStrToContext(r.Context(), "op", "getExampleParams")
 
 	var validationErrors validation.Errors
@@ -502,6 +516,7 @@ func (h OpenAPIHandlers) GetExampleParams(w http.ResponseWriter, r *http.Request
 func (h OpenAPIHandlers) NoResponse(w http.ResponseWriter, r *http.Request) {
 	var err error
 
+	logctx.SetOperation(r.Context(), "noResponse")
 	logctx.AddStrToContext(r.Context(), "op", "noResponse")
 
 	var body Foo
@@ -527,6 +542,7 @@ func (h OpenAPIHandlers) NoResponse(w http.ResponseWriter, r *http.Request) {
 func (h OpenAPIHandlers) GetExampleOptional(w http.ResponseWriter, r *http.Request) {
 	var err error
 
+	logctx.SetOperation(r.Context(), "getExampleOptional")
 	logctx.AddStrToContext(r.Context(), "op", "getExampleOptional")
 
 	var validationErrors validation.Errors
@@ -613,6 +629,7 @@ func (h OpenAPIHandlers) GetExampleOptional(w http.ResponseWriter, r *http.Reque
 func (h OpenAPIHandlers) GetExampleQuery(w http.ResponseWriter, r *http.Request) {
 	var err error
 
+	logctx.SetOperation(r.Context(), "getExampleQuery")
 	logctx.AddStrToContext(r.Context(), "op", "getExampleQuery")
 
 	var validationErrors validation.Errors
@@ -689,6 +706,7 @@ func (h OpenAPIHandlers) GetRawBody(w http.ResponseWriter, r *http.Request) {
 func (h OpenAPIHandlers) GetRawRequest(w http.ResponseWriter, r *http.Request) {
 	var err error
 
+	logctx.SetOperation(r.Context(), "getRawRequest")
 	logctx.AddStrToContext(r.Context(), "op", "getRawRequest")
 
 	var validationErrors validation.Errors
@@ -718,6 +736,7 @@ func (h OpenAPIHandlers) GetRawRequest(w http.ResponseWriter, r *http.Request) {
 func (h OpenAPIHandlers) GetRawRequestResponse(w http.ResponseWriter, r *http.Request) {
 	var err error
 
+	logctx.SetOperation(r.Context(), "getRawRequestResponse")
 	logctx.AddStrToContext(r.Context(), "op", "getRawRequestResponse")
 
 	var validationErrors validation.Errors
@@ -754,6 +773,7 @@ func (h OpenAPIHandlers) GetRawRequestResponse(w http.ResponseWriter, r *http.Re
 func (h OpenAPIHandlers) GetRawRequestResponseAndHeaders(w http.ResponseWriter, r *http.Request) {
 	var err error
 
+	logctx.SetOperation(r.Context(), "getRawRequestResponseAndHeaders")
 	logctx.AddStrToContext(r.Context(), "op", "getRawRequestResponseAndHeaders")
 
 	var validationErrors validation.Errors
@@ -779,6 +799,13 @@ func (h OpenAPIHandlers) GetRawRequestResponseAndHeaders(w http.ResponseWriter, 
 		return
 	}
 
+	example1 := headers.Values("Example-1")
+	for _, v := range example1 {
+		if v != "" {
+			w.Header().Add("Example-1", v)
+		}
+	}
+
 	location := headers.Values("Location")
 	for _, v := range location {
 		if v != "" {
@@ -797,6 +824,7 @@ func (h OpenAPIHandlers) GetRawRequestResponseAndHeaders(w http.ResponseWriter, 
 func (h OpenAPIHandlers) GetRawResponse(w http.ResponseWriter, r *http.Request) {
 	var err error
 
+	logctx.SetOperation(r.Context(), "getRawResponse")
 	logctx.AddStrToContext(r.Context(), "op", "getRawResponse")
 
 	var validationErrors validation.Errors
@@ -833,6 +861,7 @@ func (h OpenAPIHandlers) GetRawResponse(w http.ResponseWriter, r *http.Request) 
 func (h OpenAPIHandlers) GetTest(w http.ResponseWriter, r *http.Request) {
 	var err error
 
+	logctx.SetOperation(r.Context(), "getTest")
 	logctx.AddStrToContext(r.Context(), "op", "getTest")
 
 	var validationErrors validation.Errors

@@ -7,12 +7,12 @@ jobs:
   build-test:
     strategy:
       matrix:
-        go-version: [ 1.24 ]
+        go-version: [ 1.25 ]
         os: [ ubuntu-latest ]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: ${{ matrix.go-version }}
 
@@ -29,4 +29,4 @@ jobs:
         with:
           files: ./coverage.txt
       - name: lint
-        uses: golangci/golangci-lint-action@v7
+        uses: golangci/golangci-lint-action@v8

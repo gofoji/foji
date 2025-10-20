@@ -300,6 +300,9 @@ paths:
               description: Redirect URL
               schema:
                 type: string
+            Example-1:
+              schema:
+                type: string
           content:
             application/json:
               schema:
