@@ -10,3 +10,4 @@ processes:
     OpenAPIFile:
       'tests/auth/http_handler_gen.go': foji/openapi/handler.go.tpl
       'tests/auth/model_gen.go': foji/openapi/model.go.tpl
+      'tests/auth/service_gen.go': foji/openapi/service.go.tpl

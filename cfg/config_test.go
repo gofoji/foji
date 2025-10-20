@@ -129,7 +129,7 @@ func TestOutput_All(t *testing.T) {
 		name string
 		want stringlist.StringMap
 	}{
-		{"openAPIStub", stringlist.StringMap{"!swagger.yaml": "foji/openapi/stub.yaml.tpl"}},
+		{"openAPIStub", stringlist.StringMap{"!openapi.yaml": "foji/openapi/stub.yaml.tpl"}},
 		{"embed", stringlist.StringMap{}},
 		{"groupTest", stringlist.StringMap{}},
 	}

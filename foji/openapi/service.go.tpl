@@ -34,13 +34,8 @@ import (
 {{- end }}
 )
 
-// New creates a new service instance.
-func New() *Service {
-	return &Service{}
-}
-
-// Service implements all business logic for {{ .PackageName }}.
-type Service struct {
+// GenService holds all Unsupported mock endpoints {{ .PackageName }}.
+type GenService struct {
 }
 
 {{- range $name, $path := .File.API.Paths.Map }}
@@ -49,13 +44,13 @@ type Service struct {
 {{ goDoc (pascal $op.OperationID) }}
 {{- goDoc $op.Summary }}
 {{- goDoc $op.Description }}
-func (s *Service) {{ pascal $op.OperationID}}(ctx context.Context,
-	{{- template "methodSignature" ($.WithParams "op" $op "path" $path "package" $.PackageName) }}{
-	{{- $response := $.GetOpHappyResponseType $.PackageName $op}}
-    return 
-	{{- if notEmpty $response -}}nil, {{ end -}}
-    {{- if gt (len ($.GetOpHappyResponseHeaders $.PackageName $op)) 0 -}}http.Header{}, {{ end -}} 
-	errors.ErrUnsupported
-}
+func (s *GenService) {{ pascal $op.OperationID}}(ctx context.Context,
+{{- template "methodSignature" ($.WithParams "op" $op "path" $path "package" $.PackageName) }}{
+{{- $response := $.GetOpHappyResponseType $.PackageName $op}}
+{{- if notEmpty $response }}
+	return nil, errors.ErrUnsupported
+{{- else }}
+	return errors.ErrUnsupported
+{{- end }}}
 	{{- end }}
 {{- end }}
