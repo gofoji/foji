@@ -4,8 +4,6 @@ package pg
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5"
@@ -16,10 +14,6 @@ type DB interface {
 	Exec(context.Context, string, ...any) (pgconn.CommandTag, error)
 	Query(context.Context, string, ...any) (pgx.Rows, error)
 	QueryRow(context.Context, string, ...any) pgx.Row
-}
-
-func IsErrNoRows(err error) bool {
-	return errors.Is(err, pgx.ErrNoRows) || errors.Is(err, sql.ErrNoRows)
 }
 
 type Repo struct {

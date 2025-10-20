@@ -6,7 +6,9 @@ import (
 	"tests/example"
 )
 
-type Service struct{}
+type Service struct {
+	GenService
+}
 
 func (s *Service) ListAdminUsers(ctx context.Context, user *example.ExampleAuth) ([]User, error) {
 	return nil, nil
