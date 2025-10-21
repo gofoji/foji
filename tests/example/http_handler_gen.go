@@ -4,6 +4,7 @@ package example
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"time"
 
@@ -41,6 +42,7 @@ type Operations interface {
 	NoResponse(ctx context.Context, body Foo) error
 	GetExampleOptional(ctx context.Context, k1 *string, k2 *uuid.UUID, k3 *time.Time, k4 *int32, k5 *int64, k5Default int64) (*Example, error)
 	GetExampleQuery(ctx context.Context, k1 string, k2 uuid.UUID, k3 time.Time, k4 int32, k5 int64, k6 []string, k7 []uuid.UUID) (*Example, error)
+	GetRawBody(ctx context.Context, body io.ReadCloser) (*Example, error)
 	GetRawRequest(r *http.Request, vehicle GetRawRequestVehicle) (*Example, error)
 	GetRawRequestResponse(r *http.Request, w http.ResponseWriter, vehicle GetRawRequestResponseVehicle) (*Example, error)
 	GetRawRequestResponseAndHeaders(r *http.Request, w http.ResponseWriter, vehicle GetRawRequestResponseAndHeadersVehicle) (*Example, http.Header, error)
@@ -124,6 +126,7 @@ func RegisterHTTP(ops Operations, r Mux, bearerAuth TokenAuthenticator, customHe
 	r.Handle("POST /examples/noResponse", http.HandlerFunc(s.NoResponse))
 	r.Handle("GET /examples/optional", http.HandlerFunc(s.GetExampleOptional))
 	r.Handle("GET /examples/query", http.HandlerFunc(s.GetExampleQuery))
+	r.Handle("GET /examples/rawBody", http.HandlerFunc(s.GetRawBody))
 	r.Handle("GET /examples/rawRequest", http.HandlerFunc(s.GetRawRequest))
 	r.Handle("GET /examples/rawRequestResponse", http.HandlerFunc(s.GetRawRequestResponse))
 	r.Handle("GET /examples/rawRequestResponseAndHeaders", http.HandlerFunc(s.GetRawRequestResponseAndHeaders))
@@ -673,6 +676,23 @@ func (h OpenAPIHandlers) GetExampleQuery(w http.ResponseWriter, r *http.Request)
 	}
 
 	response, err := h.ops.GetExampleQuery(r.Context(), k1, k2, k3, k4, k5, k6, k7)
+	if err != nil {
+		httputil.ErrorHandler(w, r, err)
+
+		return
+	}
+
+	httputil.JSONWrite(w, r, 200, response)
+}
+
+// GetRawBody
+func (h OpenAPIHandlers) GetRawBody(w http.ResponseWriter, r *http.Request) {
+	var err error
+
+	logctx.AddStrToContext(r.Context(), "op", "getRawBody")
+	body := r.Body
+
+	response, err := h.ops.GetRawBody(r.Context(), body)
 	if err != nil {
 		httputil.ErrorHandler(w, r, err)
 

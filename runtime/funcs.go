@@ -171,7 +171,7 @@ func ToSlice(vv ...any) any {
 	return ss
 }
 
-// Numbers numbers returns a slice of strings of the numbers start to end (inclusive).
+// Numbers returns a slice of strings of the numbers start to end (inclusive).
 func Numbers(start, end int) stringlist.Strings {
 	var ss stringlist.Strings
 
