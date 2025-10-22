@@ -7,7 +7,14 @@ import (
 	"tests/example"
 )
 
-// GenService holds all Unsupported mock endpoints auth.
+// GenService holds all Unsupported mock endpoints.  You can embed the mock service in real code.
+// Simple example:
+//
+//	type Service struct {
+//		GenService
+//	}
+//
+// This allows you to mock the service for a quick start and eventually delete this stub.
 type GenService struct{}
 
 // ListAdminUsers

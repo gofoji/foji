@@ -30,8 +30,6 @@ github.com/gobuffalo/plush/v5 v5.0.10/go.mod h1:C08u/VEqzzPBXFF/yqs40P/5Cvc/zlZs
 github.com/gobuffalo/tags/v3 v3.1.4 h1:X/ydLLPhgXV4h04Hp2xlbI2oc5MDaa7eub6zw8oHjsM=
 github.com/gobuffalo/tags/v3 v3.1.4/go.mod h1:ArRNo3ErlHO8BtdA0REaZxijuWnWzF6PUXngmMXd2I0=
 github.com/godbus/dbus/v5 v5.0.4/go.mod h1:xhWf0FNVPg57R7Z0UbKHbJfkEywrmjJnf7w5xrFpKfA=
-github.com/gofoji/plates v0.3.2 h1:JSkN4Fwvy196tAsWau1W8wetAbCMkaEsxXooJGqEtL4=
-github.com/gofoji/plates v0.3.2/go.mod h1:dMu4ksz2zTMiXjTPjKQ5KVbqPc7mAHucGGmLsMmlaeE=
 github.com/gofoji/plates v0.3.3 h1:MfBu5TtWHxxEBKoGngi1FA2MhcRfjm0odl6ouis9rhs=
 github.com/gofoji/plates v0.3.3/go.mod h1:KOsI6hw+5gWEc/9Igg7bAbauc3IhKQwdOAMgv+FYeMo=
 github.com/gofoji/plates/plush v0.3.4 h1:bIfDe7lyeiorGT0dfKtADTAyl78qFT8wvxqf+bQfsr0=
