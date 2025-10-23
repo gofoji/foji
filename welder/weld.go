@@ -9,6 +9,7 @@ import (
 	"github.com/rs/zerolog"
 
 	"github.com/gofoji/foji/cfg"
+	"github.com/gofoji/foji/errors"
 	"github.com/gofoji/foji/input"
 	"github.com/gofoji/foji/input/db"
 	"github.com/gofoji/foji/input/db/pg"
@@ -39,14 +40,6 @@ type Processor struct {
 	guard func(o cfg.Output) bool
 	run   func(simulate bool, p cfg.Process, ff []input.FileGroup) error
 }
-
-type Error string
-
-func (e Error) Error() string {
-	return string(e)
-}
-
-const ErrWeld = Error("welding error")
 
 // New creates a new welder.
 func New(logger zerolog.Logger, config cfg.Config, targets []cfg.Process) *Welder {
@@ -152,7 +145,7 @@ func (w *Welder) getResource(resource string) (input.FileGroup, error) {
 
 		in, ok := w.config.Files[resource]
 		if !ok {
-			return r.Loaded, fmt.Errorf("%w: invalid resource reference: %s", ErrWeld, resource)
+			return r.Loaded, fmt.Errorf("%w: invalid resource reference: %s", errors.ErrWeld, resource)
 		}
 
 		f, err := input.Parse(w.ctx, w.logger, in)
@@ -197,7 +190,7 @@ func (w *Welder) getProcessFiles(p cfg.Process) ([]input.FileGroup, error) {
 
 func (w *Welder) parseDB() (db.DB, error) {
 	if w.conn == nil {
-		return nil, fmt.Errorf("%w: db not initialized", ErrWeld)
+		return nil, fmt.Errorf("%w: db not initialized", errors.ErrWeld)
 	}
 
 	repo := pg.New(w.conn, w.logger)
@@ -216,7 +209,7 @@ func (w *Welder) initDBConnection() error {
 	}
 
 	if w.config.DB.Connection == "" {
-		return fmt.Errorf("%w: missing db.connection", ErrWeld)
+		return fmt.Errorf("%w: missing db.connection", errors.ErrWeld)
 	}
 
 	w.logger.Debug().Str("Connection", w.config.DB.Connection).Msg("Loading Database")

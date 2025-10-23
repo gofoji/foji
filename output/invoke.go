@@ -12,21 +12,10 @@ import (
 	"github.com/rs/zerolog"
 
 	"github.com/gofoji/foji/cfg"
+	fojiErrors "github.com/gofoji/foji/errors"
 	"github.com/gofoji/foji/foji"
 	"github.com/gofoji/foji/runtime"
 	"github.com/gofoji/foji/stringlist"
-)
-
-type Error string
-
-func (e Error) Error() string {
-	return string(e)
-}
-
-const (
-	ErrMissingRequirement = Error("requires")
-	ErrNotNeeded          = Error("not needed")
-	ErrPermExists         = Error("file exists")
 )
 
 type FuncMapper interface {
@@ -57,7 +46,7 @@ func (p ProcessRunner) process(tm stringlist.StringMap, data any) error {
 
 		err = p.template(targetFile, templateFile, data)
 		if err != nil {
-			if !errors.Is(err, ErrPermExists) {
+			if !errors.Is(err, fojiErrors.ErrPermExists) {
 				return err
 			}
 
@@ -144,7 +133,7 @@ func (p ProcessRunner) template(outputFile, templateFile string, data any) error
 
 	outputFile = p.dir + outputFile
 	if permFile && fileExists(outputFile) {
-		return ErrPermExists
+		return fojiErrors.ErrPermExists
 	}
 
 	if p.simulate {
@@ -158,13 +147,13 @@ func (p ProcessRunner) template(outputFile, templateFile string, data any) error
 
 	err = p.FromFile(templateFile).ToFile(outputFile, data)
 	if err != nil {
-		if errors.Is(err, ErrNotNeeded) {
+		if errors.Is(err, fojiErrors.ErrNotNeeded) {
 			l.Info().Err(err).Msg("skipped")
 
 			return nil
 		}
 
-		if errors.Is(err, ErrMissingRequirement) {
+		if errors.Is(err, fojiErrors.ErrMissingRequirement) {
 			return err //nolint:wrapcheck
 		}
 
