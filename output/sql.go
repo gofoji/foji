@@ -115,34 +115,7 @@ func (q SQLContext) GetType(c *sql.Param, pkg string) string {
 		return c.Type
 	}
 
-	pp := strings.Split(c.Path(), ".")
-	for i := range pp {
-		p := strings.Join(pp[i:], ".")
-
-		t, ok := q.Maps.Type["."+p]
-		if ok {
-			return q.CheckPackage(t, pkg)
-		}
-	}
-
-	if c.Nullable {
-		t, ok := q.Maps.Nullable[c.Type]
-		if ok {
-			return q.CheckPackage(t, pkg)
-		}
-	}
-
-	t, ok := q.Maps.Type[c.Type]
-	if ok {
-		return q.CheckPackage(t, pkg)
-	}
-
-	if strings.ContainsAny(c.Type, "./") {
-		// Qualified Name
-		return q.CheckPackage(c.Type, pkg)
-	}
-
-	return fmt.Sprintf("UNKNOWN:path(%s):type(%s)", c.Path(), c.Type)
+	return ResolveType(q.Maps, func(t string) string { return q.CheckPackage(t, pkg) }, c.Type, c.Nullable, c.Path())
 }
 
 var errMissingParam = errors.New("missing Param.Package")

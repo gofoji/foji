@@ -139,29 +139,7 @@ func (s *SchemasContext) Parameterize(cc db.Columns, format, pkg string) string 
 }
 
 func (s SchemasContext) GetType(c *db.Column, pkg string) string {
-	pp := strings.Split(c.Path(), ".")
-	for i := range pp {
-		p := strings.Join(pp[i:], ".")
-
-		t, ok := s.Maps.Type["."+p]
-		if ok {
-			return s.CheckPackage(t, pkg)
-		}
-	}
-
-	if c.Nullable {
-		t, ok := s.Maps.Nullable[c.Type]
-		if ok {
-			return s.CheckPackage(t, pkg)
-		}
-	}
-
-	t, ok := s.Maps.Type[c.Type]
-	if ok {
-		return s.CheckPackage(t, pkg)
-	}
-
-	return fmt.Sprintf("UNKNOWN:path(%s):type(%s)", c.Path(), c.Type)
+	return ResolveType(s.Maps, func(t string) string { return s.CheckPackage(t, pkg) }, c.Type, c.Nullable, c.Path())
 }
 
 const ValidTypeElems = 2
