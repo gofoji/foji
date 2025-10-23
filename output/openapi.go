@@ -562,7 +562,8 @@ func (o *OpenAPIFileContext) DefaultValues(val string) []string {
 
 	records, err := csvReader.ReadAll()
 	if err != nil {
-		o.Logger.Err(err).Str("val", val).Msg("error reading csv for default")
+		o.AbortError = fmt.Errorf("error reading csv for default: %w: %q", err, val)
+		return nil
 	}
 
 	if len(records) > 0 {
