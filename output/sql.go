@@ -27,7 +27,7 @@ func HasSQLOutput(o cfg.Output) bool {
 
 func SQL(p cfg.Process, fn cfg.FileHandler, l zerolog.Logger, fileGroups sql.FileGroups, simulate bool) error {
 	base := SQLContext{
-		Context:    Context{Process: p, Logger: l},
+		Context:    NewContext(p, l),
 		FileGroups: fileGroups,
 	}
 

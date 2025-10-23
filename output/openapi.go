@@ -31,7 +31,7 @@ func OpenAPI(p cfg.Process, fn cfg.FileHandler, l zerolog.Logger, groups openapi
 	for _, ff := range groups {
 		for _, f := range ff {
 			ctx := OpenAPIFileContext{
-				Context: Context{Process: p, Logger: l},
+				Context: NewContext(p, l),
 				File:    f,
 			}
 

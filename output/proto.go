@@ -21,7 +21,7 @@ func HasProtoOutput(o cfg.Output) bool {
 
 func Proto(p cfg.Process, fn cfg.FileHandler, l zerolog.Logger, groups proto.PBFileGroups, simulate bool) error {
 	base := ProtoContext{
-		Context:    Context{Process: p, Logger: l},
+		Context:    NewContext(p, l),
 		FileGroups: groups,
 	}
 	runner := NewProcessRunner(p.RootDir, fn, l, simulate)

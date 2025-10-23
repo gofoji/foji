@@ -26,7 +26,7 @@ func HasDBOutput(o cfg.Output) bool {
 
 func DB(p cfg.Process, fn cfg.FileHandler, logger zerolog.Logger, schemas db.DB, simulate bool) error {
 	ctx := SchemasContext{
-		Context: Context{Process: p, Logger: logger},
+		Context: NewContext(p, logger),
 		DB:      schemas,
 	}
 

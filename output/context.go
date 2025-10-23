@@ -27,6 +27,14 @@ type Context struct {
 	AbortError error
 }
 
+// NewContext creates a new base context with the given process and logger.
+func NewContext(p cfg.Process, l zerolog.Logger) Context {
+	return Context{
+		Process: p,
+		Logger:  l,
+	}
+}
+
 // Funcs defaults the default case funcs based on the Process.Case.
 func (c *Context) Funcs() plates.FuncMap {
 	return runtime.CaseFuncs(c.Case)
