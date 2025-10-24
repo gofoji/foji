@@ -120,7 +120,7 @@ func (o *OpenAPIFileContext) getXGoType(currentPackage string, goType any) strin
 // HasExtensionValue checks if an extension exists and has a truthy value.
 // For boolean extensions, it returns the boolean value.
 // For other extensions, it returns true if they exist.
-func HasExtensionValue(extensions map[string]interface{}, ext string) bool {
+func HasExtensionValue(extensions map[string]any, ext string) bool {
 	v, ok := extensions[ext]
 	if !ok {
 		return false

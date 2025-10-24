@@ -1171,7 +1171,7 @@ func (e Season) Value() (driver.Value, error) {
 	return json.Marshal(e.String())
 }
 
-func (e *Season) Scan(src interface{}) error {
+func (e *Season) Scan(src any) error {
 	s, ok := src.(string)
 	if !ok {
 		return fmt.Errorf("Season.scan: scanned a %T, not []byte", src) //nolint
@@ -1253,7 +1253,7 @@ func (e SeasonNullable) Value() (driver.Value, error) {
 	return json.Marshal(e.String())
 }
 
-func (e *SeasonNullable) Scan(src interface{}) error {
+func (e *SeasonNullable) Scan(src any) error {
 	s, ok := src.(string)
 	if !ok {
 		return fmt.Errorf("SeasonNullable.scan: scanned a %T, not []byte", src) //nolint
@@ -1458,7 +1458,7 @@ func (e XarrayEnumItem) Value() (driver.Value, error) {
 	return json.Marshal(e.String())
 }
 
-func (e *XarrayEnumItem) Scan(src interface{}) error {
+func (e *XarrayEnumItem) Scan(src any) error {
 	s, ok := src.(string)
 	if !ok {
 		return fmt.Errorf("XarrayEnumItem.scan: scanned a %T, not []byte", src) //nolint
@@ -1548,7 +1548,7 @@ func (e XarrayObjectArrayEnumItemList) Value() (driver.Value, error) {
 	return json.Marshal(e.String())
 }
 
-func (e *XarrayObjectArrayEnumItemList) Scan(src interface{}) error {
+func (e *XarrayObjectArrayEnumItemList) Scan(src any) error {
 	s, ok := src.(string)
 	if !ok {
 		return fmt.Errorf("XarrayObjectArrayEnumItemList.scan: scanned a %T, not []byte", src) //nolint
@@ -1634,7 +1634,7 @@ func (e XarrayObjectEnumItemOptions) Value() (driver.Value, error) {
 	return json.Marshal(e.String())
 }
 
-func (e *XarrayObjectEnumItemOptions) Scan(src interface{}) error {
+func (e *XarrayObjectEnumItemOptions) Scan(src any) error {
 	s, ok := src.(string)
 	if !ok {
 		return fmt.Errorf("XarrayObjectEnumItemOptions.scan: scanned a %T, not []byte", src) //nolint
@@ -1719,7 +1719,7 @@ func (e XobjectArrayEnumItems) Value() (driver.Value, error) {
 	return json.Marshal(e.String())
 }
 
-func (e *XobjectArrayEnumItems) Scan(src interface{}) error {
+func (e *XobjectArrayEnumItems) Scan(src any) error {
 	s, ok := src.(string)
 	if !ok {
 		return fmt.Errorf("XobjectArrayEnumItems.scan: scanned a %T, not []byte", src) //nolint
@@ -1807,7 +1807,7 @@ func (e XobjectArrayObjectEnumListOptions) Value() (driver.Value, error) {
 	return json.Marshal(e.String())
 }
 
-func (e *XobjectArrayObjectEnumListOptions) Scan(src interface{}) error {
+func (e *XobjectArrayObjectEnumListOptions) Scan(src any) error {
 	s, ok := src.(string)
 	if !ok {
 		return fmt.Errorf("XobjectArrayObjectEnumListOptions.scan: scanned a %T, not []byte", src) //nolint
@@ -1888,7 +1888,7 @@ func (e XobjectEnumOptions) Value() (driver.Value, error) {
 	return json.Marshal(e.String())
 }
 
-func (e *XobjectEnumOptions) Scan(src interface{}) error {
+func (e *XobjectEnumOptions) Scan(src any) error {
 	s, ok := src.(string)
 	if !ok {
 		return fmt.Errorf("XobjectEnumOptions.scan: scanned a %T, not []byte", src) //nolint
@@ -2045,7 +2045,7 @@ func (e ColorQuery) Value() (driver.Value, error) {
 	return json.Marshal(e.String())
 }
 
-func (e *ColorQuery) Scan(src interface{}) error {
+func (e *ColorQuery) Scan(src any) error {
 	s, ok := src.(string)
 	if !ok {
 		return fmt.Errorf("ColorQuery.scan: scanned a %T, not []byte", src) //nolint
@@ -2119,7 +2119,7 @@ func (e ColorQueryDefault) Value() (driver.Value, error) {
 	return json.Marshal(e.String())
 }
 
-func (e *ColorQueryDefault) Scan(src interface{}) error {
+func (e *ColorQueryDefault) Scan(src any) error {
 	s, ok := src.(string)
 	if !ok {
 		return fmt.Errorf("ColorQueryDefault.scan: scanned a %T, not []byte", src) //nolint
@@ -2226,7 +2226,7 @@ func (e AddFormRequestF08) Value() (driver.Value, error) {
 	return json.Marshal(e.String())
 }
 
-func (e *AddFormRequestF08) Scan(src interface{}) error {
+func (e *AddFormRequestF08) Scan(src any) error {
 	s, ok := src.(string)
 	if !ok {
 		return fmt.Errorf("AddFormRequestF08.scan: scanned a %T, not []byte", src) //nolint
@@ -2300,7 +2300,7 @@ func (e AddFormRequestF08Null) Value() (driver.Value, error) {
 	return json.Marshal(e.String())
 }
 
-func (e *AddFormRequestF08Null) Scan(src interface{}) error {
+func (e *AddFormRequestF08Null) Scan(src any) error {
 	s, ok := src.(string)
 	if !ok {
 		return fmt.Errorf("AddFormRequestF08Null.scan: scanned a %T, not []byte", src) //nolint
@@ -2775,7 +2775,7 @@ func (e AddInlinedBodyRequestF08) Value() (driver.Value, error) {
 	return json.Marshal(e.String())
 }
 
-func (e *AddInlinedBodyRequestF08) Scan(src interface{}) error {
+func (e *AddInlinedBodyRequestF08) Scan(src any) error {
 	s, ok := src.(string)
 	if !ok {
 		return fmt.Errorf("AddInlinedBodyRequestF08.scan: scanned a %T, not []byte", src) //nolint
@@ -2849,7 +2849,7 @@ func (e AddInlinedBodyRequestF08Null) Value() (driver.Value, error) {
 	return json.Marshal(e.String())
 }
 
-func (e *AddInlinedBodyRequestF08Null) Scan(src interface{}) error {
+func (e *AddInlinedBodyRequestF08Null) Scan(src any) error {
 	s, ok := src.(string)
 	if !ok {
 		return fmt.Errorf("AddInlinedBodyRequestF08Null.scan: scanned a %T, not []byte", src) //nolint
@@ -3028,7 +3028,7 @@ func (e GetExampleParamsEnumTest) Value() (driver.Value, error) {
 	return json.Marshal(e.String())
 }
 
-func (e *GetExampleParamsEnumTest) Scan(src interface{}) error {
+func (e *GetExampleParamsEnumTest) Scan(src any) error {
 	s, ok := src.(string)
 	if !ok {
 		return fmt.Errorf("GetExampleParamsEnumTest.scan: scanned a %T, not []byte", src) //nolint
@@ -3102,7 +3102,7 @@ func (e GetRawRequestVehicle) Value() (driver.Value, error) {
 	return json.Marshal(e.String())
 }
 
-func (e *GetRawRequestVehicle) Scan(src interface{}) error {
+func (e *GetRawRequestVehicle) Scan(src any) error {
 	s, ok := src.(string)
 	if !ok {
 		return fmt.Errorf("GetRawRequestVehicle.scan: scanned a %T, not []byte", src) //nolint
@@ -3176,7 +3176,7 @@ func (e GetRawRequestResponseVehicle) Value() (driver.Value, error) {
 	return json.Marshal(e.String())
 }
 
-func (e *GetRawRequestResponseVehicle) Scan(src interface{}) error {
+func (e *GetRawRequestResponseVehicle) Scan(src any) error {
 	s, ok := src.(string)
 	if !ok {
 		return fmt.Errorf("GetRawRequestResponseVehicle.scan: scanned a %T, not []byte", src) //nolint
@@ -3250,7 +3250,7 @@ func (e GetRawRequestResponseAndHeadersVehicle) Value() (driver.Value, error) {
 	return json.Marshal(e.String())
 }
 
-func (e *GetRawRequestResponseAndHeadersVehicle) Scan(src interface{}) error {
+func (e *GetRawRequestResponseAndHeadersVehicle) Scan(src any) error {
 	s, ok := src.(string)
 	if !ok {
 		return fmt.Errorf("GetRawRequestResponseAndHeadersVehicle.scan: scanned a %T, not []byte", src) //nolint
@@ -3324,7 +3324,7 @@ func (e GetRawResponseVehicle) Value() (driver.Value, error) {
 	return json.Marshal(e.String())
 }
 
-func (e *GetRawResponseVehicle) Scan(src interface{}) error {
+func (e *GetRawResponseVehicle) Scan(src any) error {
 	s, ok := src.(string)
 	if !ok {
 		return fmt.Errorf("GetRawResponseVehicle.scan: scanned a %T, not []byte", src) //nolint
@@ -3398,7 +3398,7 @@ func (e GetTestVehicle) Value() (driver.Value, error) {
 	return json.Marshal(e.String())
 }
 
-func (e *GetTestVehicle) Scan(src interface{}) error {
+func (e *GetTestVehicle) Scan(src any) error {
 	s, ok := src.(string)
 	if !ok {
 		return fmt.Errorf("GetTestVehicle.scan: scanned a %T, not []byte", src) //nolint
@@ -3472,7 +3472,7 @@ func (e GetTestVehicleDefault) Value() (driver.Value, error) {
 	return json.Marshal(e.String())
 }
 
-func (e *GetTestVehicleDefault) Scan(src interface{}) error {
+func (e *GetTestVehicleDefault) Scan(src any) error {
 	s, ok := src.(string)
 	if !ok {
 		return fmt.Errorf("GetTestVehicleDefault.scan: scanned a %T, not []byte", src) //nolint
