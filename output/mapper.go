@@ -18,6 +18,7 @@ func ResolveType(maps cfg.Maps, checkFunc func(string) string, columnType string
 	pp := strings.Split(path, ".")
 	for i := range pp {
 		p := strings.Join(pp[i:], ".")
+
 		t, ok := maps.Type["."+p]
 		if ok {
 			return checkFunc(t)
