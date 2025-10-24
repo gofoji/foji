@@ -8,6 +8,7 @@ import (
 	"github.com/rs/zerolog"
 
 	"github.com/gofoji/foji/cfg"
+	"github.com/gofoji/foji/errs"
 	"github.com/gofoji/foji/runtime"
 	"github.com/gofoji/foji/stringlist"
 )
@@ -26,6 +27,14 @@ type Context struct {
 	AbortError error
 }
 
+// NewContext creates a new base context with the given process and logger.
+func NewContext(p cfg.Process, l zerolog.Logger) Context {
+	return Context{
+		Process: p,
+		Logger:  l,
+	}
+}
+
 // Funcs defaults the default case funcs based on the Process.Case.
 func (c *Context) Funcs() plates.FuncMap {
 	return runtime.CaseFuncs(c.Case)
@@ -39,7 +48,7 @@ func (c *Context) Aborted() error {
 // NotNeededIf given bool is true the execution is aborted, and can be used to prevent generation of a file.
 func (c *Context) NotNeededIf(t bool, reason string) (string, error) {
 	if t {
-		c.AbortError = fmt.Errorf("%w: %s", ErrNotNeeded, reason)
+		c.AbortError = fmt.Errorf("%w: %s", errs.ErrNotNeeded, reason)
 
 		return "", c.AbortError
 	}
@@ -50,7 +59,7 @@ func (c *Context) NotNeededIf(t bool, reason string) (string, error) {
 // ErrorIf if given bool is true the execution is fatally aborted, and stops processing.
 func (c *Context) ErrorIf(t bool, reason string) (string, error) {
 	if t {
-		c.AbortError = fmt.Errorf("%w: %s", ErrMissingRequirement, reason)
+		c.AbortError = fmt.Errorf("%w: %s", errs.ErrMissingRequirement, reason)
 
 		return "", c.AbortError
 	}
@@ -58,16 +67,11 @@ func (c *Context) ErrorIf(t bool, reason string) (string, error) {
 	return "", nil
 }
 
-const (
-	ErrInvalidDictParams = Error("invalid dict params in call to WithParams, must be key and value pairs")
-	ErrInvalidDictKey    = Error("invalid dict params in call to WithParams, must be key and value pairs")
-)
-
 // WithParams Clones the current context and adds runtime params for each pair of key, value provided.
 // Used for executing sub templates that still need access to the context.
 func (c *Context) WithParams(values ...any) (*Context, error) {
 	if len(values)%2 != 0 {
-		return nil, ErrInvalidDictParams
+		return nil, errs.ErrInvalidDictParams
 	}
 
 	out := *c
@@ -76,7 +80,7 @@ func (c *Context) WithParams(values ...any) (*Context, error) {
 	for i := 0; i < len(values); i += 2 {
 		key, ok := values[i].(string)
 		if !ok {
-			return nil, ErrInvalidDictKey
+			return nil, errs.ErrInvalidDictKey
 		}
 
 		out.RuntimeParams[key] = values[i+1]

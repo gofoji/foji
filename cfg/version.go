@@ -8,7 +8,7 @@ import (
 func Version() string {
 	info, ok := debug.ReadBuildInfo()
 	if !ok {
-		panic("Failed to read build info")
+		return "(dev build)"
 	}
 
 	if info.Main.Version != "" {

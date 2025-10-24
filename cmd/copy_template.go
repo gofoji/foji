@@ -3,8 +3,6 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
@@ -42,12 +40,12 @@ func writeTemplate(l zerolog.Logger, dir, filename string, useStdout, overwrite 
 	}
 
 	if dir != "" {
-		filename = changeDirectory(dir, "foji", filename)
+		filename = ChangeDirectory(dir, "foji", filename)
 	}
 
 	l = l.With().Str("template", filename).Logger()
 
-	if useStdout || overwrite || !fileExists(filename) {
+	if useStdout || overwrite || !FileExists(filename) {
 		l.Debug().Msg("Writing")
 
 		err = WriteToFile(b, filename)
@@ -59,25 +57,4 @@ func writeTemplate(l zerolog.Logger, dir, filename string, useStdout, overwrite 
 	}
 
 	return nil
-}
-
-func fileExists(filename string) bool {
-	fileInfo, err := os.Stat(filename)
-
-	return err == nil && fileInfo.Mode().IsRegular()
-}
-
-func changeDirectory(dir, swapDir, filename string) string {
-	path := strings.Split(filename, string(os.PathSeparator))
-	if len(path) == 0 {
-		return filename
-	}
-
-	if path[0] == swapDir {
-		path[0] = dir
-	} else {
-		path = append([]string{dir}, path...)
-	}
-
-	return filepath.Join(path...)
 }

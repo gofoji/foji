@@ -14,16 +14,9 @@ import (
 
 	"github.com/gofoji/foji/cfg"
 	"github.com/gofoji/foji/color"
+	"github.com/gofoji/foji/errs"
 	"github.com/gofoji/foji/stringlist"
 )
-
-type Error string
-
-func (e Error) Error() string {
-	return string(e)
-}
-
-var ErrRuntime = Error("runtime")
 
 var Funcs = map[string]any{
 	// Case
@@ -250,7 +243,7 @@ func In(needle any, haystack ...any) (bool, error) {
 
 		return false, nil
 	default:
-		return false, fmt.Errorf("%w: must be iterable type, found type %s", ErrRuntime, tp)
+		return false, fmt.Errorf("%w: must be iterable type, found type %s", errs.ErrRuntime, tp)
 	}
 }
 

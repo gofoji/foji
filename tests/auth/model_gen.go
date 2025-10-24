@@ -95,7 +95,7 @@ func (e UserRole) Value() (driver.Value, error) {
 	return json.Marshal(e.String())
 }
 
-func (e *UserRole) Scan(src interface{}) error {
+func (e *UserRole) Scan(src any) error {
 	s, ok := src.(string)
 	if !ok {
 		return fmt.Errorf("UserRole.scan: scanned a %T, not []byte", src) //nolint

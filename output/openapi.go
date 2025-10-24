@@ -31,7 +31,7 @@ func OpenAPI(p cfg.Process, fn cfg.FileHandler, l zerolog.Logger, groups openapi
 	for _, ff := range groups {
 		for _, f := range ff {
 			ctx := OpenAPIFileContext{
-				Context: Context{Process: p, Logger: l},
+				Context: NewContext(p, l),
 				File:    f,
 			}
 
@@ -117,8 +117,11 @@ func (o *OpenAPIFileContext) getXGoType(currentPackage string, goType any) strin
 	return fmt.Sprintf("INVALID x-go-type: %v", goType)
 }
 
-func (o *OpenAPIFileContext) OpHasExtension(op *openapi3.Operation, ext string) bool {
-	v, ok := op.Extensions[ext]
+// HasExtensionValue checks if an extension exists and has a truthy value.
+// For boolean extensions, it returns the boolean value.
+// For other extensions, it returns true if they exist.
+func HasExtensionValue(extensions map[string]any, ext string) bool {
+	v, ok := extensions[ext]
 	if !ok {
 		return false
 	}
@@ -130,17 +133,12 @@ func (o *OpenAPIFileContext) OpHasExtension(op *openapi3.Operation, ext string) 
 	return true
 }
 
+func (o *OpenAPIFileContext) OpHasExtension(op *openapi3.Operation, ext string) bool {
+	return HasExtensionValue(op.Extensions, ext)
+}
+
 func (o *OpenAPIFileContext) SecurityHasExtension(scheme *openapi3.SecuritySchemeRef, ext string) bool {
-	v, ok := scheme.Value.Extensions[ext]
-	if !ok {
-		return false
-	}
-
-	if b, isBool := v.(bool); isBool {
-		return b
-	}
-
-	return true
+	return HasExtensionValue(scheme.Value.Extensions, ext)
 }
 
 func (o *OpenAPIFileContext) HasExtension(s *openapi3.SchemaRef, ext string) bool {
@@ -562,7 +560,8 @@ func (o *OpenAPIFileContext) DefaultValues(val string) []string {
 
 	records, err := csvReader.ReadAll()
 	if err != nil {
-		o.Logger.Err(err).Str("val", val).Msg("error reading csv for default")
+		o.AbortError = fmt.Errorf("error reading csv for default: %w: %q", err, val)
+		return nil
 	}
 
 	if len(records) > 0 {

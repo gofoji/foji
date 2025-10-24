@@ -1,9 +1,7 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
@@ -53,34 +51,4 @@ func writeConfig() {
 	}
 
 	l.Info().Msg("wrote sample foji config file")
-}
-
-const (
-	permRWXUser = 0o700
-	permRWUser  = 0o600
-)
-
-func WriteToFile(source []byte, file string) error {
-	err := os.MkdirAll(filepath.Dir(file), permRWXUser)
-	if err != nil {
-		return fmt.Errorf("create output directory:%w", err)
-	}
-
-	f, err := os.OpenFile(file, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, permRWUser)
-	if err != nil {
-		return fmt.Errorf("open file:%w", err)
-	}
-
-	_, err = f.Write(source)
-
-	closeErr := f.Close()
-	if closeErr != nil {
-		return fmt.Errorf("closing file:%w", closeErr)
-	}
-
-	if err != nil {
-		return fmt.Errorf("writing file:%w", err)
-	}
-
-	return nil
 }

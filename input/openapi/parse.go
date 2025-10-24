@@ -32,7 +32,7 @@ func Parse(_ context.Context, logger zerolog.Logger, inGroups []input.FileGroup)
 
 			swagger, err := loader.LoadFromData(f.Content)
 			if err != nil {
-				panic(err)
+				return nil, err
 			}
 
 			d := File{Input: f, API: swagger}

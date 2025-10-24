@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/gofoji/foji/errs"
 	"github.com/gofoji/foji/stringlist"
 )
 
 type (
-	Error        string
 	FileHandler  func(string) error // Used for post generation processing
 	ParamMap     map[string]any     // Generic bucket of params passed to templates
 	Processes    map[string]Process
@@ -100,7 +100,7 @@ func (pp Processes) String() string {
 }
 
 const (
-	errProcess          = Error("Process")
+	errProcess          = errs.Error("Process")
 	missingBundleFormat = "%w '%s' referenced by bundle `%s` not found.  Possible options: %s"
 	missingFormat       = "%w '%s' not found.  Possible options: %s"
 )
@@ -175,8 +175,4 @@ func (o Output) All() stringlist.StringMap {
 // IsEmpty checks Files globs.
 func (f FileInput) IsEmpty() bool {
 	return len(f.Files) == 0
-}
-
-func (e Error) Error() string {
-	return string(e)
 }
