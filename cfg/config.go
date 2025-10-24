@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/gofoji/foji/errors"
+	"github.com/gofoji/foji/errs"
 	"github.com/gofoji/foji/stringlist"
 )
 
@@ -100,7 +100,7 @@ func (pp Processes) String() string {
 }
 
 const (
-	errProcess          = errors.Error("Process")
+	errProcess          = errs.Error("Process")
 	missingBundleFormat = "%w '%s' referenced by bundle `%s` not found.  Possible options: %s"
 	missingFormat       = "%w '%s' not found.  Possible options: %s"
 )

@@ -12,7 +12,7 @@ import (
 	"github.com/rs/zerolog"
 
 	"github.com/gofoji/foji/cfg"
-	fojiErrors "github.com/gofoji/foji/errors"
+	"github.com/gofoji/foji/errs"
 	"github.com/gofoji/foji/foji"
 	"github.com/gofoji/foji/runtime"
 	"github.com/gofoji/foji/stringlist"
@@ -46,7 +46,7 @@ func (p ProcessRunner) process(tm stringlist.StringMap, data any) error {
 
 		err = p.template(targetFile, templateFile, data)
 		if err != nil {
-			if !errors.Is(err, fojiErrors.ErrPermExists) {
+			if !errors.Is(err, errs.ErrPermExists) {
 				return err
 			}
 
@@ -133,7 +133,7 @@ func (p ProcessRunner) template(outputFile, templateFile string, data any) error
 
 	outputFile = p.dir + outputFile
 	if permFile && fileExists(outputFile) {
-		return fojiErrors.ErrPermExists
+		return errs.ErrPermExists
 	}
 
 	if p.simulate {
@@ -147,13 +147,13 @@ func (p ProcessRunner) template(outputFile, templateFile string, data any) error
 
 	err = p.FromFile(templateFile).ToFile(outputFile, data)
 	if err != nil {
-		if errors.Is(err, fojiErrors.ErrNotNeeded) {
+		if errors.Is(err, errs.ErrNotNeeded) {
 			l.Info().Err(err).Msg("skipped")
 
 			return nil
 		}
 
-		if errors.Is(err, fojiErrors.ErrMissingRequirement) {
+		if errors.Is(err, errs.ErrMissingRequirement) {
 			return err //nolint:wrapcheck
 		}
 

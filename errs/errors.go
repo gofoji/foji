@@ -1,5 +1,5 @@
-// Package errors provides unified error types and constants used throughout foji.
-package errors
+// Package errs provides unified error types and constants used throughout foji.
+package errs
 
 // Error is a simple error string type used for custom error definitions.
 type Error string

@@ -14,7 +14,7 @@ import (
 
 	"github.com/gofoji/foji/cfg"
 	"github.com/gofoji/foji/color"
-	"github.com/gofoji/foji/errors"
+	"github.com/gofoji/foji/errs"
 	"github.com/gofoji/foji/stringlist"
 )
 
@@ -243,7 +243,7 @@ func In(needle any, haystack ...any) (bool, error) {
 
 		return false, nil
 	default:
-		return false, fmt.Errorf("%w: must be iterable type, found type %s", errors.ErrRuntime, tp)
+		return false, fmt.Errorf("%w: must be iterable type, found type %s", errs.ErrRuntime, tp)
 	}
 }
 

@@ -9,7 +9,7 @@ import (
 	"github.com/rs/zerolog"
 
 	"github.com/gofoji/foji/cfg"
-	"github.com/gofoji/foji/errors"
+	"github.com/gofoji/foji/errs"
 	"github.com/gofoji/foji/input"
 	"github.com/gofoji/foji/input/db"
 	"github.com/gofoji/foji/input/db/pg"
@@ -145,7 +145,7 @@ func (w *Welder) getResource(resource string) (input.FileGroup, error) {
 
 		in, ok := w.config.Files[resource]
 		if !ok {
-			return r.Loaded, fmt.Errorf("%w: invalid resource reference: %s", errors.ErrWeld, resource)
+			return r.Loaded, fmt.Errorf("%w: invalid resource reference: %s", errs.ErrWeld, resource)
 		}
 
 		f, err := input.Parse(w.ctx, w.logger, in)
@@ -190,7 +190,7 @@ func (w *Welder) getProcessFiles(p cfg.Process) ([]input.FileGroup, error) {
 
 func (w *Welder) parseDB() (db.DB, error) {
 	if w.conn == nil {
-		return nil, fmt.Errorf("%w: db not initialized", errors.ErrWeld)
+		return nil, fmt.Errorf("%w: db not initialized", errs.ErrWeld)
 	}
 
 	repo := pg.New(w.conn, w.logger)
@@ -209,7 +209,7 @@ func (w *Welder) initDBConnection() error {
 	}
 
 	if w.config.DB.Connection == "" {
-		return fmt.Errorf("%w: missing db.connection", errors.ErrWeld)
+		return fmt.Errorf("%w: missing db.connection", errs.ErrWeld)
 	}
 
 	w.logger.Debug().Str("Connection", w.config.DB.Connection).Msg("Loading Database")
