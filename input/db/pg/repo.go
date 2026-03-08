@@ -84,8 +84,7 @@ func (r Repo) processTables(ctx context.Context, ss db.DB) error {
 			ss[val.Name] = val
 		}
 
-		table := t.toDB(val)
-		val.Tables = append(val.Tables, &table)
+		val.Tables = append(val.Tables, new(t.toDB(val)))
 	}
 
 	return nil
@@ -108,8 +107,7 @@ func (r Repo) processEnums(ctx context.Context, ss db.DB) error {
 			ss[val.Name] = val
 		}
 
-		enum := e.toDB(val)
-		val.Enums = append(val.Enums, &enum)
+		val.Enums = append(val.Enums, new(e.toDB(val)))
 	}
 
 	return nil
@@ -131,8 +129,7 @@ func (r Repo) processColumns(ctx context.Context, ss db.DB) error {
 			continue
 		}
 
-		column := c.toDB(table)
-		table.Columns = append(table.Columns, &column)
+		table.Columns = append(table.Columns, new(c.toDB(table)))
 	}
 
 	return nil

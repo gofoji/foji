@@ -17,8 +17,7 @@ func (ss DB) Filter(filters stringlist.Strings) DB {
 			continue
 		}
 
-		filtered := s.Filter(filters)
-		result[key] = &filtered
+		result[key] = new(s.Filter(filters))
 	}
 
 	return result
@@ -42,8 +41,7 @@ func (tt Tables) Filter(filters stringlist.Strings) Tables {
 
 	for _, t := range tt {
 		if !filters.AnyMatches(t.Path()) {
-			filtered := t.Filter(filters)
-			result = append(result, &filtered)
+			result = append(result, new(t.Filter(filters)))
 		}
 	}
 
@@ -76,8 +74,7 @@ func (ee Enums) Filter(filters stringlist.Strings) Enums {
 
 	for _, e := range ee {
 		if !filters.AnyMatches(e.Path()) {
-			filtered := e.Filter(filters)
-			result = append(result, &filtered)
+			result = append(result, new(e.Filter(filters)))
 		}
 	}
 
