@@ -2,6 +2,7 @@ package output
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/gofoji/plates"
@@ -165,10 +166,8 @@ func (ii *Imports) CheckPackage(t, currentPackage string) string {
 // Add filters duplicates and appends to the import list.
 // Add works on uninitialized Imports objects.
 func (ii *Imports) Add(s string) {
-	for _, i := range *ii {
-		if i == s {
-			return
-		}
+	if slices.Contains(*ii, s) {
+		return
 	}
 
 	*ii = append(*ii, s)

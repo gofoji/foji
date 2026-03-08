@@ -173,9 +173,9 @@ func (s SchemasContext) PropertyFromDB(c *db.Column) *Property {
 }
 
 func (s SchemasContext) PropertiesFromDB(cc db.Columns) Properties {
-	result := Properties{}
-	for _, c := range cc {
-		result = append(result, s.PropertyFromDB(c))
+	result := make(Properties, len(cc))
+	for i, c := range cc {
+		result[i] = s.PropertyFromDB(c)
 	}
 
 	return result

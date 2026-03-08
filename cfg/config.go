@@ -2,6 +2,7 @@ package cfg
 
 import (
 	"fmt"
+	"maps"
 	"sort"
 
 	"github.com/gofoji/foji/errs"
@@ -164,9 +165,7 @@ func (o Output) All() stringlist.StringMap {
 	result := stringlist.StringMap{}
 
 	for _, m := range o {
-		for k, v := range m {
-			result[k] = v
-		}
+		maps.Copy(result, m)
 	}
 
 	return result

@@ -23,13 +23,3 @@ func MatchFilters(filters Strings, s string) bool {
 
 	return false
 }
-
-func contains(list []string, s string) bool {
-	for x := range list {
-		if s == list[x] {
-			return true
-		}
-	}
-
-	return false
-}

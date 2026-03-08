@@ -1,5 +1,10 @@
 package stringlist
 
+import (
+	"maps"
+	"slices"
+)
+
 type StringMap map[string]string
 
 func (t StringMap) IsEmpty() bool {
@@ -7,11 +12,5 @@ func (t StringMap) IsEmpty() bool {
 }
 
 func (t StringMap) Values() Strings {
-	result := Strings{}
-
-	for _, v := range t {
-		result = append(result, v)
-	}
-
-	return result
+	return slices.Collect(maps.Values(t))
 }

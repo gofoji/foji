@@ -56,7 +56,7 @@ type OpenAPIFileContext struct {
 }
 
 func (o *OpenAPIFileContext) GoImports() []string {
-	var out []string //nolint:prealloc
+	var out []string
 
 	for _, i := range o.Imports {
 		if i == o.PackageName() {
@@ -293,13 +293,7 @@ func (o *OpenAPIFileContext) HasValidation(s *openapi3.SchemaRef) bool {
 		}
 	}
 
-	for _, p := range s.Value.AllOf {
-		if o.HasValidation(p) {
-			return true
-		}
-	}
-
-	return false
+	return slices.ContainsFunc(s.Value.AllOf, o.HasValidation)
 }
 
 // IsDefaultEnum helper that checks if an enumerated type is overridden (specified externally).
@@ -389,9 +383,7 @@ func (o *OpenAPIFileContext) SchemaProperties(schema *openapi3.SchemaRef) openap
 }
 
 func schemaPropertiesWithEmbedded(schema *openapi3.SchemaRef, out openapi3.Schemas) openapi3.Schemas {
-	for k, v := range schema.Value.Properties {
-		out[k] = v
-	}
+	maps.Copy(out, schema.Value.Properties)
 
 	for _, subSchema := range schema.Value.AllOf {
 		schemaPropertiesWithEmbedded(subSchema, out)
@@ -539,7 +531,7 @@ func mapKeysSorted[T any](in map[string]T) []string {
 }
 
 func (o *OpenAPIFileContext) OpParams(path *openapi3.PathItem, op *openapi3.Operation) openapi3.Parameters {
-	var out openapi3.Parameters
+	out := make(openapi3.Parameters, 0, len(path.Parameters)+len(op.Parameters))
 
 	out = append(out, path.Parameters...)
 	out = append(out, op.Parameters...)

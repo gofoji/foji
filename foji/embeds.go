@@ -27,7 +27,7 @@ func walk(dir string) ([]string, error) {
 		currentPath += dir + "/"
 	}
 
-	var out []string //nolint:prealloc
+	var out []string
 
 	for _, f := range entries {
 		if f.IsDir() {

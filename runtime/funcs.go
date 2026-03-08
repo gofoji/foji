@@ -226,7 +226,7 @@ func In(needle any, haystack ...any) (bool, error) {
 		return false, nil
 	}
 
-	tp := reflect.TypeOf(haystack).Kind()
+	tp := reflect.TypeOf(haystack).Kind() //nolint:modernize
 	switch tp {
 	case reflect.Slice, reflect.Array:
 		var item any
@@ -260,7 +260,9 @@ func GoDoc(s string) string {
 	}
 
 	ss := strings.Split(strings.TrimSpace(s), "\n")
-	out := "\n" + CommentPrefix
+	out := strings.Builder{}
+	out.WriteString("\n" + CommentPrefix)
+
 	length := 0
 
 	for lineNumber, s := range ss {
@@ -268,23 +270,23 @@ func GoDoc(s string) string {
 			continue
 		}
 
-		ll := strings.Split(s, " ")
-		for _, l := range ll {
+		for l := range strings.SplitSeq(s, " ") {
 			if len(l)+length > MaxWidth {
-				out += "\n" + CommentPrefix
+				out.WriteString("\n" + CommentPrefix)
+
 				length = 0
 			}
 
 			length += len(l)
-			out += " " + l
+			out.WriteString(" " + l)
 		}
 
 		if lineNumber < len(ss)-1 {
-			out += "\n" + CommentPrefix
+			out.WriteString("\n" + CommentPrefix)
 		}
 	}
 
-	return out
+	return out.String()
 }
 
 // GoComment appends CommentPrefix to each newline and trims trailing empty lines

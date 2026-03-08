@@ -3,6 +3,7 @@ package stringlist
 import (
 	"fmt"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 
@@ -94,18 +95,14 @@ func (s Strings) Map(f StringMapper) Strings {
 
 // Contains returns true if the param exists in the Strings.
 func (s Strings) Contains(v string) bool {
-	return contains(s, v)
+	return slices.Contains(s, v)
 }
 
 // ContainsAny returns true if any of the params exists in the Strings.
 func (s Strings) ContainsAny(v Strings) bool {
-	for _, x := range v {
-		if s.Contains(x) {
-			return true
-		}
-	}
-
-	return false
+	return slices.ContainsFunc(v, func(x string) bool {
+		return s.Contains(x)
+	})
 }
 
 // ContainsAll returns true if all the params exists in the Strings.

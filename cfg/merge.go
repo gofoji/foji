@@ -1,6 +1,10 @@
 package cfg
 
-import "github.com/gofoji/foji/stringlist"
+import (
+	"maps"
+
+	"github.com/gofoji/foji/stringlist"
+)
 
 // Merge merges all properties from an ancestor Config.
 func (c Config) Merge(from Config) Config {
@@ -162,13 +166,11 @@ func (f FileInput) Merge(from FileInput) FileInput {
 }
 
 // MergeTypesMaps merges all properties from an ancestor TypeMap.
-func MergeTypesMaps(maps ...stringlist.StringMap) stringlist.StringMap {
+func MergeTypesMaps(mm ...stringlist.StringMap) stringlist.StringMap {
 	result := stringlist.StringMap{}
 
-	for _, m := range maps {
-		for k, v := range m {
-			result[k] = v
-		}
+	for _, m := range mm {
+		maps.Copy(result, m)
 	}
 
 	return result

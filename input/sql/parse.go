@@ -75,9 +75,8 @@ func (q Query) IsType(t ...string) bool {
 
 func (p Parser) readDescriptor(s string) Query {
 	q := Query{Raw: s, Type: "query"}
-	ss := strings.Split(s, "\n")
 
-	for _, line := range ss {
+	for line := range strings.SplitSeq(s, "\n") {
 		if commentRE.MatchString(line) {
 			p.parseDescriptorLine(line, &q)
 		}
@@ -177,11 +176,12 @@ func Parse(ctx context.Context, logger zerolog.Logger, repo Repo, inGroups []inp
 	return result, nil
 }
 
+var deliminator = []byte(";")
+
 func parseFile(ctx context.Context, f input.File, logger zerolog.Logger, p Parser) (File, error) {
 	resultFile := File{File: f}
 
-	statements := bytes.Split(f.Content, []byte(";"))
-	for _, stmt := range statements {
+	for stmt := range bytes.SplitSeq(f.Content, deliminator) {
 		s := strings.TrimSpace(string(stmt))
 		if s == "" {
 			continue
