@@ -2,7 +2,10 @@ package input
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"regexp"
 
@@ -11,6 +14,11 @@ import (
 	"github.com/gofoji/foji/cfg"
 	"github.com/gofoji/foji/files"
 	"github.com/gofoji/foji/stringlist"
+)
+
+var (
+	ErrNoGithubToken    = errors.New("missing github authentication token")
+	ErrGithubStatusCode = errors.New("github returned non-successful status")
 )
 
 type FileGroup struct {
@@ -36,8 +44,33 @@ func rewrite(rules stringlist.StringMap, name string) string {
 	return name
 }
 
-func Parse(_ context.Context, logger zerolog.Logger, input cfg.FileInput) (FileGroup, error) {
+func Parse(ctx context.Context, logger zerolog.Logger, input cfg.FileInput) (FileGroup, error) {
 	result := FileGroup{FileInput: input}
+
+	fileResults, err := ParseFiles(ctx, logger, input)
+	if err != nil {
+		return result, err
+	}
+
+	urlResults, err := ParseUrls(ctx, logger, input)
+	if err != nil {
+		return result, err
+	}
+
+	githubResults, err := ParseGithubFiles(ctx, logger, input)
+	if err != nil {
+		return result, err
+	}
+
+	result.Files = append(result.Files, fileResults...)
+	result.Files = append(result.Files, urlResults...)
+	result.Files = append(result.Files, githubResults...)
+
+	return result, nil
+}
+
+func ParseFiles(_ context.Context, logger zerolog.Logger, input cfg.FileInput) ([]File, error) {
+	result := []File{}
 
 	loadedFiles := stringlist.Strings{}
 
@@ -87,9 +120,100 @@ func Parse(_ context.Context, logger zerolog.Logger, input cfg.FileInput) (FileG
 				Content: b,
 			}
 			logger.Debug().Str("name", file.Name).Msg("File Loaded")
-			result.Files = append(result.Files, file)
+			result = append(result, file)
 			loadedFiles = append(loadedFiles, filename)
 		}
+	}
+
+	return result, nil
+}
+
+func ParseGithubFiles(ctx context.Context, logger zerolog.Logger, input cfg.FileInput) ([]File, error) {
+	result := []File{}
+
+	githubToken, ok := os.LookupEnv("GH_TOKEN")
+
+	if !ok && len(input.GithubFiles) > 0 {
+		return result, ErrNoGithubToken
+	}
+
+	for _, u := range input.GithubFiles {
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+		if err != nil {
+			return result, fmt.Errorf("error creating request to read url: %s: %w", u, err)
+		}
+
+		req.Header.Add("Accept", "application/vnd.github.raw+json")
+		req.Header.Add("Authorization", "Bearer "+githubToken)
+
+		logger.Debug().Str("source", u).Msg("Fetching URL")
+
+		res, err := http.DefaultClient.Do(req)
+		if err != nil {
+			return result, fmt.Errorf("error fetching url: %s: %w", u, err)
+		}
+
+		defer res.Body.Close()
+
+		if res.StatusCode != http.StatusOK {
+			return result, fmt.Errorf("%w %d for url %s", ErrGithubStatusCode, res.StatusCode, u)
+		}
+
+		logger.Debug().Str("source", u).Msg("Reading URL")
+
+		b, err := io.ReadAll(res.Body)
+		if err != nil {
+			return result, fmt.Errorf("error reading body: %s: %w", u, err)
+		}
+
+		file := File{
+			Source:  u,
+			Name:    rewrite(input.Rewrite, u),
+			Content: b,
+		}
+		logger.Debug().Str("name", file.Name).Msg("File Loaded")
+		result = append(result, file)
+	}
+
+	return result, nil
+}
+
+func ParseUrls(ctx context.Context, logger zerolog.Logger, input cfg.FileInput) ([]File, error) {
+	result := []File{}
+
+	for _, u := range input.Urls {
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+		if err != nil {
+			return result, fmt.Errorf("error creating request to read url: %s: %w", u, err)
+		}
+
+		logger.Debug().Str("source", u).Msg("Fetching URL")
+
+		res, err := http.DefaultClient.Do(req)
+		if err != nil {
+			return result, fmt.Errorf("error fetching url: %s: %w", u, err)
+		}
+
+		defer res.Body.Close()
+
+		if res.StatusCode != http.StatusOK {
+			return result, fmt.Errorf("%w %d for url %s", ErrGithubStatusCode, res.StatusCode, u)
+		}
+
+		logger.Debug().Str("source", u).Msg("Reading URL")
+
+		b, err := io.ReadAll(res.Body)
+		if err != nil {
+			return result, fmt.Errorf("error reading body: %s: %w", u, err)
+		}
+
+		file := File{
+			Source:  u,
+			Name:    rewrite(input.Rewrite, u),
+			Content: b,
+		}
+		logger.Debug().Str("name", file.Name).Msg("File Loaded")
+		result = append(result, file)
 	}
 
 	return result, nil

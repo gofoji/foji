@@ -28,6 +28,10 @@ type (
 	FileInput struct {
 		// Files to process, supports glob syntax https://golang.org/pkg/path/filepath/#Match
 		Files stringlist.Strings
+		// Files to process from abitrary URL
+		Urls stringlist.Strings `yaml:"urls,omitempty"`
+		// Files to process from github. This is the same as [Urls], except that it adds github API specific headers. Use syntax https://api.github.com/repos/ORG/REPO/contents/PATH/TO/FILE?ref=TAG
+		GithubFiles stringlist.Strings `yaml:"githubFiles,omitempty"`
 		// Optional regex for filtering the files.  The filename must not match any of the filter
 		// expressions to be considered valid.
 		Filter  stringlist.Strings   `yaml:"filter,omitempty"`
@@ -173,5 +177,5 @@ func (o Output) All() stringlist.StringMap {
 
 // IsEmpty checks Files globs.
 func (f FileInput) IsEmpty() bool {
-	return len(f.Files) == 0
+	return len(f.Files) == 0 && len(f.GithubFiles) == 0
 }

@@ -158,7 +158,7 @@ func (ff FileInputMap) Merge(from FileInputMap) FileInputMap {
 
 // Merge merges all properties from an ancestor FileInput.
 func (f FileInput) Merge(from FileInput) FileInput {
-	if len(f.Files) > 0 || len(f.Filter) > 0 || len(f.Rewrite) > 0 {
+	if len(f.Files) > 0 || len(f.GithubFiles) > 0 || len(f.Filter) > 0 || len(f.Rewrite) > 0 {
 		return f
 	}
 
