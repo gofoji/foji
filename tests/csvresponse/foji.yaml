@@ -10,3 +10,10 @@ processes:
     OpenAPIFile:
       'tests/csvresponse/http_handler_gen.go': foji/openapi/handler.go.tpl
       'tests/csvresponse/model_gen.go': foji/openapi/model.go.tpl
+  openAPIClient:
+    params:
+      Package: foji/tests/csvresponse
+      Auth: ExampleAuth
+    OpenAPIFile:
+      'tests/csvresponse/model_gen.go': foji/openapi/model.go.tpl
+      'tests/csvresponse/http_client_gen.go': foji/openapi/client.go.tpl

@@ -193,8 +193,10 @@ func (e *{{ $enumType }}) Scan(src any) error {
 {{- $key := .RuntimeParams.key }}
 {{- $label := .RuntimeParams.label }}
 
-{{- if not ($.HasExtension $schema "x-go-type" )}}
+{{- if or ($.Params.GetBool "IgnoreGoType") (not ($.HasExtension $schema "x-go-type" ))}}
 {{- $typeName := $.GetType $.PackageName $key $schema }}
+{{- $rawName := pascal $key }}
+{{- $declName := $.PrefixType $rawName }}
 // {{ $typeName}}
 {{- goDoc $schema.Value.Description }}
 //
@@ -204,14 +206,14 @@ func (e *{{ $enumType }}) Scan(src any) error {
         {{- $label := .RuntimeParams.label }}
         {{- template "enum" ($.WithParams "name" $key "schema" $schema "description" (print $label " : " $key ))}}
     {{- else if and ($schema.Value.Type.Permits "object") (gt (len ($.SchemaProperties $schema)) 0) }}
-type {{ pascal $key }} struct {
+type {{ $declName }} struct {
     {{- range $field, $schemaProp := $.SchemaProperties $schema}}
         {{- $isRequired := $.IsRequiredProperty $field $schema -}}
-        {{- template "propertyDeclaration" ($.WithParams "key" $field "schema" $schemaProp "typeName" $typeName "isRequired" $isRequired)}}
+        {{- template "propertyDeclaration" ($.WithParams "key" $field "schema" $schemaProp "typeName" $rawName "isRequired" $isRequired)}}
     {{- end }}
 }
     {{- else }}
-type {{ pascal $key }} {{ $.GetType $.PackageName (pascal (print $typeName " Item" )) $schema }}
+type {{ $declName }} {{ $.GetType $.PackageName (pascal (print $rawName " Item" )) $schema }}
     {{- end }}
 
 {{- $hasValidation := $.HasValidation $schema -}}
@@ -221,14 +223,14 @@ type {{ pascal $key }} {{ $.GetType $.PackageName (pascal (print $typeName " Ite
     {{- range $key, $schemaProp := $.SchemaProperties $schema }}
         {{- if not (empty $schemaProp.Value.Properties )}}
             {{- if empty $schemaProp.Ref -}}
-                {{- template "typeDeclaration" ($.WithParams "mediaType" "application/json" "key" (pascal (print $typeName " " $key)) "schema" $schemaProp "label" (print  $typeName " inline " $key))}}
+                {{- template "typeDeclaration" ($.WithParams "mediaType" "application/json" "key" (pascal (print $rawName " " $key)) "schema" $schemaProp "label" (print  $typeName " inline " $key))}}
             {{- end -}}
         {{- else if $schemaProp.Value.Type.Is "array"}}
             {{- if empty $schemaProp.Value.Items.Ref -}}
                 {{- $isEnumItem := $.IsDefaultEnum $key $schemaProp.Value.Items }}
                 {{- $hasProperties := not (empty ($.SchemaProperties $schemaProp.Value.Items )) }}
                 {{- if or $isEnumItem $hasProperties}}
-                    {{- template "typeDeclaration" ($.WithParams "mediaType" "application/json" "key" (pascal (print $typeName " " $key)) "schema" $schemaProp.Value.Items "label" (print  $typeName " inline item " $key))}}
+                    {{- template "typeDeclaration" ($.WithParams "mediaType" "application/json" "key" (pascal (print $rawName " " $key)) "schema" $schemaProp.Value.Items "label" (print  $typeName " inline item " $key))}}
                 {{- end }}
             {{- end }}
         {{- end }}
@@ -239,7 +241,7 @@ type {{ pascal $key }} {{ $.GetType $.PackageName (pascal (print $typeName " Ite
             {{- $isEnumItem := $.IsDefaultEnum $key $schema.Value.Items }}
             {{- $hasProperties := not (empty ($.SchemaProperties $schema.Value.Items )) }}
             {{- if or $isEnumItem $hasProperties}}
-                {{- template "typeDeclaration" ($.WithParams "mediaType" "application/json" "key" (pascal (print $typeName " Item" )) "schema" $schema.Value.Items "label" (print  $typeName " inline item " $key))}}
+                {{- template "typeDeclaration" ($.WithParams "mediaType" "application/json" "key" (pascal (print $rawName " Item" )) "schema" $schema.Value.Items "label" (print  $typeName " inline item " $key))}}
             {{- end }}
         {{- end }}
     {{- end }}
@@ -247,35 +249,35 @@ type {{ pascal $key }} {{ $.GetType $.PackageName (pascal (print $typeName " Ite
 {{- /*    Regex Validation Patterns */ -}}
     {{- range $key, $schemaProp := $.SchemaProperties $schema }}
         {{- if and (notEmpty $schemaProp.Value.Pattern) (empty $schemaProp.Ref) }}
-var {{ camel $typeName }}{{ pascal $key }}Pattern = regexp.MustCompile(`{{ $schemaProp.Value.Pattern }}`)
+var {{ camel $declName }}{{ pascal $key }}Pattern = regexp.MustCompile(`{{ $schemaProp.Value.Pattern }}`)
         {{- end}}
     {{- end }}
     {{- if and $hasValidation (notEmpty $schema.Value.Pattern) (empty $schema.Ref) }}
-var {{ camel $key }}Pattern = regexp.MustCompile(`{{ $schema.Value.Pattern }}`)
+var {{ camel $declName }}Pattern = regexp.MustCompile(`{{ $schema.Value.Pattern }}`)
     {{ end }}
 
 {{- /*    Enums */}}
     {{- range $key, $schemaEnum := $.SchemaEnums $schema }}
-        {{- template "enum" ($.WithParams "name" (print $typeName " " $key) "schema" $schemaEnum "description" (print $label " : " $key ))}}
+        {{- template "enum" ($.WithParams "name" (print $rawName " " $key) "schema" $schemaEnum "description" (print $label " : " $key ))}}
     {{- end -}}
 
 {{if eq $mediaType "application/json" }}
     {{- if or $hasValidation $hasRequired (.SchemaPropertiesHaveDefaults $schema)}}
 
-func (p *{{ pascal $key }}) UnmarshalJSON(b []byte) error {
+func (p *{{ $declName }}) UnmarshalJSON(b []byte) error {
     var err error
         {{- if or $hasRequired (.SchemaPropertiesHaveDefaults $schema) }}
     var requiredCheck map[string]any
 
     err = json.Unmarshal(b, &requiredCheck)
     if err != nil {
-        return validation.Error{err.Error(), fmt.Errorf("{{ pascal $key }}.UnmarshalJSON Required: `%v`: %w", string(b), err)}
+        return validation.Error{err.Error(), fmt.Errorf("{{ $declName }}.UnmarshalJSON Required: `%v`: %w", string(b), err)}
     }
 
     var validationErrors validation.Errors
             {{ range $field, $schemaProp := ($.RequiredProperties $schema) }}
     if _, ok := requiredCheck["{{ $field }}"]; !ok {
-        validationErrors.Add("{{ $field }}", ErrMissingRequiredField)
+        validationErrors.Add("{{ $field }}", Err{{ $.Params.GetWithDefault "TypePrefix" "" }}MissingRequiredField)
     }
             {{ end }}
 
@@ -284,15 +286,15 @@ func (p *{{ pascal $key }}) UnmarshalJSON(b []byte) error {
     }
         {{ end }}
 
-    type  {{ pascal $key }}JSON {{ pascal $key }}
-    var parseObject {{ pascal $key }}JSON
+    type  {{ $declName }}JSON {{ $declName }}
+    var parseObject {{ $declName }}JSON
 
     err = json.Unmarshal(b, &parseObject)
     if err != nil {
-        return validation.Error{err.Error(), fmt.Errorf("{{ pascal $key }}.UnmarshalJSON: `%v`: %w", string(b), err)}
+        return validation.Error{err.Error(), fmt.Errorf("{{ $declName }}.UnmarshalJSON: `%v`: %w", string(b), err)}
     }
 
-    v := {{ pascal $key }}(parseObject)
+    v := {{ $declName }}(parseObject)
 
         {{ range $field, $schemaProp := $.SchemaProperties $schema}}
             {{ $typeName := (print $key " " $field) -}}
@@ -338,16 +340,16 @@ func (p *{{ pascal $key }}) UnmarshalJSON(b []byte) error {
 }
 
         {{ if $hasValidation}}
-func (p {{ pascal $key }}) MarshalJSON() ([]byte, error) {
+func (p {{ $declName }}) MarshalJSON() ([]byte, error) {
     err := p.Validate()
     if err != nil {
         return nil, err
     }
 
-    type unvalidated {{ pascal $key }} // Skips the validation check
+    type unvalidated {{ $declName }} // Skips the validation check
     b, err := json.Marshal(unvalidated(p))
     if err != nil {
-        return nil, fmt.Errorf("{{ pascal $key }}.Marshal: `%+v`: %w", p, err)
+        return nil, fmt.Errorf("{{ $declName }}.Marshal: `%+v`: %w", p, err)
     }
 
     return b, nil
@@ -359,11 +361,11 @@ func (p {{ pascal $key }}) MarshalJSON() ([]byte, error) {
 
 {{if or (eq $mediaType "multipart/form-data") (eq $mediaType "application/x-www-form-urlencoded")}}
 
-func ParseForm{{ pascal $key }}(r *http.Request) ({{ pascal $key }}, error) {
+func ParseForm{{ $declName }}(r *http.Request) ({{ $declName }}, error) {
 	var (
 	  parseErrors validation.Errors
 	  err error
-      v {{ pascal $key }}
+      v {{ $declName }}
     )
 
     {{ range $field, $schemaProp := $.SchemaProperties $schema }}
@@ -433,13 +435,13 @@ func ParseForm{{ pascal $key }}(r *http.Request) ({{ pascal $key }}, error) {
     {{ end }}
 
 	if parseErrors != nil {
-		return {{ pascal $key }}{}, parseErrors.GetErr()
+		return {{ $declName }}{}, parseErrors.GetErr()
 	}
 
     {{ if $hasValidation}}
     err = v.Validate()
     if err != nil {
-        return {{ pascal $key }}{}, err
+        return {{ $declName }}{}, err
     }
     {{ end }}
 
@@ -451,7 +453,7 @@ func ParseForm{{ pascal $key }}(r *http.Request) ({{ pascal $key }}, error) {
 {{- if $hasValidation }}
     {{ $properties := $.SchemaProperties $schema }}
     {{- if not (empty $properties )}}
-func (p {{ pascal $key }}) Validate() error {
+func (p {{ $declName }}) Validate() error {
     var err validation.Errors
         {{ range $fieldName, $schemaProp := $properties }}
             {{- if $.HasValidation $schemaProp }}
@@ -466,21 +468,21 @@ func (p {{ pascal $key }}) Validate() error {
                 {{- $isRequired := $.IsRequiredProperty $fieldName $schema -}}
                 {{- $isPointer := and (not $isRequired) ($schemaProp.Value.Nullable) }}
 
-func (p {{ pascal $key }}) Validate{{ pascal $fieldName }}(err *validation.Errors) {
+func (p {{ $declName }}) Validate{{ pascal $fieldName }}(err *validation.Errors) {
                 {{- if $isPointer }}
 	if p.{{ pascal $fieldName }} == nil {
 		return
 	}
 
                 {{ end -}}
-                {{- template "validateField" ($.WithParams "fieldName" $fieldName "schema" $schemaProp "typeName" $key "isPointer" $isPointer ) -}}
+                {{- template "validateField" ($.WithParams "fieldName" $fieldName "schema" $schemaProp "typeName" $declName "isPointer" $isPointer ) -}}
 }
             {{- end }}
         {{- end }}
     {{ else -}}
-func (p {{ pascal $key }}) Validate() error {
+func (p {{ $declName }}) Validate() error {
     var err validation.Errors
-        {{- template "validateField" ($.WithParams "fieldName" "" "schema" $schema "typeName" $key "isPointer" false )}}
+        {{- template "validateField" ($.WithParams "fieldName" "" "schema" $schema "typeName" $declName "isPointer" false )}}
 
     return err.GetErr()
 }
@@ -506,7 +508,7 @@ import (
     "github.com/bir/iken/validation"
 )
 
-var ErrMissingRequiredField = errors.New("missing required field")
+var Err{{ $.Params.GetWithDefault "TypePrefix" "" }}MissingRequiredField = errors.New("missing required field")
 
 // Component Schemas
 

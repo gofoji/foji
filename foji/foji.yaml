@@ -98,3 +98,11 @@ processes:
       'service_gen.go': foji/openapi/service.go.tpl
       'handlers_gen.go': foji/openapi/handler.go.tpl
       '!cmd/serve/main.go': foji/openapi/main.go.tpl
+  openAPIClient:
+    format: go
+    resources: [ api ]
+    params:
+      IgnoreGoType: true
+    OpenAPIFile:
+      'models_gen.go': foji/openapi/model.go.tpl
+      'client_gen.go': foji/openapi/client.go.tpl

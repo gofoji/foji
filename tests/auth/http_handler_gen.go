@@ -28,6 +28,7 @@ type Operations interface {
 	QueryDataWithApiKey(ctx context.Context, user *example.ExampleAuth, query *string) error
 	ListDocuments(ctx context.Context, user *example.ExampleAuth) error
 	CreateDocument(ctx context.Context, user *example.ExampleAuth) error
+	Overview(ctx context.Context, user *example.ExampleAuth) error
 	GetDetailedProfile(ctx context.Context, user *example.ExampleAuth) error
 	GetProtectedResource(ctx context.Context, user *example.ExampleAuth) error
 	GetPublicStatus(ctx context.Context) (*GetPublicStatusResponse, error)
@@ -36,39 +37,41 @@ type Operations interface {
 }
 
 type OpenAPIHandlers struct {
-	ops                          Operations
-	apiKeyCookieAuth             RequestAuthenticator
-	apiKeyHeaderAuth             RequestAuthenticator
-	apiKeyQueryAuth              RequestAuthenticator
-	basicAuthAuth                RequestAuthenticator
-	bearerAuthAuth               RequestAuthenticator
-	oauth2ExampleAuth            RequestAuthenticator
-	openIdconnectAuth            RequestAuthenticator
-	rawAuth                      RequestAuthenticator
-	authorize                    AuthorizeFunc
-	listAdminUsersSecurity       SecurityGroups
-	queryDataWithApiKeySecurity  SecurityGroups
-	createDocumentSecurity       SecurityGroups
-	getProtectedResourceSecurity SecurityGroups
-	getCurrentUserSecurity       SecurityGroups
+	ops                                Operations
+	apiKeyCookieAuth                   RequestAuthenticator
+	apiKeyHeaderAuth                   RequestAuthenticator
+	apiKeyQueryAuth                    RequestAuthenticator
+	basicAuthAuth                      RequestAuthenticator
+	bearerAuthAuth                     RequestAuthenticator
+	oauth2ClientCredentialsExampleAuth RequestAuthenticator
+	oauth2ExampleAuth                  RequestAuthenticator
+	openIdconnectAuth                  RequestAuthenticator
+	rawAuth                            RequestAuthenticator
+	authorize                          AuthorizeFunc
+	listAdminUsersSecurity             SecurityGroups
+	queryDataWithApiKeySecurity        SecurityGroups
+	createDocumentSecurity             SecurityGroups
+	getProtectedResourceSecurity       SecurityGroups
+	getCurrentUserSecurity             SecurityGroups
 }
 
 type Mux interface {
 	Handle(pattern string, handler http.Handler)
 }
 
-func RegisterHTTP(ops Operations, r Mux, apiKeyCookieAuth TokenAuthenticator, apiKeyHeaderAuth TokenAuthenticator, apiKeyQueryAuth TokenAuthenticator, basicAuthAuth BasicAuthenticator, bearerAuthAuth TokenAuthenticator, oauth2ExampleAuth RequestAuthenticator, openIdconnectAuth RequestAuthenticator, rawAuth RequestAuthenticator, authorize AuthorizeFunc) *OpenAPIHandlers {
+func RegisterHTTP(ops Operations, r Mux, apiKeyCookieAuth TokenAuthenticator, apiKeyHeaderAuth TokenAuthenticator, apiKeyQueryAuth TokenAuthenticator, basicAuthAuth BasicAuthenticator, bearerAuthAuth TokenAuthenticator, oauth2ClientCredentialsExampleAuth RequestAuthenticator, oauth2ExampleAuth RequestAuthenticator, openIdconnectAuth RequestAuthenticator, rawAuth RequestAuthenticator, authorize AuthorizeFunc) *OpenAPIHandlers {
 	s := OpenAPIHandlers{
-		ops:               ops,
-		apiKeyCookieAuth:  httputil.CookieAuth("cookie_name", apiKeyCookieAuth),
-		apiKeyHeaderAuth:  httputil.HeaderAuth("X-API-Key", apiKeyHeaderAuth),
-		apiKeyQueryAuth:   httputil.QueryAuth("query_key_name", apiKeyQueryAuth),
-		basicAuthAuth:     httputil.BasicAuth(basicAuthAuth),
-		bearerAuthAuth:    httputil.BearerAuth("Authorization", bearerAuthAuth),
-		oauth2ExampleAuth: oauth2ExampleAuth,
-		openIdconnectAuth: openIdconnectAuth,
-		rawAuth:           rawAuth,
-		authorize:         authorize,
+		ops:                                ops,
+		apiKeyCookieAuth:                   httputil.CookieAuth("cookie_name", apiKeyCookieAuth),
+		apiKeyHeaderAuth:                   httputil.HeaderAuth("X-API-Key", apiKeyHeaderAuth),
+		apiKeyQueryAuth:                    httputil.QueryAuth("query_key_name", apiKeyQueryAuth),
+		basicAuthAuth:                      httputil.BasicAuth(basicAuthAuth),
+		bearerAuthAuth:                     httputil.BearerAuth("Authorization", bearerAuthAuth),
+		oauth2ClientCredentialsExampleAuth: oauth2ClientCredentialsExampleAuth,
+		oauth2ExampleAuth:                  oauth2ExampleAuth,
+		openIdconnectAuth:                  openIdconnectAuth,
+		rawAuth:                            rawAuth,
+		authorize:                          authorize,
 	}
 
 	s.listAdminUsersSecurity = SecurityGroups{
@@ -101,6 +104,7 @@ func RegisterHTTP(ops Operations, r Mux, apiKeyCookieAuth TokenAuthenticator, ap
 	r.Handle("GET /data/query", http.HandlerFunc(s.QueryDataWithApiKey))
 	r.Handle("GET /documents", http.HandlerFunc(s.ListDocuments))
 	r.Handle("POST /documents", http.HandlerFunc(s.CreateDocument))
+	r.Handle("GET /overview", http.HandlerFunc(s.Overview))
 	r.Handle("GET /profile/detailed", http.HandlerFunc(s.GetDetailedProfile))
 	r.Handle("GET /protected-resource", http.HandlerFunc(s.GetProtectedResource))
 	r.Handle("GET /public/status", http.HandlerFunc(s.GetPublicStatus))
@@ -231,6 +235,32 @@ func (h OpenAPIHandlers) CreateDocument(w http.ResponseWriter, r *http.Request) 
 	}
 
 	w.WriteHeader(201)
+}
+
+// Overview
+// System overview
+// Requires OAuth client credentials
+func (h OpenAPIHandlers) Overview(w http.ResponseWriter, r *http.Request) {
+	var err error
+
+	logctx.SetOperation(r.Context(), "overview")
+	logctx.AddStrToContext(r.Context(), "op", "overview")
+
+	user, err := h.oauth2ClientCredentialsExampleAuth(r)
+	if err != nil {
+		httputil.ErrorHandler(w, r, err)
+
+		return
+	}
+
+	err = h.ops.Overview(r.Context(), user)
+	if err != nil {
+		httputil.ErrorHandler(w, r, err)
+
+		return
+	}
+
+	w.WriteHeader(200)
 }
 
 // GetDetailedProfile

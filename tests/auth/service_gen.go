@@ -45,6 +45,13 @@ func (s *GenService) CreateDocument(ctx context.Context, user *example.ExampleAu
 	return errors.ErrUnsupported
 }
 
+// Overview
+// System overview
+// Requires OAuth client credentials
+func (s *GenService) Overview(ctx context.Context, user *example.ExampleAuth) error {
+	return errors.ErrUnsupported
+}
+
 // GetDetailedProfile
 // Get detailed profile
 // Requires OpenID Connect authentication

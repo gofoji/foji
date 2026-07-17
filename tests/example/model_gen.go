@@ -17,7 +17,7 @@ import (
 	"github.com/google/uuid"
 )
 
-var ErrMissingRequiredField = errors.New("missing required field")
+var ErrExampleMissingRequiredField = errors.New("missing required field")
 
 // Component Schemas
 
@@ -158,7 +158,7 @@ func (p *Example) UnmarshalJSON(b []byte) error {
 	var validationErrors validation.Errors
 
 	if _, ok := requiredCheck["id"]; !ok {
-		validationErrors.Add("id", ErrMissingRequiredField)
+		validationErrors.Add("id", ErrExampleMissingRequiredField)
 	}
 
 	if validationErrors != nil {
@@ -199,7 +199,7 @@ func (p *Examples) UnmarshalJSON(b []byte) error {
 	var validationErrors validation.Errors
 
 	if _, ok := requiredCheck["list"]; !ok {
-		validationErrors.Add("list", ErrMissingRequiredField)
+		validationErrors.Add("list", ErrExampleMissingRequiredField)
 	}
 
 	if validationErrors != nil {
@@ -305,7 +305,7 @@ func (p *FooBar) UnmarshalJSON(b []byte) error {
 	var validationErrors validation.Errors
 
 	if _, ok := requiredCheck["a"]; !ok {
-		validationErrors.Add("a", ErrMissingRequiredField)
+		validationErrors.Add("a", ErrExampleMissingRequiredField)
 	}
 
 	if validationErrors != nil {
@@ -762,23 +762,23 @@ func (p *Patterns) UnmarshalJSON(b []byte) error {
 	var validationErrors validation.Errors
 
 	if _, ok := requiredCheck["id"]; !ok {
-		validationErrors.Add("id", ErrMissingRequiredField)
+		validationErrors.Add("id", ErrExampleMissingRequiredField)
 	}
 
 	if _, ok := requiredCheck["stateAlways"]; !ok {
-		validationErrors.Add("stateAlways", ErrMissingRequiredField)
+		validationErrors.Add("stateAlways", ErrExampleMissingRequiredField)
 	}
 
 	if _, ok := requiredCheck["subObject"]; !ok {
-		validationErrors.Add("subObject", ErrMissingRequiredField)
+		validationErrors.Add("subObject", ErrExampleMissingRequiredField)
 	}
 
 	if _, ok := requiredCheck["subState"]; !ok {
-		validationErrors.Add("subState", ErrMissingRequiredField)
+		validationErrors.Add("subState", ErrExampleMissingRequiredField)
 	}
 
 	if _, ok := requiredCheck["timeStamp"]; !ok {
-		validationErrors.Add("timeStamp", ErrMissingRequiredField)
+		validationErrors.Add("timeStamp", ErrExampleMissingRequiredField)
 	}
 
 	if validationErrors != nil {
@@ -1032,7 +1032,7 @@ func (p *PlayerAlways) UnmarshalJSON(b []byte) error {
 	var validationErrors validation.Errors
 
 	if _, ok := requiredCheck["id"]; !ok {
-		validationErrors.Add("id", ErrMissingRequiredField)
+		validationErrors.Add("id", ErrExampleMissingRequiredField)
 	}
 
 	if validationErrors != nil {
@@ -1078,7 +1078,7 @@ func (p *PlayerMaybe) UnmarshalJSON(b []byte) error {
 	var validationErrors validation.Errors
 
 	if _, ok := requiredCheck["id"]; !ok {
-		validationErrors.Add("id", ErrMissingRequiredField)
+		validationErrors.Add("id", ErrExampleMissingRequiredField)
 	}
 
 	if validationErrors != nil {
@@ -2872,11 +2872,11 @@ func (p *AddInlinedBodyRequest) UnmarshalJSON(b []byte) error {
 	var validationErrors validation.Errors
 
 	if _, ok := requiredCheck["f07"]; !ok {
-		validationErrors.Add("f07", ErrMissingRequiredField)
+		validationErrors.Add("f07", ErrExampleMissingRequiredField)
 	}
 
 	if _, ok := requiredCheck["f10"]; !ok {
-		validationErrors.Add("f10", ErrMissingRequiredField)
+		validationErrors.Add("f10", ErrExampleMissingRequiredField)
 	}
 
 	if validationErrors != nil {

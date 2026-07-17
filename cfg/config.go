@@ -145,6 +145,19 @@ func (pp ParamMap) HasString(name string) (string, bool) {
 	return s, ok
 }
 
+// GetBool returns a bool param identified by `name`, otherwise false.
+// Accepts either a bool or the string "true".
+func (pp ParamMap) GetBool(name string) bool {
+	switch v := pp[name].(type) {
+	case bool:
+		return v
+	case string:
+		return v == "true"
+	}
+
+	return false
+}
+
 // GetWithDefault returns a string param identified by `name`, otherwise returns the default.
 func (pp ParamMap) GetWithDefault(name, def string) string {
 	p, ok := pp[name]

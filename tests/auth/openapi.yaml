@@ -61,6 +61,7 @@ components:
     # Custom auth that processes the request directly using `x-raw-auth`.
     Raw:
       x-raw-auth: true
+      x-raw-client-auth: true
       type: apiKey
       name: Authorization
       in: header
@@ -75,6 +76,15 @@ components:
             read:pets: read your pets
         authorizationCode:
           authorizationUrl: https://example.com/api/oauth/dialog
+          tokenUrl: https://example.com/api/oauth/token
+          scopes:
+            write:pets: modify pets in your account
+            read:pets: read your pets
+
+    Oauth2ClientCredentialsExample:
+      type: oauth2
+      flows:
+        clientCredentials:
           tokenUrl: https://example.com/api/oauth/token
           scopes:
             write:pets: modify pets in your account
@@ -244,6 +254,18 @@ paths:
       responses:
         '200':
           description: Detailed user profile
+
+  # OAuth Client Credentials
+  /overview:
+    get:
+      operationId: overview
+      summary: System overview
+      description: Requires OAuth client credentials
+      security:
+        - Oauth2ClientCredentialsExample: []
+      responses:
+        '200':
+          description: System overview data
 
   # API key variations
   /data/query:

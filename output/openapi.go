@@ -95,7 +95,19 @@ func (o *OpenAPIFileContext) GetTypeName(pkg string, s *openapi3.SchemaRef) stri
 		return o.CheckPackage(t, pkg)
 	}
 
-	return o.CheckPackage(ref, pkg)
+	return o.CheckPackage(o.PrefixType(ref), pkg)
+}
+
+// PrefixType applies the TypePrefix param (if any) to a type name, which may be package-qualified.
+func (o *OpenAPIFileContext) PrefixType(name string) string {
+	prefix := o.Params.GetWithDefault("TypePrefix", "")
+	if prefix == "" {
+		return name
+	}
+
+	pos := strings.LastIndex(name, ".") + 1
+
+	return name[:pos] + prefix + name[pos:]
 }
 
 func (o *OpenAPIFileContext) TypeOnly(name string) string {
@@ -153,7 +165,7 @@ func (o *OpenAPIFileContext) GetType(currentPackage, name string, s *openapi3.Sc
 		return ""
 	}
 
-	if override, ok := s.Value.Extensions["x-go-type"]; ok {
+	if override, ok := s.Value.Extensions["x-go-type"]; ok && !o.Params.GetBool("IgnoreGoType") {
 		return o.getXGoType(currentPackage, override)
 	}
 
@@ -193,7 +205,7 @@ func (o *OpenAPIFileContext) GetType(currentPackage, name string, s *openapi3.Sc
 			return "any"
 		}
 
-		name = o.PackageName() + "." + kace.Pascal(name)
+		name = o.PrefixType(o.PackageName() + "." + kace.Pascal(name))
 
 		return o.CheckPackage(name, currentPackage)
 	}
@@ -211,7 +223,7 @@ func (o *OpenAPIFileContext) GetType(currentPackage, name string, s *openapi3.Sc
 
 func (o *OpenAPIFileContext) EnumName(name string) string {
 	// TODO: Support override via template
-	return o.PackageName() + "." + kace.Pascal(name)
+	return o.PrefixType(o.PackageName() + "." + kace.Pascal(name))
 }
 
 func (o *OpenAPIFileContext) EnumNew(name string) string {
@@ -654,6 +666,52 @@ func (o *OpenAPIFileContext) OpSecurity(op *openapi3.Operation) openapi3.Securit
 	}
 
 	return o.API.Security
+}
+
+// OpSecuritySchemes returns the distinct security scheme names referenced by the operation
+// across all of its security requirement groups, sorted for deterministic output.
+func (o *OpenAPIFileContext) OpSecuritySchemes(op *openapi3.Operation) []string {
+	seen := map[string]bool{}
+
+	for _, group := range o.OpSecurity(op) {
+		for key := range group {
+			seen[key] = true
+		}
+	}
+
+	out := make([]string, 0, len(seen))
+	for k := range seen {
+		out = append(out, k)
+	}
+
+	slices.Sort(out)
+
+	return out
+}
+
+// OpSecurityGroups returns the operation's security requirement groups as sorted scheme-name
+// slices (AND within a group, OR across groups), with duplicate groups removed so the generated
+// validation does not repeat identical conditions.  An empty slice element represents an empty
+// requirement (anonymous access permitted).
+func (o *OpenAPIFileContext) OpSecurityGroups(op *openapi3.Operation) [][]string {
+	var out [][]string
+
+	seen := map[string]bool{}
+
+	for _, group := range o.OpSecurity(op) {
+		schemes := mapKeysSorted(group)
+
+		key := strings.Join(schemes, "\x00")
+		if seen[key] {
+			continue
+		}
+
+		seen[key] = true
+
+		out = append(out, schemes)
+	}
+
+	return out
 }
 
 func hasAuthorization(security openapi3.SecurityRequirements) bool {
