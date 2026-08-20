@@ -25,8 +25,11 @@ type File struct {
 	Content []byte // Contents of file
 }
 
-func rewrite(rules stringlist.StringMap, name string) string {
-	for match, replace := range rules {
+// rewrite applies the first matching rule. Rules are ordered, so "first" means
+// the first one declared in the config rather than whichever Go's map iteration
+// happened to reach first.
+func rewrite(rules cfg.OrderedMap, name string) string {
+	for match, replace := range rules.Entries() {
 		re := regexp.MustCompile(match)
 		if re.MatchString(name) {
 			return re.ReplaceAllString(name, replace)

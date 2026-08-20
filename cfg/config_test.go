@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/gofoji/foji/cfg"
-	"github.com/gofoji/foji/stringlist"
 )
 
 func TestLoad(t *testing.T) {
@@ -127,11 +126,11 @@ func TestOutput_All(t *testing.T) {
 
 	tests := []struct {
 		name string
-		want stringlist.StringMap
+		want cfg.OrderedMap
 	}{
-		{"openAPIStub", stringlist.StringMap{"!openapi.yaml": "foji/openapi/stub.yaml.tpl"}},
-		{"embed", stringlist.StringMap{}},
-		{"groupTest", stringlist.StringMap{}},
+		{"openAPIStub", cfg.NewOrderedMap("!openapi.yaml", "foji/openapi/stub.yaml.tpl")},
+		{"embed", cfg.OrderedMap{}},
+		{"groupTest", cfg.OrderedMap{}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -42,10 +42,10 @@ func copyTemplates(_ *cobra.Command, args []string) {
 			l.Fatal().Str("processes", config.Processes.String()).Strs("targets", args).Msg("No valid targets defined.")
 		}
 
-		templateMaps := stringlist.StringMap{}
+		templateMaps := cfg.OrderedMap{}
 
 		for _, p := range targets {
-			templateMaps = cfg.MergeTypesMaps(templateMaps, p.All())
+			templateMaps.SetAll(p.All())
 		}
 
 		templates = templateMaps.Values()

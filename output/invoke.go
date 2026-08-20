@@ -15,7 +15,6 @@ import (
 	"github.com/gofoji/foji/errs"
 	"github.com/gofoji/foji/foji"
 	"github.com/gofoji/foji/runtime"
-	"github.com/gofoji/foji/stringlist"
 )
 
 type FuncMapper interface {
@@ -32,13 +31,15 @@ type TemplateInitializer interface {
 
 const PermPrefix = "!"
 
-func (p ProcessRunner) process(tm stringlist.StringMap, data any) error {
+func (p ProcessRunner) process(tm cfg.OrderedMap, data any) error {
 	f, ok := data.(FuncMapper)
 	if ok {
 		p.AddFuncs(f.Funcs())
 	}
 
-	for targetFile, templateFile := range tm {
+	// Ordered: templates at the same level share accumulated context state, so
+	// generation order has to follow the config rather than Go's map order.
+	for targetFile, templateFile := range tm.Entries() {
 		err := p.doInit(data)
 		if err != nil {
 			return err
@@ -235,7 +236,7 @@ func (p ProcessRunner) loadLocalOrEmbed(filename string) ([]byte, error) {
 
 func hasAnyOutput(o cfg.Output, outputs ...string) bool {
 	for _, k := range outputs {
-		if len(o[k]) > 0 {
+		if o[k].Len() > 0 {
 			return true
 		}
 	}

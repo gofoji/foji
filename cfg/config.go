@@ -3,6 +3,7 @@ package cfg
 import (
 	"fmt"
 	"maps"
+	"slices"
 	"sort"
 
 	"github.com/gofoji/foji/errs"
@@ -14,7 +15,9 @@ type (
 	ParamMap     map[string]any     // Generic bucket of params passed to templates
 	Processes    map[string]Process
 	FileInputMap map[string]FileInput
-	Output       map[string]stringlist.StringMap
+	// Output maps each output kind (DbTable, OpenAPIFile, ...) to the templates
+	// it renders. The inner map is ordered because it drives generation order.
+	Output map[string]OrderedMap
 
 	DBInput struct {
 		// DB Connection string.
@@ -30,8 +33,10 @@ type (
 		Files stringlist.Strings
 		// Optional regex for filtering the files.  The filename must not match any of the filter
 		// expressions to be considered valid.
-		Filter  stringlist.Strings   `yaml:"filter,omitempty"`
-		Rewrite stringlist.StringMap `yaml:"rewrite,omitempty"` // Optional rules for rewriting file names
+		Filter stringlist.Strings `yaml:"filter,omitempty"`
+		// Optional rules for rewriting file names. Ordered because the first
+		// matching rule wins.
+		Rewrite OrderedMap `yaml:"rewrite,omitempty"`
 	}
 
 	// Maps are a set of lookups for mapping various attributes (type, name, case) for welds.
@@ -160,12 +165,14 @@ func (pp ParamMap) GetWithDefault(name, def string) string {
 	return s
 }
 
-// All merges all the mapped TypeMaps into a single StringMap, useful for getting the list of all templates.
-func (o Output) All() stringlist.StringMap {
-	result := stringlist.StringMap{}
+// All merges every output kind's templates into a single map, useful for
+// getting the list of all templates. The output kinds are visited in sorted
+// order so the result is stable; within a kind the declared order is kept.
+func (o Output) All() OrderedMap {
+	result := OrderedMap{}
 
-	for _, m := range o {
-		maps.Copy(result, m)
+	for _, kind := range slices.Sorted(maps.Keys(o)) {
+		result.SetAll(o[kind])
 	}
 
 	return result

@@ -1082,7 +1082,7 @@ func TestImports_Add_Dedup(t *testing.T) {
 
 func TestHasOpenAPIOutput(t *testing.T) {
 	o := cfg.Output{
-		OpenAPIFile: stringlist.StringMap{"out.go": "tpl.go"},
+		OpenAPIFile: cfg.NewOrderedMap("out.go", "tpl.go"),
 	}
 	assert.True(t, HasOpenAPIOutput(o))
 
