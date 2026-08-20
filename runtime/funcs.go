@@ -234,7 +234,7 @@ func In(needle any, haystack ...any) (bool, error) {
 		return false, nil
 	}
 
-	tp := reflect.TypeOf(haystack).Kind() //nolint:modernize
+	tp := reflect.TypeOf(haystack).Kind()
 	switch tp {
 	case reflect.Slice, reflect.Array:
 		var item any

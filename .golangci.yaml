@@ -7,6 +7,7 @@ linters:
     - depguard
     - exhaustive
     - exhaustruct
+    - exhaustruct_v5
     - funcorder
     - gochecknoglobals
     - godot
@@ -14,6 +15,7 @@ linters:
     - nlreturn
     - varnamelen
     - wrapcheck
+    - gomodguard
     - wsl # superseeded by wsl_v5
   settings:
     cyclop:
