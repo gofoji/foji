@@ -17,9 +17,9 @@ var listCmd = &cobra.Command{
 }
 
 func list(_ *cobra.Command, _ []string) {
-	l := getLogger(quiet, trace, verbose)
+	l := rootFlags.logger()
 
-	config, err := cfg.Load(cfgFile, true)
+	config, err := cfg.Load(rootFlags.cfgFile, true)
 	if err != nil {
 		l.Fatal().Err(err).Msg("Failed to load config")
 	}

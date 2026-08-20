@@ -16,10 +16,19 @@ var initCmd = &cobra.Command{
 	Run:     initConfig,
 }
 
-func initConfig(_ *cobra.Command, _ []string) {
-	l := log.With().Str("cfgFile", cfgFile).Logger()
+var initFlags struct {
+	overwrite bool
+}
 
-	info, err := os.Stat(cfgFile)
+func registerInitFlags() {
+	initCmd.PersistentFlags().BoolVarP(&initFlags.overwrite, "overwrite", "y", false,
+		"force overwrite an existing output file")
+}
+
+func initConfig(_ *cobra.Command, _ []string) {
+	l := log.With().Str("cfgFile", rootFlags.cfgFile).Logger()
+
+	info, err := os.Stat(rootFlags.cfgFile)
 	if os.IsNotExist(err) {
 		writeConfig()
 
@@ -34,7 +43,7 @@ func initConfig(_ *cobra.Command, _ []string) {
 		l.Fatal().Msg("cfgFile is a directory")
 	}
 
-	if !overwrite {
+	if !initFlags.overwrite {
 		l.Fatal().Msg("cfgFile exists, specify `overwrite` to replace")
 	}
 
@@ -43,9 +52,9 @@ func initConfig(_ *cobra.Command, _ []string) {
 }
 
 func writeConfig() {
-	l := log.With().Str("cfgFile", cfgFile).Logger()
+	l := log.With().Str("cfgFile", rootFlags.cfgFile).Logger()
 
-	err := WriteToFile(foji.InitConfig, cfgFile)
+	err := WriteToFile(foji.InitConfig, rootFlags.cfgFile)
 	if err != nil {
 		l.Fatal().Err(err).Msg("saving file")
 	}

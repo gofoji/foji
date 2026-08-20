@@ -216,20 +216,27 @@ func (w *Welder) initDBConnection() error {
 
 	config, err := pgx.ParseConfig(w.config.DB.Connection)
 	if err != nil {
-		w.logger.Fatal().Err(err).Msg("pgx.ParseConfig")
+		return fmt.Errorf("%w: parsing db.connection: %w", errs.ErrWeld, err)
 	}
 
 	// TODO: Enable tracer on PGX V5
 	// config.Tracer = pgxzero.New(w.logger).WithMapper(pgxzeroMapper)
 
-	conn, err := pgx.ConnectConfig(context.Background(), config)
+	conn, err := pgx.ConnectConfig(w.ctx, config)
 	if err != nil {
-		w.logger.Fatal().Err(err).Msg("Unable to connect to database")
+		return fmt.Errorf("%w: connecting to database: %w", errs.ErrWeld, err)
 	}
 
-	dt, err := conn.LoadType(context.Background(), "_name")
+	dt, err := conn.LoadType(w.ctx, "_name")
 	if err != nil {
-		w.logger.Fatal().Err(err).Msg("Unable to Load Data Types")
+		// The connection is not stored on the Welder yet, so Close is this
+		// function's responsibility.
+		closeErr := conn.Close(w.ctx)
+		if closeErr != nil {
+			w.logger.Err(closeErr).Msg("DB Connection Close")
+		}
+
+		return fmt.Errorf("%w: loading data types: %w", errs.ErrWeld, err)
 	}
 
 	conn.TypeMap().RegisterType(dt)

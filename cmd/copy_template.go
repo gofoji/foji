@@ -18,10 +18,23 @@ var copyTemplateCmd = &cobra.Command{
 	Run:     copyTemplate,
 }
 
-func copyTemplate(_ *cobra.Command, args []string) {
-	l := getLogger(quiet, trace, verbose)
+var copyTemplateFlags struct {
+	dir       string
+	stdout    bool
+	overwrite bool
+}
 
-	err := writeTemplate(l, dir, args[0], stdout, overwrite)
+func registerCopyTemplateFlags() {
+	copyTemplateCmd.PersistentFlags().BoolVarP(&copyTemplateFlags.stdout, "stdout", "o", false, "write to stdout")
+	copyTemplateCmd.PersistentFlags().BoolVarP(&copyTemplateFlags.overwrite, "overwrite", "y", false,
+		"force overwrite an existing output file")
+	copyTemplateCmd.PersistentFlags().StringVarP(&copyTemplateFlags.dir, "dir", "d", "foji", "output directory")
+}
+
+func copyTemplate(_ *cobra.Command, args []string) {
+	l := rootFlags.logger()
+
+	err := writeTemplate(l, copyTemplateFlags.dir, args[0], copyTemplateFlags.stdout, copyTemplateFlags.overwrite)
 	if err != nil {
 		l.Fatal().Err(err).Msg("Failed to Write Template")
 	}

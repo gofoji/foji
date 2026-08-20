@@ -7,7 +7,6 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-	"unsafe"
 
 	"github.com/codemodus/kace"
 	"github.com/jinzhu/inflection"
@@ -213,7 +212,16 @@ func NotEmpty(in string) bool {
 
 // IsNil returns true if the input or referenced object is nil.
 func IsNil(i any) bool {
-	return (*[2]uintptr)(unsafe.Pointer(&i))[1] == 0
+	if i == nil {
+		return true
+	}
+
+	switch v := reflect.ValueOf(i); v.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Map, reflect.Pointer, reflect.UnsafePointer:
+		return v.IsNil()
+	default:
+		return false
+	}
 }
 
 // IsNotNil returns false if the input or referenced object is nil.

@@ -16,10 +16,19 @@ var weldCmd = &cobra.Command{
 	Run:     weld,
 }
 
-func weld(_ *cobra.Command, args []string) {
-	l := getLogger(quiet, trace, verbose)
+var weldFlags struct {
+	simulate bool
+}
 
-	c, err := cfg.Load(cfgFile, true)
+func registerWeldFlags() {
+	weldCmd.PersistentFlags().BoolVarP(&weldFlags.simulate, "simulate", "s", false,
+		"simulates the processing, only displays files that would be generated")
+}
+
+func weld(_ *cobra.Command, args []string) {
+	l := rootFlags.logger()
+
+	c, err := cfg.Load(rootFlags.cfgFile, true)
 	if err != nil {
 		l.Fatal().Err(err).Msg("Unable to load config")
 	}
@@ -29,7 +38,7 @@ func weld(_ *cobra.Command, args []string) {
 		l.Fatal().Err(err).Msg("Getting targets")
 	}
 
-	err = welder.New(l, c, targets).Run(simulate)
+	err = welder.New(l, c, targets).Run(weldFlags.simulate)
 	if err != nil {
 		l.Fatal().Err(err).Msg("Welding")
 	}

@@ -17,10 +17,21 @@ var copyTemplatesCmd = &cobra.Command{
 	Run:     copyTemplates,
 }
 
-func copyTemplates(_ *cobra.Command, args []string) {
-	l := getLogger(quiet, trace, verbose)
+var copyTemplatesFlags struct {
+	dir       string
+	overwrite bool
+}
 
-	config, err := cfg.Load(cfgFile, true)
+func registerCopyTemplatesFlags() {
+	copyTemplatesCmd.PersistentFlags().StringVarP(&copyTemplatesFlags.dir, "dir", "d", "foji", "output directory")
+	copyTemplatesCmd.PersistentFlags().BoolVarP(&copyTemplatesFlags.overwrite, "overwrite", "y", false,
+		"force overwrite an existing output file")
+}
+
+func copyTemplates(_ *cobra.Command, args []string) {
+	l := rootFlags.logger()
+
+	config, err := cfg.Load(rootFlags.cfgFile, true)
 	if err != nil {
 		l.Fatal().Err(err).Msg("Failed to load config")
 	}
@@ -52,7 +63,8 @@ func copyTemplates(_ *cobra.Command, args []string) {
 	}
 
 	for _, v := range templates {
-		err = writeTemplate(l, dir, v, stdout, overwrite)
+		// This command declares no --stdout flag, so it always writes to disk.
+		err = writeTemplate(l, copyTemplatesFlags.dir, v, false, copyTemplatesFlags.overwrite)
 		if err != nil {
 			l.Fatal().Str("template", v).Err(err).Msg("Failed to Write")
 		}

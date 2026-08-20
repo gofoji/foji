@@ -4,23 +4,32 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 
 	"github.com/gofoji/foji/cfg"
 )
 
-var (
-	cfgFile         string
-	verbose         bool
-	trace           bool
-	quiet           bool
-	overwrite       bool
-	includeDefaults bool
-	stdout          bool
-	simulate        bool
-	dir             string
-	dumpWeld        string
-)
+// rootFlagSet holds the flags declared on the root command. They are
+// persistent, so every subcommand inherits them.
+//
+// Each command owns its own flag struct rather than sharing package-level
+// variables: `--overwrite` is declared by three commands and `--dir` by two, and
+// binding them all to one variable meant the commands aliased each other and
+// could only work because exactly one runs per process.
+type rootFlagSet struct {
+	cfgFile string
+	verbose bool
+	trace   bool
+	quiet   bool
+}
+
+var rootFlags rootFlagSet
+
+// logger builds a logger at the verbosity selected by the root flags.
+func (f rootFlagSet) logger() zerolog.Logger {
+	return getLogger(f.quiet, f.trace, f.verbose)
+}
 
 var rootCmd = &cobra.Command{
 	Use:   "foji",
@@ -48,29 +57,17 @@ func Execute() {
 	}
 }
 
+// registerFlags binds the root flags and then delegates to each command, which
+// registers its own.
 func registerFlags() {
-	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "foji.yaml", "config file")
-	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "include verbose logging")
-	rootCmd.PersistentFlags().BoolVarP(&trace, "trace", "t", false, "include trace logging")
-	rootCmd.PersistentFlags().BoolVarP(&quiet, "quiet", "q", false, "mutes all logging (overrides verbose)")
+	rootCmd.PersistentFlags().StringVarP(&rootFlags.cfgFile, "config", "c", "foji.yaml", "config file")
+	rootCmd.PersistentFlags().BoolVarP(&rootFlags.verbose, "verbose", "v", false, "include verbose logging")
+	rootCmd.PersistentFlags().BoolVarP(&rootFlags.trace, "trace", "t", false, "include trace logging")
+	rootCmd.PersistentFlags().BoolVarP(&rootFlags.quiet, "quiet", "q", false, "mutes all logging (overrides verbose)")
 
-	initCmd.PersistentFlags().BoolVarP(&overwrite, "overwrite", "y", false,
-		"force overwrite an existing output file")
-
-	dumpConfigCmd.PersistentFlags().BoolVarP(&includeDefaults, "includeDefaults", "d", false,
-		"Include evaluated Fōji defaults in the dump")
-	dumpConfigCmd.PersistentFlags().StringVarP(&dumpWeld, "weld", "w", "",
-		"limits output to only the specified weld config (includes defaults")
-
-	copyTemplateCmd.PersistentFlags().BoolVarP(&stdout, "stdout", "o", false, "write to stdout")
-	copyTemplateCmd.PersistentFlags().BoolVarP(&overwrite, "overwrite", "y", false,
-		"force overwrite an existing output file")
-	copyTemplateCmd.PersistentFlags().StringVarP(&dir, "dir", "d", "foji", "output directory")
-
-	copyTemplatesCmd.PersistentFlags().StringVarP(&dir, "dir", "d", "foji", "output directory")
-	copyTemplatesCmd.PersistentFlags().BoolVarP(&overwrite, "overwrite", "y", false,
-		"force overwrite an existing output file")
-
-	weldCmd.PersistentFlags().BoolVarP(&simulate, "simulate", "s", false,
-		"simulates the processing, only displays files that would be generated")
+	registerInitFlags()
+	registerDumpConfigFlags()
+	registerCopyTemplateFlags()
+	registerCopyTemplatesFlags()
+	registerWeldFlags()
 }
